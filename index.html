@@ -261,17 +261,25 @@
                             <label for="starter-multiplier">Starter Tile Multiplier:</label>
                             <input type="number" id="starter-multiplier" min="1" max="5" value="2" step="1">
                         </div>
-                        <div class="setup-option">
-                            <label for="intersection-bonus">Intersection Bonus:</label>
-                            <input type="number" id="intersection-bonus" min="0" max="50" value="5" step="5">
-                        </div>
-                        <div class="setup-option">
-                            <label for="center-bonus">Center Bonus:</label>
-                            <input type="number" id="center-bonus" min="0" max="50" value="5" step="5">
-                        </div>
-                        <div class="setup-option">
-                            <label for="path-points">Path Points (per tile):</label>
-                            <input type="number" id="path-points" min="1" max="10" value="3" step="1">
+
+                        <!-- Street-Specific Scoring Options -->
+                        <div class="streets-only">
+                            <div class="setup-option">
+                                <label for="intersection-bonus">Intersection Bonus:</label>
+                                <input type="number" id="intersection-bonus" min="0" max="50" value="5" step="5">
+                            </div>
+                            <div class="setup-option">
+                                <label for="center-bonus">Center Bonus:</label>
+                                <input type="number" id="center-bonus" min="0" max="50" value="5" step="5">
+                            </div>
+                            <div class="setup-option">
+                                <label for="path-points">Path Points (per tile):</label>
+                                <input type="number" id="path-points" min="1" max="10" value="3" step="1">
+                            </div>
+                            <div class="checkbox-option">
+                                <input type="checkbox" id="enable-end-game-bonus">
+                                <label for="enable-end-game-bonus">End-of-Game Path Bonus only</label>
+                            </div>
                         </div>
                     </div>
 

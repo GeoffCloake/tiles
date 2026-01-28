@@ -31,6 +31,37 @@ class PathScoring {
     return longestPath;
   }
 
+  calculateEndGameBonus(gameState, playerId) {
+    const playerColor = this.getPlayerColor(gameState, playerId);
+
+    // 1. Find all relevant start/end points for this player
+    const centerSquares = this.findSpecialTilesForPlayer(gameState, 'squares', playerColor);
+    const bonusCircles = this.findSpecialTilesForPlayer(gameState, 'circles', playerColor);
+
+    if (!centerSquares.length || !bonusCircles.length) return 0;
+
+    // 2. Find longest continuous path connecting a Center Square to ANY Bonus Circle
+    // (Note: The user requested "connecting to bonus circles", possibly implicit plural.
+    // Standard rule interpretation: Longest single path chain that starts at a Square and ends at a Circle)
+
+    let longestPathLength = 0;
+
+    for (const start of centerSquares) {
+      // We do a BFS/DFS from each center square to find the max depth that hits a circle
+      // Re-using findLongestPath logic but specifically targeting circle endpoints
+      for (const end of bonusCircles) {
+        const paths = this.findAllPathsForPlayer(gameState, start, end, playerColor);
+        for (const path of paths) {
+          if (path && path.length > longestPathLength) {
+            longestPathLength = path.length;
+          }
+        }
+      }
+    }
+
+    return longestPathLength * this.pointsPerTile;
+  }
+
   // FIX: use the player's assigned color, not “first rack tile”
   getPlayerColor(gameState, playerId) {
     const p = gameState.playerManager.getPlayerById(playerId);

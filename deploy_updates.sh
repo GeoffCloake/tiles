@@ -1,3 +1,3 @@
 git add .
-git commit -m "feat: add path scoring options and dynamic rules text"
+git commit -m "feat: add end-game path bonus and refine UI"
 git push origin main

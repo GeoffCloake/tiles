@@ -43,6 +43,7 @@ export class SetupManager {
         this.intersectionBonusInput = document.getElementById('intersection-bonus');
         this.centerBonusInput = document.getElementById('center-bonus');
         this.pathPointsInput = document.getElementById('path-points');
+        this.enableEndGameBonusCheckbox = document.getElementById('enable-end-game-bonus');
 
         this.setupEventListeners();
         this.initializeOptions();
@@ -202,7 +203,8 @@ export class SetupManager {
                 starterTileMultiplier: parseInt(this.starterMultiplierInput?.value || '2'),
                 intersectionBonus: parseInt(this.intersectionBonusInput?.value || '5'),
                 centerBonus: parseInt(this.centerBonusInput?.value || '5'),
-                pathPoints: parseInt(this.pathPointsInput?.value || '3')
+                pathPoints: parseInt(this.pathPointsInput?.value || '3'),
+                enableEndGameBonus: this.enableEndGameBonusCheckbox?.checked || false
             }
         };
 

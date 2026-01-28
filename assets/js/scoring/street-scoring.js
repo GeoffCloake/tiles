@@ -21,12 +21,15 @@ export class StreetScoring extends ScoringSystem {
                 },
                 pathScoring: new PathScoring(options.pathPoints || 3), // Configurable points per tile
                 intersectionBonus: 5,
-                centerBonus: 5
+                centerBonus: 5,
+                enableEndGameBonus: options.enableEndGameBonus || false
             }
         });
 
-        // Track best paths per player
-        this.bestPaths = new Map(); // playerId -> {length: number, score: number}
+        // Track best paths per player (only if NOT using end-game bonus)
+        if (!this.options.enableEndGameBonus) {
+            this.bestPaths = new Map(); // playerId -> {length: number, score: number}
+        }
     }
 
     calculateScore(gameState, position, tile) {
@@ -57,44 +60,42 @@ export class StreetScoring extends ScoringSystem {
             totalScore += (this.options.centerBonus || 5);
         }
 
-        // 4. Temporarily add the current tile to calculate path score
-        const currentPlayer = gameState.getCurrentPlayer();
-        gameState.boardState[position.y][position.x] = tile;  // Temporarily place tile
+        // 6. Path Scoring (ONLY if End-Game Bonus is DISABLED)
+        if (!this.options.enableEndGameBonus) {
+            // Temporarily add the current tile to calculate path score
+            const currentPlayer = gameState.getCurrentPlayer();
+            gameState.boardState[position.y][position.x] = tile;  // Temporarily place tile
 
-        // Now calculate path score with the new tile in place
-        const longestPath = this.options.pathScoring.findLongestPathForPlayer(gameState, currentPlayer.id);
-        if (longestPath) {
-            const currentPathScore = this.options.pathScoring.calculatePathScore(longestPath);
+            // Now calculate path score with the new tile in place
+            const longestPath = this.options.pathScoring.findLongestPathForPlayer(gameState, currentPlayer.id);
+            if (longestPath) {
+                const currentPathScore = this.options.pathScoring.calculatePathScore(longestPath);
 
-            // Get player's best path info
-            const bestPath = this.bestPaths.get(currentPlayer.id) || { length: 0, score: 0 };
+                // Get player's best path info
+                const bestPath = this.bestPaths.get(currentPlayer.id) || { length: 0, score: 0 };
 
-            // Only add score if this path is longer
-            if (longestPath.length > bestPath.length) {
-                // Calculate additional points for the improvement
-                const additionalScore = currentPathScore - bestPath.score;
+                // Only add score if this path is longer
+                if (longestPath.length > bestPath.length) {
+                    // Calculate additional points for the improvement
+                    const additionalScore = currentPathScore - bestPath.score;
 
-                console.log(`New longest path for ${currentPlayer.name}:`,
-                    this.options.pathScoring.visualizePath(longestPath));
-                console.log(`Path improved by ${longestPath.length - bestPath.length} tiles`);
-                console.log(`Additional score: ${additionalScore}`);
+                    // Update best path
+                    this.bestPaths.set(currentPlayer.id, {
+                        length: longestPath.length,
+                        score: currentPathScore
+                    });
 
-                // Update best path
-                this.bestPaths.set(currentPlayer.id, {
-                    length: longestPath.length,
-                    score: currentPathScore
-                });
+                    // Add only the improvement points to total score
+                    totalScore += additionalScore;
+                }
 
-                // Add only the improvement points to total score
-                totalScore += additionalScore;
+                // Update path length display regardless of scoring
+                gameState.emit('pathUpdate', { playerId: currentPlayer.id, path: longestPath });
             }
 
-            // Update path length display regardless of scoring
-            gameState.emit('pathUpdate', { playerId: currentPlayer.id, path: longestPath });
+            // Remove the temporary tile since the actual placement happens later
+            gameState.boardState[position.y][position.x] = null;
         }
-
-        // Remove the temporary tile since the actual placement happens later
-        gameState.boardState[position.y][position.x] = null;
 
         return totalScore;
     }
@@ -167,17 +168,26 @@ export class StreetScoring extends ScoringSystem {
     }
 
     getFinalScore(gameState, player) {
-        return player.score;
+        let finalScore = player.score;
+
+        if (this.options.enableEndGameBonus) {
+            const bonus = this.options.pathScoring.calculateEndGameBonus(gameState, player.id);
+            if (bonus > 0) {
+                finalScore += bonus;
+            }
+        }
+
+        return finalScore;
     }
 
     // Reset a player's best path (useful for new games)
     resetPlayerPath(playerId) {
-        this.bestPaths.delete(playerId);
+        if (this.bestPaths) this.bestPaths.delete(playerId);
     }
 
     // Reset all player paths
     resetAllPaths() {
-        this.bestPaths.clear();
+        if (this.bestPaths) this.bestPaths.clear();
     }
 
     isIntersection(tile) {
