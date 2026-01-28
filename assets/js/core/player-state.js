@@ -63,6 +63,8 @@ export class PlayerManager {
             const playerColor = playerColors[index];
             player.setColor(playerColor);
 
+            console.log(`PlayerManager: Player ${config.name} (Index ${index}) assigned color ${playerColor}.`);
+
             // Initialize player's tiles
             player.setTiles(
                 Array(this.gameState.rackSize)
