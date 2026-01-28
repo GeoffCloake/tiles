@@ -1,0 +1,93 @@
+/* Board Layout */
+.board-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.board {
+  width: min(700px, 90vw);
+  height: min(700px, 90vw);
+  background-color: var(--bg-secondary);
+  display: grid;
+  grid-template-columns: repeat(var(--board-size, 9), 1fr);
+  grid-template-rows: repeat(var(--board-size, 9), 1fr);
+  gap: 0;
+  padding: 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow:
+    0 6px 12px rgba(0, 0, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+}
+
+/* Tile Styles */
+.tile {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #494949;
+  border: 1px solid #3d3d3d;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  box-sizing: border-box;
+  aspect-ratio: 1;
+}
+
+.tile:empty {
+  background-color: var(--bg-tertiary);
+  opacity: 0.7;
+}
+
+.tile:hover { background-color: #363636; cursor: pointer; }
+
+.tile canvas { width: 100%; height: 100%; }
+
+/* Tile Preview */
+.tile-preview {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Valid Placement Indicator */
+.valid-placement {
+  position: relative;
+  cursor: pointer;
+  outline: 2px solid var(--accent-green);
+  animation: pulse 1.5s infinite;
+}
+
+.valid-placement::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(127,127,127,.3);
+  border: 2px solid rgba(0,0,0,.4);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* Invalid Placement Animation */
+.tile.invalid {
+  background-color: rgba(0, 0, 0, 0.5);
+  animation: shake 0.5s;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% { outline-color: rgba(76, 175, 80, 0.6); }
+  50% { outline-color: rgba(76, 175, 80, 1); }
+  100% { outline-color: rgba(76, 175, 80, 0.6); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+}

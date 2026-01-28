@@ -1,0 +1,75 @@
+/* Rack Container */
+.rack-section {
+    width: 100%;
+    max-width: min(650px, 90vw);
+    margin: 0 auto;
+    background: var(--bg-secondary);
+    padding: clamp(1rem, 2vw, 1.5rem);
+    border-radius: 6px;
+}
+
+.rack {
+    background-color: #494949;
+    padding: 1rem;
+    border-radius: 8px;
+    display: flex;
+    gap: clamp(0.5rem, 1vw, 1rem);
+    justify-content: center;
+    flex-wrap: wrap;
+    border: 1px solid #3d3d3d;
+}
+
+/* Rack Tiles */
+.rack .tile {
+    width: 60px;
+    height: 60px;
+    background-color: var(--bg-secondary);
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    margin: 0 10px;
+}
+
+.rack .tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Selected Tile */
+.rack .tile.selected {
+    border: 1px solid var(--accent-yellow) !important;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+    background-color: #222222 !important;
+    transform: translateY(-2px) !important;
+    transition: none !important;
+    opacity: 1 !important;
+    z-index: 1 !important;
+}
+
+/* Rack Controls */
+.rack-controls {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #494949;
+    border-radius: 4px;
+}
+
+.controls-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* Responsive Layout */
+@media (max-width: 640px) {
+    .controls-buttons {
+        flex-direction: column;
+    }
+
+    .control-button {
+        width: 100%;
+        min-width: 0;
+    }
+}

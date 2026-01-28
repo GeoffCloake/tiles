@@ -1,0 +1,14 @@
+/* Main styles file - imports all CSS modules */
+
+/* Core styles and variables */
+@import url('./base.css');
+@import url('./start.css');
+@import url('./setup.css');
+
+/* Reusable UI components */
+@import url('./components.css');
+
+/* Game-specific modules */
+@import url('./game-board.css');
+@import url('./game-rack.css');
+@import url('./game-ui.css');

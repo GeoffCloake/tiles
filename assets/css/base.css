@@ -1,0 +1,104 @@
+/* Base variables and reset */
+:root {
+    --bg-primary: #121212;
+    --bg-secondary: #1e1e1e;
+    --bg-tertiary: #2d2d2d;
+    --text-primary: #FFFFFF;
+    --text-secondary: #ccc;
+    --text-tertiary: #999;
+    --accent-blue: #00A4FF;
+    --accent-green: #00FF00;
+    --accent-yellow: #FFE600;
+    --border-color: #404040;
+    --border-hover: #4a4a4a;
+    
+    /* Tile Colors */
+    --tile-red: #df0000;
+    --tile-blue: #008bda;
+    --tile-yellow: #FFE600;
+    --tile-green: #1f9100;
+    --tile-cyan: #00d7ea;
+    --tile-orange: #FF9900;
+    --tile-purple: #a200ff;
+    --tile-pink: #ff46eb;
+}
+
+/* Base reset and typography */
+body {
+    background-color: var(--bg-primary);
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.setup-screen {
+    display: flex;
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh; /* Add dynamic viewport height */
+    background-color: var(--bg-primary);
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 2rem 0;
+}
+
+.game-container {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--bg-primary);
+}
+
+.game-container.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Common layout containers */
+.game-container {
+    background-color: var(--bg-secondary);
+    padding: clamp(1rem, 2vw, 2rem);
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 3px;
+}
+
+/* Focus states */
+:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+/* Touch device optimizations */
+@media (hover: none) {
+    input,
+    select,
+    button {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}

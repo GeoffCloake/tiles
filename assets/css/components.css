@@ -1,0 +1,145 @@
+/* Button styles */
+.button {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    text-align: center;
+    text-decoration: none;
+}
+
+.button:hover {
+    background: var(--bg-primary);
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+}
+
+.button.active {
+    background: var(--bg-primary);
+}
+
+.button--primary {
+    background: var(--accent-blue);
+    border: none;
+    color: white;
+    font-weight: 500;
+}
+
+.button--primary:hover {
+    box-shadow: 0 4px 12px rgba(0, 164, 255, 0.3);
+}
+
+.button--full {
+    width: 100%;
+    display: block;
+}
+
+/* Form Elements */
+.input {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.input:focus {
+    border-color: var(--border-hover);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Range input styling */
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+    margin: 1rem 0;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    border: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    border: 2px solid #fff;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--border-hover);
+    margin-top: -6px;
+    cursor: pointer;
+}
+
+/* Select styling */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: grid;
+    place-items: center;
+    padding: clamp(1rem, 4vw, 2rem);
+    z-index: 1000;
+}
+
+.modal__content {
+    background: var(--bg-secondary);
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    border-radius: 12px;
+    width: min(600px, 100% - 2rem);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal__buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Score Popup */
+.score-popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--accent-yellow);
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    animation: scorePopup 1s ease-out forwards;
+    pointer-events: none;
+    z-index: 100;
+}
+
+@keyframes scorePopup {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -100%) scale(1.5);
+    }
+}
