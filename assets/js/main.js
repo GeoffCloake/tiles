@@ -107,6 +107,9 @@ class Game {
 
     if (tileSet && cfg.tileSetOptions) tileSet.updateOptions(cfg.tileSetOptions);
     if (ruleset && cfg.rulesetOptions) ruleset.options = { ...ruleset.options, ...cfg.rulesetOptions };
+    if (scoringSystem && cfg.scoringOptions) {
+        scoringSystem.options = { ...scoringSystem.options, ...cfg.scoringOptions };
+    }
 
     // ---- Initial tiles handling (supports both Random and Arrangement) ----
     const isObj = typeof cfg.initialTiles === 'object' && cfg.initialTiles !== null;
@@ -142,7 +145,7 @@ class Game {
     this.rackManager.initialize(this.gameState);
     this.playerUIManager.initialize(this.gameState);
 
-    // No extra initializeBoard() call here — constructor already placed starters
+    // No extra initializeBoard() call here ï¿½ constructor already placed starters
     // when initialTilesArg is provided (random or arrangement).
 
     this.updateUIForCurrentPlayer();

@@ -19,10 +19,12 @@ export class StreetScoring extends ScoringSystem {
                     squares: 20,  // Center square
                     circles: 10   // Bonus circle
                 },
-                pathScoring: new PathScoring(3) // 3 points per tile in path
+                pathScoring: new PathScoring(3), // 3 points per tile in path
+                intersectionBonus: 5,
+                centerBonus: 5
             }
         });
-        
+
         // Track best paths per player
         this.bestPaths = new Map(); // playerId -> {length: number, score: number}
     }
@@ -32,16 +34,27 @@ export class StreetScoring extends ScoringSystem {
 
         // 1. Calculate road connection score
         const roadConnections = this.countRoadMatches(gameState, position, tile);
-        totalScore += this.options.scores[roadConnections] || 0;
+        let connectionScore = this.options.scores[roadConnections] || 0;
 
-        // 2. Add center pattern bonus if present
+        // 2. Apply starter tile multiplier ONLY to connection score
+        if (this.isConnectedToStarterTile(gameState, position)) {
+            connectionScore *= this.options.starterTileMultiplier;
+        }
+        totalScore += connectionScore;
+
+        // 3. Add center pattern bonus if present
         if (tile.centerPattern) {
             totalScore += this.options.centerPatternScores[tile.centerPattern] || 0;
         }
 
-        // 3. Apply starter tile multiplier if connected to a starter tile
-        if (this.isConnectedToStarterTile(gameState, position)) {
-            totalScore *= this.options.starterTileMultiplier;
+        // 4. Add Intersection Bonus (Connection of 4 streets)
+        if (this.isIntersection(tile)) {
+            totalScore += (this.options.intersectionBonus || 5);
+        }
+
+        // 5. Add Center Placement Bonus
+        if (this.isCenterPlacement(gameState, position)) {
+            totalScore += (this.options.centerBonus || 5);
         }
 
         // 4. Temporarily add the current tile to calculate path score
@@ -52,30 +65,30 @@ export class StreetScoring extends ScoringSystem {
         const longestPath = this.options.pathScoring.findLongestPathForPlayer(gameState, currentPlayer.id);
         if (longestPath) {
             const currentPathScore = this.options.pathScoring.calculatePathScore(longestPath);
-            
+
             // Get player's best path info
             const bestPath = this.bestPaths.get(currentPlayer.id) || { length: 0, score: 0 };
-            
+
             // Only add score if this path is longer
             if (longestPath.length > bestPath.length) {
                 // Calculate additional points for the improvement
                 const additionalScore = currentPathScore - bestPath.score;
-                
-                console.log(`New longest path for ${currentPlayer.name}:`, 
+
+                console.log(`New longest path for ${currentPlayer.name}:`,
                     this.options.pathScoring.visualizePath(longestPath));
                 console.log(`Path improved by ${longestPath.length - bestPath.length} tiles`);
                 console.log(`Additional score: ${additionalScore}`);
-                
+
                 // Update best path
                 this.bestPaths.set(currentPlayer.id, {
                     length: longestPath.length,
                     score: currentPathScore
                 });
-                
+
                 // Add only the improvement points to total score
                 totalScore += additionalScore;
             }
-            
+
             // Update path length display regardless of scoring
             gameState.emit('pathUpdate', { playerId: currentPlayer.id, path: longestPath });
         }
@@ -89,7 +102,7 @@ export class StreetScoring extends ScoringSystem {
     getRotatedSides(tile) {
         // Create a copy of the sides array
         let sides = [...tile.sides];
-        
+
         // Apply rotation if specified
         if (tile.rotation) {
             for (let i = 0; i < tile.rotation; i++) {
@@ -165,5 +178,15 @@ export class StreetScoring extends ScoringSystem {
     // Reset all player paths
     resetAllPaths() {
         this.bestPaths.clear();
+    }
+
+    isIntersection(tile) {
+        // Check if all sides are streets (intersection of 4 roads)
+        return tile.sides && tile.sides.every(side => side === 'street');
+    }
+
+    isCenterPlacement(gameState, position) {
+        const center = Math.floor(gameState.boardSize / 2);
+        return position.x === center && position.y === center;
     }
 }

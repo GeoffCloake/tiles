@@ -3,7 +3,7 @@
 export class SetupManager {
     constructor(config) {
         console.log("Initializing SetupManager...");
-        
+
         // Store configuration callback
         this.onGameStart = config.onGameStart;
 
@@ -17,19 +17,19 @@ export class SetupManager {
         this.rackSizeSelect = document.getElementById('rack-size');
         this.tileSetSelect = document.getElementById('tile-set');
         this.playerCountSelect = document.getElementById('player-count');
-        
+
         // Initial Tiles Layout
         this.initialTileLayout = document.getElementById('initial-tile-layout');
         this.initialTilesInput = document.getElementById('initial-tiles');
         this.layoutTilesSelect = document.getElementById('layout-tiles');
-        
+
         // Timer Controls
         this.enableTimerCheckbox = document.getElementById('enable-timer');
         this.timeLimitInput = document.getElementById('time-limit');
-        
+
         // Player Names
         this.playerNamesContainer = document.getElementById('player-names-container');
-        
+
         // Shapes Tileset Options
         this.enableBlankSidesCheckbox = document.getElementById('enable-blank-sides');
         this.shapeCountSelect = document.getElementById('shape-count');
@@ -37,6 +37,11 @@ export class SetupManager {
         // Rule Variations
         this.enableFreePlayCheckbox = document.getElementById('enable-free-play');
         this.enableBorderRuleCheckbox = document.getElementById('enable-border-rule');
+
+        // Scoring Options
+        this.starterMultiplierInput = document.getElementById('starter-multiplier');
+        this.intersectionBonusInput = document.getElementById('intersection-bonus');
+        this.centerBonusInput = document.getElementById('center-bonus');
 
         this.setupEventListeners();
         this.initializeOptions();
@@ -108,7 +113,7 @@ export class SetupManager {
         // Toggle Shapes-specific options
         const shapeControls = document.querySelector('.shapes-only');
         const streetsControls = document.querySelector('.streets-only');
-        
+
         if (shapeControls && streetsControls) {
             shapeControls.style.display = tileSet === 'shapes' ? 'block' : 'none';
             streetsControls.style.display = tileSet === 'streets' ? 'block' : 'none';
@@ -145,64 +150,71 @@ export class SetupManager {
         return names;
     }
 
-getInitialTilesConfig() {
-    const layoutType = this.initialTileLayout?.value || 'random';
-    
-    if (layoutType === 'random') {
+    getInitialTilesConfig() {
+        const layoutType = this.initialTileLayout?.value || 'random';
+
+        if (layoutType === 'random') {
+            return {
+                type: 'random',
+                count: parseInt(this.initialTilesInput?.value || '0')
+            };
+        } else if (layoutType === 'arrangement') {
+            return {
+                type: 'arrangement',
+                style: this.layoutTilesSelect?.value || 'border'
+            };
+        }
+
+        // Default configuration
         return {
             type: 'random',
-            count: parseInt(this.initialTilesInput?.value || '0')
-        };
-    } else if (layoutType === 'arrangement') {
-        return {
-            type: 'arrangement',
-            style: this.layoutTilesSelect?.value || 'border'
+            count: 0
         };
     }
-    
-    // Default configuration
-    return {
-        type: 'random',
-        count: 0
-    };
-}
 
-startGame() {
-    console.log("Setup Manager: Starting game...");
-    const config = {
-        boardSize: parseInt(this.boardSizeSelect.value),
-        rackSize: parseInt(this.rackSizeSelect.value),
-        tileSet: this.tileSetSelect.value,
-        ruleset: 'basic',
-        initialTiles: this.getInitialTilesConfig(),
-        enableTimer: this.enableTimerCheckbox.checked,
-        timeLimit: parseInt(this.timeLimitInput.value),
-        players: this.getPlayerNames().map(name => ({ name })),
-        
-        // Tileset specific options
-        tileSetOptions: {
-            enableBlankSides: this.enableBlankSidesCheckbox?.checked || false,
-            shapeCount: parseInt(this.shapeCountSelect?.value || '6')
-        },
-        
-        // Rule variations
-        rulesetOptions: {
-            enableFreePlay: this.enableFreePlayCheckbox?.checked || false,
-            enableBorderRule: this.enableBorderRuleCheckbox?.checked || false
+    startGame() {
+        console.log("Setup Manager: Starting game...");
+        const config = {
+            boardSize: parseInt(this.boardSizeSelect.value),
+            rackSize: parseInt(this.rackSizeSelect.value),
+            tileSet: this.tileSetSelect.value,
+            ruleset: 'basic',
+            initialTiles: this.getInitialTilesConfig(),
+            enableTimer: this.enableTimerCheckbox.checked,
+            timeLimit: parseInt(this.timeLimitInput.value),
+            players: this.getPlayerNames().map(name => ({ name })),
+
+            // Tileset specific options
+            tileSetOptions: {
+                enableBlankSides: this.enableBlankSidesCheckbox?.checked || false,
+                shapeCount: parseInt(this.shapeCountSelect?.value || '6')
+            },
+
+            // Rule variations
+            rulesetOptions: {
+                enableFreePlay: this.enableFreePlayCheckbox?.checked || false,
+                enableBorderRule: this.enableBorderRuleCheckbox?.checked || false
+            },
+
+            // Scoring configuration
+            scoringOptions: {
+                starterTileMultiplier: parseInt(this.starterMultiplierInput?.value || '2'),
+                intersectionBonus: parseInt(this.intersectionBonusInput?.value || '5'),
+                centerBonus: parseInt(this.centerBonusInput?.value || '5')
+            }
+        };
+
+        console.log("Game config:", config);
+
+        // Hide setup screen, show game screen
+        if (this.setupScreen) this.setupScreen.style.display = 'none';
+        if (this.gameScreen) this.gameScreen.style.display = 'flex';
+
+        // Call onGameStart callback with config
+        if (this.onGameStart) {
+            this.onGameStart(config);
         }
-    };
-
-    console.log("Game config:", config);
-
-    // Hide setup screen, show game screen
-    if (this.setupScreen) this.setupScreen.style.display = 'none';
-    if (this.gameScreen) this.gameScreen.style.display = 'flex';
-
-    // Call onGameStart callback with config
-    if (this.onGameStart) {
-        this.onGameStart(config);
     }
-}
 
     showSetup() {
         if (this.gameScreen) this.gameScreen.style.display = 'none';
