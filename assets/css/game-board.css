@@ -73,6 +73,23 @@
   pointer-events: none;
 }
 
+/* Bonus Path Highlight */
+.bonus-path {
+  position: relative;
+}
+
+.bonus-path::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 215, 0, 0.3); /* Gold overlay */
+  border: 2px solid #FFD700;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 2;
+  animation: pulse 2s infinite;
+}
+
 /* Invalid Placement Animation */
 .tile.invalid {
   background-color: rgba(0, 0, 0, 0.5);

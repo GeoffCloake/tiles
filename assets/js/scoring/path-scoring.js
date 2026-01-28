@@ -45,6 +45,7 @@ class PathScoring {
     // Standard rule interpretation: Longest single path chain that starts at a Square and ends at a Circle)
 
     let longestPath = null;
+    let longestPathLength = 0;
 
     for (const start of centerSquares) {
       // We do a BFS/DFS from each center square to find the max depth that hits a circle

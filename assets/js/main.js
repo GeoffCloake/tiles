@@ -293,7 +293,13 @@ class Game {
     const scoresDiv = document.getElementById('final-scores');
     finalScores.sort((a, b) => b.score - a.score);
     const scoreHtml = finalScores
-      .map((score, i) => `<p${i === 0 ? ' class="winner"' : ''}>${score.name}: ${score.score} points${i === 0 ? ' ??' : ''}</p>`)
+      .map((score, i) => {
+        let details = '';
+        if (score.bonus > 0) {
+          details = ` <span class="score-details">(${score.base} Base + ${score.bonus} Bonus)</span>`;
+        }
+        return `<p${i === 0 ? ' class="winner"' : ''}>${score.name}: ${score.score} points${details}${i === 0 ? ' 🏆' : ''}</p>`;
+      })
       .join('');
     scoresDiv.innerHTML = scoreHtml;
     modal.style.display = 'block';
