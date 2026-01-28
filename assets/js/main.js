@@ -319,26 +319,44 @@ class Game {
     if (!handle) return; // Need a handle
 
     handle.onmousedown = dragMouseDown;
+    handle.ontouchstart = dragMouseDown;
 
     function dragMouseDown(e) {
       e = e || window.event;
-      e.preventDefault();
+      // e.preventDefault(); // Don't prevent default immediately for touch or scrolling might break, but for a handle it's usually okay.
+      // For drag handle, preventing default is often good to stop scrolling.
+      if (e.type === 'touchstart') {
+        // e.preventDefault(); // Prevents scroll, good for handle
+      } else {
+        e.preventDefault();
+      }
+
       // get the mouse cursor position at startup:
-      pos3 = e.clientX;
-      pos4 = e.clientY;
+      const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+      const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+
+      pos3 = clientX;
+      pos4 = clientY;
+
       document.onmouseup = closeDragElement;
+      document.ontouchend = closeDragElement;
+
       // call a function whenever the cursor moves:
       document.onmousemove = elementDrag;
+      document.ontouchmove = elementDrag;
     }
 
     function elementDrag(e) {
       e = e || window.event;
-      e.preventDefault();
+      e.preventDefault(); // Prevent scrolling while dragging
       // calculate the new cursor position:
-      pos1 = pos3 - e.clientX;
-      pos2 = pos4 - e.clientY;
-      pos3 = e.clientX;
-      pos4 = e.clientY;
+      const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+      const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+
+      pos1 = pos3 - clientX;
+      pos2 = pos4 - clientY;
+      pos3 = clientX;
+      pos4 = clientY;
       // set the element's new position:
       // We use offsets because the element is flex-positioned initially
       // To make it movable, we might need to switch to relative/absolute or just use margins/transforms.
@@ -366,6 +384,8 @@ class Game {
       // stop moving when mouse button is released:
       document.onmouseup = null;
       document.onmousemove = null;
+      document.ontouchend = null;
+      document.ontouchmove = null;
     }
   }
 

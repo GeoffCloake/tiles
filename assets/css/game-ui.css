@@ -63,7 +63,8 @@
     flex: 1;
     overflow-y: auto;
     /* Add padding to match sidebar */
-    padding-right: 0; /* For scrollbar space */
+    padding-right: 0;
+    /* For scrollbar space */
 }
 
 .player-info {
@@ -84,12 +85,15 @@
 
 /* Make sure sidebar footer buttons don't get hidden */
 .sidebar-footer {
-    margin-top: auto; /* Push to bottom */
-    padding-top: 1rem; /* Space from player list */
+    margin-top: auto;
+    /* Push to bottom */
+    padding-top: 1rem;
+    /* Space from player list */
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
+
 /* Setup Page Styles */
 .setup-container {
     background-color: var(--bg-secondary);
@@ -172,7 +176,8 @@
     }
 
     .board-container {
-        width: min(700px, calc(100vw - 2rem)); /* Account for game-area padding */
+        width: min(700px, calc(100vw - 2rem));
+        /* Account for game-area padding */
         margin: 0 auto;
     }
 
@@ -187,7 +192,7 @@
     .setup-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .button-group {
         flex-direction: column;
     }
@@ -198,9 +203,27 @@
     }
 }
 
-@media (max-width: 480px) {
-    .setup-container {
-        margin: 0.5rem;
-        padding: 1rem;
+.setup-container {
+    margin: 0.5rem;
+    padding: 1rem;
+}
+}
+
+/* Mobile optimizations for Game Modal */
+@media (max-width: 768px) {
+    #game-end-modal {
+        justify-content: center !important;
+        /* Center horizontally */
+        align-items: flex-end !important;
+        /* Align to bottom */
+        padding-right: 0 !important;
+        padding-bottom: 60px !important;
+        /* Space for bottom nav/thumbs */
+    }
+
+    #game-end-modal .modal-content {
+        max-width: 90% !important;
+        /* Use more width */
+        margin: 0 1rem;
     }
 }
