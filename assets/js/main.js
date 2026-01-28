@@ -208,7 +208,16 @@ class Game {
     });
 
     this.gameState.on('turnChange', () => this.updateUIForCurrentPlayer());
-    this.gameState.on('gameEnd', (finalScores) => this.showGameEndModal(finalScores));
+    this.gameState.on('gameEnd', (finalScores) => {
+      // Highlight bonus path if present for any player
+      // Prioritize the winner's path or all paths? Usually winner or just show all.
+      // Let's highlight all bonus paths found.
+      finalScores.forEach(s => {
+        if (s.path) this.boardManager.highlightPath(s.path);
+      });
+
+      this.showGameEndModal(finalScores);
+    });
 
     this.gameState.on('tileSelected', (tile) => {
       this.rackManager.updateSelectedTile(tile);

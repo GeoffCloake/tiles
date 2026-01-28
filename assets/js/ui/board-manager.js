@@ -79,6 +79,15 @@ export class BoardManager {
     setTimeout(() => cell.classList.remove('invalid'), 500);
   }
 
+  highlightPath(path) {
+    if (!path || !path.length) return;
+    path.forEach(pos => {
+      const index = pos.y * this.gameState.boardSize + pos.x;
+      const cell = this.boardElement.children[index];
+      if (cell) cell.classList.add('bonus-path');
+    });
+  }
+
   showScorePopup(position, score) {
     const index = position.y * this.gameState.boardSize + position.x;
     const cell = this.boardElement.children[index];

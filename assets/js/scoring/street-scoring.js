@@ -169,15 +169,24 @@ export class StreetScoring extends ScoringSystem {
 
     getFinalScore(gameState, player) {
         let finalScore = player.score;
+        let bonusScore = 0;
+        let bonusPath = null;
 
         if (this.options.enableEndGameBonus) {
-            const bonus = this.options.pathScoring.calculateEndGameBonus(gameState, player.id);
-            if (bonus > 0) {
-                finalScore += bonus;
+            const result = this.options.pathScoring.calculateEndGameBonus(gameState, player.id);
+            if (result && result.score > 0) {
+                bonusScore = result.score;
+                bonusPath = result.path;
+                finalScore += bonusScore;
             }
         }
 
-        return finalScore;
+        return {
+            total: finalScore,
+            base: player.score,
+            bonus: bonusScore,
+            path: bonusPath
+        };
     }
 
     // Reset a player's best path (useful for new games)

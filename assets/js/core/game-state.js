@@ -35,7 +35,7 @@ export class GameState {
 
     initializeBoard(config) {
         console.log("Initializing board with config:", config);
-        
+
         if (!config || (!config.type && !config.count)) {
             console.warn("Invalid initial tiles configuration");
             return;
@@ -55,7 +55,7 @@ export class GameState {
         };
 
         const placedTiles = placeInitialTiles(this, tileConfig);
-        
+
         if (placedTiles && placedTiles.length > 0) {
             placedTiles.forEach(({ position, tile }) => {
                 this.boardState[position.y][position.x] = tile;
@@ -229,11 +229,26 @@ export class GameState {
     }
 
     endGame() {
-        const finalScores = this.playerManager.players.map(player => ({
-            id: player.id,
-            name: player.name,
-            score: this.scoringSystem.getFinalScore(this, player)
-        }));
+        const finalScores = this.playerManager.players.map(player => {
+            const result = this.scoringSystem.getFinalScore(this, player);
+            // Handle both simple number return (legacy/other systems) and structured object
+            if (typeof result === 'object') {
+                return {
+                    id: player.id,
+                    name: player.name,
+                    score: result.total,
+                    base: result.base,
+                    bonus: result.bonus,
+                    path: result.path
+                };
+            } else {
+                return {
+                    id: player.id,
+                    name: player.name,
+                    score: result
+                };
+            }
+        });
 
         finalScores.sort((a, b) => b.score - a.score);
 

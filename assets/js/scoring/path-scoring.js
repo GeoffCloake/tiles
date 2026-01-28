@@ -44,7 +44,7 @@ class PathScoring {
     // (Note: The user requested "connecting to bonus circles", possibly implicit plural.
     // Standard rule interpretation: Longest single path chain that starts at a Square and ends at a Circle)
 
-    let longestPathLength = 0;
+    let longestPath = null;
 
     for (const start of centerSquares) {
       // We do a BFS/DFS from each center square to find the max depth that hits a circle
@@ -54,12 +54,16 @@ class PathScoring {
         for (const path of paths) {
           if (path && path.length > longestPathLength) {
             longestPathLength = path.length;
+            longestPath = path;
           }
         }
       }
     }
 
-    return longestPathLength * this.pointsPerTile;
+    return {
+      score: longestPathLength * this.pointsPerTile,
+      path: longestPath
+    };
   }
 
   // FIX: use the player's assigned color, not “first rack tile”
