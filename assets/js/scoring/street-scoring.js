@@ -22,6 +22,7 @@ export class StreetScoring extends ScoringSystem {
                 pathScoring: new PathScoring(options.pathPoints || 3), // Configurable points per tile
                 intersectionBonus: 5,
                 centerBonus: 5,
+                completionBonus: 20,
                 enableEndGameBonus: options.enableEndGameBonus || false
             }
         });

@@ -91,7 +91,7 @@ export class PlayerUIManager {
     const el = document.getElementById(`score-${player.id}`);
     if (el) {
       // Show breakdown if bonus exists
-      const bonusText = player.bonusScore > 0 ? ` <small style="color:var(--accent-green)">(${player.bonusScore} Bonus)</small>` : '';
+      const bonusText = player.bonusScore > 0 ? ` <small style="color:#4ade80">(${player.bonusScore} Bonus)</small>` : '';
       el.innerHTML = `${player.score}${bonusText}`;
     }
   }
