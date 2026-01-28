@@ -206,7 +206,7 @@ export class SetupManager {
                 centerBonus: parseInt(this.centerBonusInput?.value || '5'),
                 pathPoints: parseInt(this.pathPointsInput?.value || '3'),
                 completionBonus: parseInt(this.completionBonusInput?.value || '0'),
-                enableEndGameBonus: this.enableEndGameBonusCheckbox?.checked || false
+                enableEndGameBonus: document.getElementById('score-mode-endgame')?.checked || false
             }
         };
 

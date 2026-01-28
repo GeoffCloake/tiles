@@ -174,9 +174,23 @@
                                 <label for="completion-bonus">Connection Completion Bonus:</label>
                                 <input type="number" id="completion-bonus" min="0" max="100" value="20" step="5">
                             </div>
-                            <div class="checkbox-option">
-                                <input type="checkbox" id="enable-end-game-bonus">
-                                <label for="enable-end-game-bonus">End-of-Game Path Bonus only</label>
+                            <div class="setup-option">
+                                <label style="margin-bottom: 0.5rem; display:block; color:var(--text-secondary);">Path
+                                    Scoring Mode:</label>
+                                <div style="display: flex; gap: 1.5rem; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="radio" id="score-mode-instant" name="path-scoring-mode"
+                                            value="instant" checked>
+                                        <label for="score-mode-instant" style="margin:0; color: white;">Instant
+                                            (In-Play)</label>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="radio" id="score-mode-endgame" name="path-scoring-mode"
+                                            value="endgame">
+                                        <label for="score-mode-endgame" style="margin:0; color: white;">End of Game
+                                            Only</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
