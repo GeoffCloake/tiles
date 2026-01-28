@@ -52,13 +52,13 @@ export class PlayerManager {
 
     initializePlayers(playerConfigs) {
         // Use default player colors if not specified
-        const playerColors = playerConfigs.map((config, index) => 
-            config.color || DEFAULT_PLAYER_COLORS[index + 1] || '#000000'
+        const playerColors = playerConfigs.map((config, index) =>
+            config.color || (playerConfigs.length === 1 ? DEFAULT_PLAYER_COLORS[0] : DEFAULT_PLAYER_COLORS[index + 1]) || '#000000'
         );
 
         this.players = playerConfigs.map((config, index) => {
             const player = new Player(config.name);
-            
+
             // Set player color
             const playerColor = playerColors[index];
             player.setColor(playerColor);
@@ -95,7 +95,7 @@ export class PlayerManager {
         this.turnTimer = setInterval(() => {
             timeLeft--;
             this.gameState.emit('turnTimerUpdate', timeLeft);
-            
+
             if (timeLeft <= 0) {
                 clearInterval(this.turnTimer);
                 this.nextTurn();
@@ -127,7 +127,7 @@ export class PlayerManager {
     skipTurn() {
         const nextPlayer = this.nextTurn();
         this.gameState.emit('turnChange', nextPlayer);
-        
+
         if (this.turnTimer) {
             this.initializeTurnTimer(this.timeLimit);
         }

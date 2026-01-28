@@ -295,8 +295,9 @@ class Game {
     const scoreHtml = finalScores
       .map((score, i) => {
         let details = '';
-        if (score.bonus > 0) {
-          details = ` <span class="score-details">(${score.base} Base + ${score.bonus} Bonus)</span>`;
+        const endBonusEnabled = this._savedConfig?.scoringOptions?.enableEndGameBonus;
+        if (score.bonus > 0 || endBonusEnabled) {
+          details = ` <span class="score-details">(${score.base || 0} Base + ${score.bonus || 0} Bonus)</span>`;
         }
         return `<p${i === 0 ? ' class="winner"' : ''}>${score.name}: ${score.score} points${details}${i === 0 ? ' 🏆' : ''}</p>`;
       })
