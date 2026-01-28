@@ -3,7 +3,7 @@ import { ScoringSystem } from '../core/base-classes.js';
 import { PathScoring } from './path-scoring.js';
 
 export class StreetScoring extends ScoringSystem {
-    constructor() {
+    constructor(options = {}) {
         super({
             name: 'Street Scoring',
             description: 'Score based on road connections, special tiles, and paths',
@@ -19,7 +19,7 @@ export class StreetScoring extends ScoringSystem {
                     squares: 20,  // Center square
                     circles: 10   // Bonus circle
                 },
-                pathScoring: new PathScoring(3), // 3 points per tile in path
+                pathScoring: new PathScoring(options.pathPoints || 3), // Configurable points per tile
                 intersectionBonus: 5,
                 centerBonus: 5
             }

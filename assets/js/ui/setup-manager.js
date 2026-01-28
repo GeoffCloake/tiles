@@ -42,6 +42,7 @@ export class SetupManager {
         this.starterMultiplierInput = document.getElementById('starter-multiplier');
         this.intersectionBonusInput = document.getElementById('intersection-bonus');
         this.centerBonusInput = document.getElementById('center-bonus');
+        this.pathPointsInput = document.getElementById('path-points');
 
         this.setupEventListeners();
         this.initializeOptions();
@@ -200,7 +201,8 @@ export class SetupManager {
             scoringOptions: {
                 starterTileMultiplier: parseInt(this.starterMultiplierInput?.value || '2'),
                 intersectionBonus: parseInt(this.intersectionBonusInput?.value || '5'),
-                centerBonus: parseInt(this.centerBonusInput?.value || '5')
+                centerBonus: parseInt(this.centerBonusInput?.value || '5'),
+                pathPoints: parseInt(this.pathPointsInput?.value || '3')
             }
         };
 

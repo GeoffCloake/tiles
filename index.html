@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,501 +9,519 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Multiplayer Tile Board Game</title>
     <link rel="stylesheet" href="assets/css/styles.css">
-<style>
-#game-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    min-height: 100vh;
-    overflow: auto;
-    background-color: var(--bg-primary);
-}
+    <style>
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 100vh;
+            overflow: auto;
+            background-color: var(--bg-primary);
+        }
 
-#game-container.fullscreen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 9999;
-    background: var(--bg-primary);
-}
+        #game-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            background: var(--bg-primary);
+        }
 
-    .fullscreen-button {
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 10000;
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid #ccc;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.2s;
-    }
+        .fullscreen-button {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10000;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
 
-    .fullscreen-button:hover {
-        background-color: white;
-    }
+        .fullscreen-button:hover {
+            background-color: white;
+        }
 
-    .fullscreen-button svg {
-        width: 24px;
-        height: 24px;
-    }
+        .fullscreen-button svg {
+            width: 24px;
+            height: 24px;
+        }
 
-.fullscreen .setup-screen {
-    position: absolute;  /* Change from fixed when in fullscreen */
-    overflow-y: auto;
-    height: 100%;
-}
+        .fullscreen .setup-screen {
+            position: absolute;
+            /* Change from fixed when in fullscreen */
+            overflow-y: auto;
+            height: 100%;
+        }
 
-    .setup-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 1rem;
-        background: #1a1a1a;
-        border-radius: 8px;
-    }
+        .setup-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            background: #1a1a1a;
+            border-radius: 8px;
+        }
 
-    .setup-header {
-        margin-top: 3rem;
-    }
+        .setup-header {
+            margin-top: 3rem;
+        }
 
 
 
-    /* Modal styles */
-    .modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.7);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 10001;
-    }
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+        }
 
-    .modal-content {
-        background: #1a1a1a;
-        color: white;
-        padding: 2rem;
-        border-radius: 8px;
-        max-width: 800px;
-        width: 90%;
-        max-height: 90vh;
-        overflow-y: auto;
-        position: relative;
-        border: 1px solid #333;
-    }
+        .modal-content {
+            background: #1a1a1a;
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            border: 1px solid #333;
+        }
 
-    .rules-content {
-        margin-bottom: 2rem;
-    }
+        .rules-content {
+            margin-bottom: 2rem;
+        }
 
-    #close-rules {
-        position: sticky;
-        bottom: 0;
-        width: 100%;
-        padding: 1rem;
-        background: #333;
-        border-top: 1px solid #444;
-        text-align: center;
-        color: white;
-    }
+        #close-rules {
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            padding: 1rem;
+            background: #333;
+            border-top: 1px solid #444;
+            text-align: center;
+            color: white;
+        }
 
-    /* Additional dark theme elements */
-    .setup-section {
-        background: #222;
-        padding: 1.5rem;
-        border-radius: 6px;
-        margin-bottom: 1rem;
-    }
+        /* Additional dark theme elements */
+        .setup-section {
+            background: #222;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
 
-    select, input[type="number"], input[type="range"] {
-        background: #333;
-        color: white;
-        border: 1px solid #444;
-    }
-</style>
+        select,
+        input[type="number"],
+        input[type="range"] {
+            background: #333;
+            color: white;
+            border: 1px solid #444;
+        }
+    </style>
 </head>
+
 <body>
-<div id="game-container">
-    <!-- Fullscreen Button -->
-    <button id="fullscreen-toggle" class="fullscreen-button" aria-label="Toggle fullscreen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-        </svg>
-    </button>
+    <div id="game-container">
+        <!-- Fullscreen Button -->
+        <button id="fullscreen-toggle" class="fullscreen-button" aria-label="Toggle fullscreen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                    d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+            </svg>
+        </button>
 
-    <!-- Setup Screen -->
-<div id="setup-screen" class="setup-screen">
-    <div class="setup-container">
-        <div class="setup-header">
-            <h1>Game Setup</h1>
-            <p>Customize your game experience</p>
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="setup-screen">
+            <div class="setup-container">
+                <div class="setup-header">
+                    <h1>Game Setup</h1>
+                    <p>Customize your game experience</p>
+                </div>
+                <div class="setup-grid">
+                    <!-- Player Settings Section -->
+                    <div class="setup-section">
+                        <h2>Player Settings</h2>
+                        <div class="setup-option">
+                            <label for="player-count">Number of Players:</label>
+                            <select id="player-count">
+                                <option value="1">1 Player</option>
+                                <option value="2">2 Players</option>
+                                <option value="3">3 Players</option>
+                                <option value="4">4 Players</option>
+                            </select>
+                        </div>
+
+                        <div class="player-names" id="player-names-container">
+                            <!-- Player name inputs will be added dynamically -->
+                        </div>
+                    </div>
+                    <!-- Board Settings Section -->
+                    <div class="setup-section">
+                        <h2>Board Settings</h2>
+                        <div class="setup-option">
+                            <label for="board-size">Board Size:</label>
+                            <select id="board-size">
+                                <option value="5">5x5</option>
+                                <option value="7">7x7</option>
+                                <option value="9" selected>9x9</option>
+                                <option value="11">11x11</option>
+                                <option value="13">13x13</option>
+                            </select>
+                        </div>
+                        <div class="setup-option">
+                            <label for="initial-tile-layout">Starting Tiles</label>
+                            <select id="initial-tile-layout">
+                                <option value="random">Randomly Placed</option>
+                                <option value="arrangement">Arrangement</option>
+                            </select>
+                        </div>
+                        <div class="setup-option-random">
+                            <label for="random-tiles">Random Tiles:</label>
+                            <input type="range" id="initial-tiles" min="0" max="30" value="0" step="1">
+                            <div class="value-display">0 tiles</div>
+                        </div>
+                        <div class="setup-option-arrangement">
+                            <select id="layout-tiles">
+                                <label for="layout-tiles">Tile Arrangement:</label>
+                                <option value="border">Random Border Tiles</option>
+                                <option value="centre">Centre Tile</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tile Settings Section -->
+                    <div class="setup-section">
+                        <h2>Tile Settings</h2>
+                        <div class="setup-option">
+                            <label for="rack-size">Tile Rack Size:</label>
+                            <select id="rack-size">
+                                <option value="1">1 Tile</option>
+                                <option value="2">2 Tiles</option>
+                                <option value="3">3 Tiles</option>
+                                <option value="5" selected>5 Tiles</option>
+                                <option value="7">7 Tiles</option>
+                            </select>
+                        </div>
+
+                        <div class="setup-option">
+                            <label for="tile-set">Tile Set:</label>
+                            <select id="tile-set">
+                                <option value="streets">Streets</option>
+                                <option value="shapes">Shapes</option>
+                            </select>
+                        </div>
+                        <!-- Streets-specific options -->
+                        <div class="setup-option streets-only">
+                            <!-- Reserved for future Streets-specific options -->
+                        </div>
+
+                        <!-- Shapes-only options -->
+                        <div class="setup-option shapes-only">
+                            <label for="shape-count">Number of Shapes:</label>
+                            <select id="shape-count">
+                                <option value="1">1 Shape</option>
+                                <option value="2">2 Shapes</option>
+                                <option value="3">3 Shapes</option>
+                                <option value="4">4 Shapes</option>
+                                <option value="5">5 Shapes</option>
+                                <option value="6" selected>6 Shapes</option>
+                                <option value="7">7 Shapes</option>
+                                <option value="8">8 Shapes</option>
+                            </select>
+                        </div>
+
+                        <div class="checkbox-option shapes-only">
+                            <input type="checkbox" id="enable-blank-sides">
+                            <label for="enable-blank-sides">Enable Blank Sides</label>
+                        </div>
+                    </div>
+
+                    <!-- Scoring Settings Section -->
+                    <div class="setup-section">
+                        <h2>Scoring Settings</h2>
+                        <div class="setup-option">
+                            <label for="starter-multiplier">Starter Tile Multiplier:</label>
+                            <input type="number" id="starter-multiplier" min="1" max="5" value="2" step="1">
+                        </div>
+                        <div class="setup-option">
+                            <label for="intersection-bonus">Intersection Bonus:</label>
+                            <input type="number" id="intersection-bonus" min="0" max="50" value="5" step="5">
+                        </div>
+                        <div class="setup-option">
+                            <label for="center-bonus">Center Bonus:</label>
+                            <input type="number" id="center-bonus" min="0" max="50" value="5" step="5">
+                        </div>
+                        <div class="setup-option">
+                            <label for="path-points">Path Points (per tile):</label>
+                            <input type="number" id="path-points" min="1" max="10" value="3" step="1">
+                        </div>
+                    </div>
+
+                    <!-- Game Rules Section -->
+                    <div class="setup-section">
+                        <h2>Game Rules</h2>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="enable-timer">
+                            <label for="enable-timer">Enable Turn Timer</label>
+                        </div>
+
+                        <div class="setup-option" id="time-limit-container" style="display: none;">
+                            <label for="time-limit">Time Limit per Turn (seconds):</label>
+                            <input type="number" id="time-limit" min="10" max="300" value="60" step="5">
+                        </div>
+
+                        <!-- Rule Variations Section -->
+                        <h2>Variations</h2>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="enable-free-play">
+                            <label for="enable-free-play">Free Play Mode (No adjacent requirement)</label>
+                        </div>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="enable-border-rule">
+                            <label for="enable-border-rule">Border Rule (Only blank/non-streets on edges)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="back-button" onclick="window.location.href='index.html'">Back</button>
+                    <button id="start-game-button" class="start-button">Start Game</button>
+                </div>
+            </div>
         </div>
-        <div class="setup-grid">
-            <!-- Player Settings Section -->
-            <div class="setup-section">
-                <h2>Player Settings</h2>
-                <div class="setup-option">
-                    <label for="player-count">Number of Players:</label>
-                    <select id="player-count">
-                        <option value="1">1 Player</option>
-                        <option value="2">2 Players</option>
-                        <option value="3">3 Players</option>
-                        <option value="4">4 Players</option>
-                    </select>
+        <!-- Game Screen -->
+        <div id="game" class="game-area" style="display: none;">
+            <!-- Main Game Area -->
+            <div class="main-game-container">
+                <div class="board-container">
+                    <div id="board" class="board"></div>
                 </div>
-
-                <div class="player-names" id="player-names-container">
-                    <!-- Player name inputs will be added dynamically -->
-                </div>
-            </div>
-            <!-- Board Settings Section -->
-            <div class="setup-section">
-                <h2>Board Settings</h2>
-                <div class="setup-option">
-                    <label for="board-size">Board Size:</label>
-                    <select id="board-size">
-                        <option value="5">5x5</option>
-                        <option value="7">7x7</option>
-                        <option value="9" selected>9x9</option>
-                        <option value="11">11x11</option>
-                        <option value="13">13x13</option>
-                    </select>
-                </div>
-                <div class="setup-option">
-                    <label for="initial-tile-layout">Starting Tiles</label>
-					<select id="initial-tile-layout">
-                        <option value="random">Randomly Placed</option>
-                        <option value="arrangement">Arrangement</option>
-                    </select>
-				</div>
-                <div class="setup-option-random">
-                    <label for="random-tiles">Random Tiles:</label>
-                    <input type="range" id="initial-tiles" min="0" max="30" value="0" step="1">
-                    <div class="value-display">0 tiles</div>
-                </div>
-                <div class="setup-option-arrangement">
-					<select id="layout-tiles">
-                    <label for="layout-tiles">Tile Arrangement:</label>
-                        <option value="border">Random Border Tiles</option>
-                        <option value="centre">Centre Tile</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Tile Settings Section -->
-            <div class="setup-section">
-                <h2>Tile Settings</h2>
-                <div class="setup-option">
-                    <label for="rack-size">Tile Rack Size:</label>
-                    <select id="rack-size">
-                        <option value="1">1 Tile</option>
-                        <option value="2">2 Tiles</option>
-                        <option value="3">3 Tiles</option>
-                        <option value="5" selected>5 Tiles</option>
-                        <option value="7">7 Tiles</option>
-                    </select>
-                </div>
-
-                <div class="setup-option">
-                    <label for="tile-set">Tile Set:</label>
-                    <select id="tile-set">
-                        <option value="streets">Streets</option>
-                        <option value="shapes">Shapes</option>
-                    </select>
-                </div>
-				                <!-- Streets-specific options -->
-                <div class="setup-option streets-only">
-                    <!-- Reserved for future Streets-specific options -->
-                </div>
-				
-                <!-- Shapes-only options -->
-                <div class="setup-option shapes-only">
-                    <label for="shape-count">Number of Shapes:</label>
-                    <select id="shape-count">
-                        <option value="1">1 Shape</option>
-                        <option value="2">2 Shapes</option>
-                        <option value="3">3 Shapes</option>
-                        <option value="4">4 Shapes</option>
-                        <option value="5">5 Shapes</option>
-                        <option value="6" selected>6 Shapes</option>
-                        <option value="7">7 Shapes</option>
-                        <option value="8">8 Shapes</option>
-                    </select>
-                </div>
-
-                <div class="checkbox-option shapes-only">
-                    <input type="checkbox" id="enable-blank-sides">
-                    <label for="enable-blank-sides">Enable Blank Sides</label>
-                </div>
-            </div>
-
-            <!-- Scoring Settings Section -->
-            <div class="setup-section">
-                <h2>Scoring Settings</h2>
-                <div class="setup-option">
-                   <label for="starter-multiplier">Starter Tile Multiplier:</label>
-                   <input type="number" id="starter-multiplier" min="1" max="5" value="2" step="1">
-                </div>
-                <div class="setup-option">
-                   <label for="intersection-bonus">Intersection Bonus:</label>
-                   <input type="number" id="intersection-bonus" min="0" max="50" value="5" step="5">
-                </div>
-                <div class="setup-option">
-                   <label for="center-bonus">Center Bonus:</label>
-                   <input type="number" id="center-bonus" min="0" max="50" value="5" step="5">
-                </div>
-            </div>
-
-            <!-- Game Rules Section -->
-            <div class="setup-section">
-                <h2>Game Rules</h2>
-                <div class="checkbox-option">
-                    <input type="checkbox" id="enable-timer">
-                    <label for="enable-timer">Enable Turn Timer</label>
-                </div>
-
-                <div class="setup-option" id="time-limit-container" style="display: none;">
-                    <label for="time-limit">Time Limit per Turn (seconds):</label>
-                    <input type="number" id="time-limit" min="10" max="300" value="60" step="5">
-                </div>
-
-            <!-- Rule Variations Section -->
-                <h2>Variations</h2>
-                <div class="checkbox-option">
-                    <input type="checkbox" id="enable-free-play">
-                    <label for="enable-free-play">Free Play Mode (No adjacent requirement)</label>
-                </div>
-                <div class="checkbox-option">
-                    <input type="checkbox" id="enable-border-rule">
-                    <label for="enable-border-rule">Border Rule (Only blank/non-streets on edges)</label>
-                </div>
-            </div>
-        </div>
-
-        <div class="button-group">
-            <button class="back-button" onclick="window.location.href='index.html'">Back</button>
-            <button id="start-game-button" class="start-button">Start Game</button>
-        </div>
-    </div>
-</div>
-    <!-- Game Screen -->
-    <div id="game" class="game-area" style="display: none;">
-        <!-- Main Game Area -->
-        <div class="main-game-container">
-            <div class="board-container">
-                <div id="board" class="board"></div>
-            </div>
-            <div class="rack-section">
-                <div id="rack" class="rack"></div>
-                <div class="rack-controls">
-                    <div class="controls-buttons">
-                        <button id="rotate-button" class="button">
-                            <span class="button-icon">↻</span> Rotate Tile
-                        </button>
-                        <button id="show-valid-moves" class="button">
-                            Show Valid Moves
-                        </button>
+                <div class="rack-section">
+                    <div id="rack" class="rack"></div>
+                    <div class="rack-controls">
+                        <div class="controls-buttons">
+                            <button id="rotate-button" class="button">
+                                <span class="button-icon">↻</span> Rotate Tile
+                            </button>
+                            <button id="show-valid-moves" class="button">
+                                Show Valid Moves
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Sidebar -->
+            <div class="game-sidebar">
+                <div class="turn-indicator">
+                    <span id="current-player-display"></span>
+                    <span id="turn-timer"></span>
+                    <button id="skip-turn" class="button">Miss Turn</button>
+                </div>
+                <div id="player-container"></div>
+                <div class="sidebar-footer">
+                    <button id="new-game-button" class="button">New Game</button>
+                    <button id="setup-button" class="button">Setup</button>
+                    <button id="rules-button" class="button">Rules</button>
+                </div>
+            </div>
         </div>
 
-        <!-- Sidebar -->
-        <div class="game-sidebar">
-            <div class="turn-indicator">
-                <span id="current-player-display"></span>
-                <span id="turn-timer"></span>
-                <button id="skip-turn" class="button">Miss Turn</button>
+        <!-- Modals -->
+        <div id="rules-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2>Game Rules</h2>
+                <div class="rules-content">
+                    <h3>How to Play</h3>
+
+                    <section class="rule-section">
+                        <h4>Game Setup</h4>
+                        <p>The game begins with starter tiles randomly placed on the board. These have circular centres.
+                            Each player receives 5 tiles in their rack. Board and rack size, and starter tiles are
+                            adjustable. Number of players is selectable and a timer can be set for turns</p>
+                    </section>
+
+                    <section class="rule-section">
+                        <h4>Tile Mechanics</h4>
+                        <ul>
+                            <li>Each tile has four colored edges that must match adjacent tiles.</li>
+                            <li>You can rotate tiles before placing them using the 'Rotate Tile' button.</li>
+                            <li>Tiles must be placed adjacent to at least one existing tile (except starter tiles).</li>
+                            <li>Colors on touching edges must match exactly.</li>
+                        </ul>
+                    </section>
+
+                    <div class="section">
+                        <h3>Basic Scoring</h3>
+                        <p>Points are awarded based on the number of road connections made when placing a tile:</p>
+                        <ul>
+                            <li><strong>1 connection:</strong> 1 point</li>
+                            <li><strong>2 connections:</strong> 4 points</li>
+                            <li><strong>3 connections:</strong> 9 points</li>
+                            <li><strong>4 connections:</strong> 16 points</li>
+                        </ul>
+                    </div>
+
+                    <div class="section">
+                        <h3>Bonus Points</h3>
+
+                        <h4>Center Pattern Tiles</h4>
+                        <p>Special tiles with patterns in their center provide immediate bonus points:</p>
+                        <ul>
+                            <li><strong>Center Square (⬛):</strong> 20 points</li>
+                            <li><strong>Bonus Circle (⭕):</strong> 10 points</li>
+                        </ul>
+
+                        <h4>Path Bonuses</h4>
+                        <p>Players can earn additional points by creating continuous road paths:</p>
+                        <ul>
+                            <li>Each new tile that extends your longest path earns 3 points per tile in the entire path
+                            </li>
+                            <li>Paths must connect between your Center Square tiles and Bonus Circle tiles</li>
+                            <li>Only improvements to your longest path count for scoring</li>
+                            <li>Path scores are calculated immediately when placing a tile</li>
+                        </ul>
+                        <h4>Starter Tile Multiplier</h4>
+                        <ul>
+                            <li>Connecting to a starter tile (marked with a gray circle) doubles the score for that
+                                placement</li>
+                            <li>Only applies to the base connection score, not to path or pattern bonuses</li>
+                        </ul>
+                    </div>
+
+                    <div class="section">
+                        <h3>Strategy Tips</h3>
+                        <ol>
+                            <li>Look for opportunities to create long paths between your Center Squares and Bonus
+                                Circles</li>
+                            <li>Use intersections strategically to maximize connection points</li>
+                            <li>Try to connect to starter tiles when making multiple connections</li>
+                            <li>Balance immediate scoring (connections) with long-term path development</li>
+                        </ol>
+                    </div>
+
+                    <div class="section">
+                        <h3>Example Scoring</h3>
+                        <p>A tile placement might score as follows:</p>
+                        <ol>
+                            <li>Base connection score (3 connections = 9 points)</li>
+                            <li>Center pattern bonus (if present, +10 or +20)</li>
+                            <li>Intersection bonus (if applicable, +5)</li>
+                            <li>Center placement bonus (if in center, +5)</li>
+                            <li>Path bonus (3 points × number of tiles in new longest path)</li>
+                            <li>Starter tile multiplier (doubles base connection score if applicable)</li>
+                        </ol>
+                        <p class="note"><em>Note: Only the base connection score is affected by the starter tile
+                                multiplier. Pattern bonuses, path scores, and other special bonuses are added after
+                                multiplication.</em></p>
+                    </div>
+
+                    <section class="rule-section">
+                        <h4>Turn Actions</h4>
+                        <ul>
+                            <li>On your turn, you can:
+                                <ul>
+                                    <li>Place a tile from your rack</li>
+                                    <li>Rotate a selected tile</li>
+                                    <li>Miss your turn if you can't make a valid move</li>
+                                </ul>
+                            </li>
+                            <li>After placing a tile, your rack is automatically refilled</li>
+                        </ul>
+                    </section>
+
+                    <section class="rule-section">
+                        <h4>Game End</h4>
+                        <p>The game ends when either:</p>
+                        <ul>
+                            <li>The board is full</li>
+                            <li>No player can make a valid move</li>
+                        </ul>
+                        <p>The player with the highest score wins!</p>
+                    </section>
+                </div>
+                <button id="close-rules" class="button">Close</button>
             </div>
-            <div id="player-container"></div>
-            <div class="sidebar-footer">
-                <button id="new-game-button" class="button">New Game</button>
-                <button id="setup-button" class="button">Setup</button>
-                <button id="rules-button" class="button">Rules</button>
+        </div>
+
+        <div id="game-end-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2>Game Over!</h2>
+                <div id="final-scores"></div>
+                <div class="modal-buttons">
+                    <button id="new-game-modal" class="button">New Game</button>
+                    <button id="return-setup" class="button">Return to Setup</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Modals -->
-    <div id="rules-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h2>Game Rules</h2>
-            <div class="rules-content">
-                <h3>How to Play</h3>
-                
-                <section class="rule-section">
-                    <h4>Game Setup</h4>
-                    <p>The game begins with starter tiles randomly placed on the board. These have circular centres. Each player receives 5 tiles in their rack. Board and rack size, and starter tiles are adjustable. Number of players is selectable and a timer can be set for turns</p>
-                </section>
+    <!-- Scripts -->
+    <script type="module" src="assets/js/main.js"></script>
+    <script>
+        // Fullscreen functionality
+        const container = document.getElementById('game-container');
+        const fullscreenButton = document.getElementById('fullscreen-toggle');
+        const fullscreenIcon = fullscreenButton.querySelector('svg');
 
-                <section class="rule-section">
-                    <h4>Tile Mechanics</h4>
-                    <ul>
-                        <li>Each tile has four colored edges that must match adjacent tiles.</li>
-                        <li>You can rotate tiles before placing them using the 'Rotate Tile' button.</li>
-                        <li>Tiles must be placed adjacent to at least one existing tile (except starter tiles).</li>
-                        <li>Colors on touching edges must match exactly.</li>
-                    </ul>
-                </section>
+        fullscreenButton.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                container.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
 
-                <div class="section">
-                    <h3>Basic Scoring</h3>
-                    <p>Points are awarded based on the number of road connections made when placing a tile:</p>
-                    <ul>
-                        <li><strong>1 connection:</strong> 1 point</li>
-                        <li><strong>2 connections:</strong> 4 points</li>
-                        <li><strong>3 connections:</strong> 9 points</li>
-                        <li><strong>4 connections:</strong> 16 points</li>
-                    </ul>
-                </div>
-
-                <div class="section">
-                    <h3>Bonus Points</h3>
-                    
-                    <h4>Center Pattern Tiles</h4>
-                    <p>Special tiles with patterns in their center provide immediate bonus points:</p>
-                    <ul>
-                        <li><strong>Center Square (⬛):</strong> 20 points</li>
-                        <li><strong>Bonus Circle (⭕):</strong> 10 points</li>
-                    </ul>
-
-                    <h4>Path Bonuses</h4>
-                    <p>Players can earn additional points by creating continuous road paths:</p>
-                    <ul>
-                        <li>Each new tile that extends your longest path earns 3 points per tile in the entire path</li>
-                        <li>Paths must connect between your Center Square tiles and Bonus Circle tiles</li>
-                        <li>Only improvements to your longest path count for scoring</li>
-                        <li>Path scores are calculated immediately when placing a tile</li>
-                    </ul>
-                    <h4>Starter Tile Multiplier</h4>
-                    <ul>
-                        <li>Connecting to a starter tile (marked with a gray circle) doubles the score for that placement</li>
-                        <li>Only applies to the base connection score, not to path or pattern bonuses</li>
-                    </ul>
-                </div>
-
-                <div class="section">
-                    <h3>Strategy Tips</h3>
-                    <ol>
-                        <li>Look for opportunities to create long paths between your Center Squares and Bonus Circles</li>
-                        <li>Use intersections strategically to maximize connection points</li>
-                        <li>Try to connect to starter tiles when making multiple connections</li>
-                        <li>Balance immediate scoring (connections) with long-term path development</li>
-                    </ol>
-                </div>
-
-                <div class="section">
-                    <h3>Example Scoring</h3>
-                    <p>A tile placement might score as follows:</p>
-                    <ol>
-                        <li>Base connection score (3 connections = 9 points)</li>
-                        <li>Center pattern bonus (if present, +10 or +20)</li>
-                        <li>Intersection bonus (if applicable, +5)</li>
-                        <li>Center placement bonus (if in center, +5)</li>
-                        <li>Path bonus (3 points × number of tiles in new longest path)</li>
-                        <li>Starter tile multiplier (doubles base connection score if applicable)</li>
-                    </ol>
-                    <p class="note"><em>Note: Only the base connection score is affected by the starter tile multiplier. Pattern bonuses, path scores, and other special bonuses are added after multiplication.</em></p>
-                </div>
-
-                <section class="rule-section">
-                    <h4>Turn Actions</h4>
-                    <ul>
-                        <li>On your turn, you can:
-                            <ul>
-                                <li>Place a tile from your rack</li>
-                                <li>Rotate a selected tile</li>
-                                <li>Miss your turn if you can't make a valid move</li>
-                            </ul>
-                        </li>
-                        <li>After placing a tile, your rack is automatically refilled</li>
-                    </ul>
-                </section>
-
-                <section class="rule-section">
-                    <h4>Game End</h4>
-                    <p>The game ends when either:</p>
-                    <ul>
-                        <li>The board is full</li>
-                        <li>No player can make a valid move</li>
-                    </ul>
-                    <p>The player with the highest score wins!</p>
-                </section>
-            </div>
-            <button id="close-rules" class="button">Close</button>
-        </div>
-    </div>
-
-    <div id="game-end-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h2>Game Over!</h2>
-            <div id="final-scores"></div>
-            <div class="modal-buttons">
-                <button id="new-game-modal" class="button">New Game</button>
-                <button id="return-setup" class="button">Return to Setup</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Scripts -->
-<script type="module" src="assets/js/main.js"></script>
-<script>
-    // Fullscreen functionality
-    const container = document.getElementById('game-container');
-    const fullscreenButton = document.getElementById('fullscreen-toggle');
-    const fullscreenIcon = fullscreenButton.querySelector('svg');
-
-    fullscreenButton.addEventListener('click', () => {
-        if (!document.fullscreenElement) {
-            container.requestFullscreen().catch(err => {
-                console.error(`Error attempting to enable fullscreen: ${err.message}`);
-            });
-        } else {
-            document.exitFullscreen();
-        }
-    });
-
-    document.addEventListener('fullscreenchange', () => {
-        container.classList.toggle('fullscreen', !!document.fullscreenElement);
-        if (document.fullscreenElement) {
-            fullscreenIcon.innerHTML = `
+        document.addEventListener('fullscreenchange', () => {
+            container.classList.toggle('fullscreen', !!document.fullscreenElement);
+            if (document.fullscreenElement) {
+                fullscreenIcon.innerHTML = `
                 <path d="M8 3v3a2 2 0 0 1-2 2H3m13-5v3a2 2 0 0 0 2 2h3M3 16h3a2 2 0 0 1 2 2v3M21 16h-3a2 2 0 0 0-2 2v3"/>
             `;
-        } else {
-            fullscreenIcon.innerHTML = `
+            } else {
+                fullscreenIcon.innerHTML = `
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
             `;
+            }
+        });
+    </script>
+    <script>
+        // Rules modal functionality
+        const rulesModal = document.getElementById('rules-modal');
+        const rulesButton = document.getElementById('rules-button');
+        const closeRulesButton = document.getElementById('close-rules');
+        const setupScreen = document.getElementById('setup-screen');
+        const gameScreen = document.getElementById('game');
+
+        let previousScreen = null;
+
+        // Show rules modal
+        function showRulesModal() {
+            // Store which screen was visible
+            previousScreen = setupScreen.style.display === 'none' ? gameScreen : setupScreen;
+            rulesModal.style.display = 'flex';
         }
-    });
-</script>
-	<script>
-    // Rules modal functionality
-    const rulesModal = document.getElementById('rules-modal');
-    const rulesButton = document.getElementById('rules-button');
-    const closeRulesButton = document.getElementById('close-rules');
-    const setupScreen = document.getElementById('setup-screen');
-    const gameScreen = document.getElementById('game');
-
-    let previousScreen = null;
-
-    // Show rules modal
-    function showRulesModal() {
-        // Store which screen was visible
-        previousScreen = setupScreen.style.display === 'none' ? gameScreen : setupScreen;
-        rulesModal.style.display = 'flex';
-    }
-</script>
+    </script>
 </body>
+
 </html>

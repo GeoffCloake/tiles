@@ -108,7 +108,12 @@ class Game {
     if (tileSet && cfg.tileSetOptions) tileSet.updateOptions(cfg.tileSetOptions);
     if (ruleset && cfg.rulesetOptions) ruleset.options = { ...ruleset.options, ...cfg.rulesetOptions };
     if (scoringSystem && cfg.scoringOptions) {
-        scoringSystem.options = { ...scoringSystem.options, ...cfg.scoringOptions };
+      scoringSystem.options = { ...scoringSystem.options, ...cfg.scoringOptions };
+
+      // Explicitly update path scoring instance if it exists
+      if (cfg.scoringOptions.pathPoints && scoringSystem.options.pathScoring) {
+        scoringSystem.options.pathScoring.pointsPerTile = cfg.scoringOptions.pathPoints;
+      }
     }
 
     // ---- Initial tiles handling (supports both Random and Arrangement) ----
@@ -232,8 +237,47 @@ class Game {
     this.boardManager.clearValidMoves();
   }
 
-  showRules() { document.getElementById('rules-modal').style.display = 'block'; }
-  hideRules() { document.getElementById('rules-modal').style.display = 'none'; }
+  showRules() {
+    const rulesModal = document.getElementById('rules-modal');
+    if (rulesModal) {
+      rulesModal.style.display = 'flex';
+      this.updateRulesText();
+    }
+  }
+
+  hideRules() {
+    const rulesModal = document.getElementById('rules-modal');
+    if (rulesModal) rulesModal.style.display = 'none';
+  }
+
+  updateRulesText() {
+    const setup = this.setupManager;
+    const defaults = { multiplier: 2, pathPoints: 3, intersection: 5, center: 5 };
+
+    const multiplier = this._savedConfig?.scoringOptions?.starterTileMultiplier
+      ?? parseInt(setup.starterMultiplierInput?.value || defaults.multiplier);
+
+    const pathPoints = this._savedConfig?.scoringOptions?.pathPoints
+      ?? parseInt(setup.pathPointsInput?.value || defaults.pathPoints);
+
+    const intersectionBonus = this._savedConfig?.scoringOptions?.intersectionBonus
+      ?? parseInt(setup.intersectionBonusInput?.value || defaults.intersection);
+
+    const centerBonus = this._savedConfig?.scoringOptions?.centerBonus
+      ?? parseInt(setup.centerBonusInput?.value || defaults.center);
+
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+
+    setVal('rule-display-multiplier', multiplier);
+    setVal('rule-display-path-points', pathPoints);
+    setVal('rule-display-path-points-example', pathPoints);
+    setVal('rule-display-intersection', intersectionBonus);
+    setVal('rule-display-intersection-example', intersectionBonus);
+    setVal('rule-display-center', centerBonus);
+  }
 
   showGameEndModal(finalScores) {
     const modal = document.getElementById('game-end-modal');
@@ -265,7 +309,7 @@ class Game {
     const t = setInterval(() => {
       if (Date.now() - last > 30000) window.dispatchEvent(new Event('dummy'));
     }, 30000);
-    ['touchstart','touchmove','touchend','click','keydown'].forEach(ev =>
+    ['touchstart', 'touchmove', 'touchend', 'click', 'keydown'].forEach(ev =>
       document.addEventListener(ev, () => (last = Date.now()))
     );
     window.addEventListener('unload', () => clearInterval(t));
