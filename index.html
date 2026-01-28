@@ -127,6 +127,15 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
             margin-bottom: 0;
             max-width: 400px;
+            position: relative;
+            /* Ensure positioning context if needed, though we might use transform */
+        }
+
+        #game-end-modal h2 {
+            cursor: move;
+            /* Indicate draggable */
+            user-select: none;
+            /* Prevent text selection while dragging */
         }
 
         .rules-content {

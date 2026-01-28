@@ -307,7 +307,66 @@ class Game {
       })
       .join('');
     scoresDiv.innerHTML = scoreHtml;
-    modal.style.display = 'block';
+    modal.style.display = 'flex'; // Ensure flex display
+
+    // Initialize Draggable Logic
+    this.makeElementDraggable(document.querySelector('#game-end-modal .modal-content'), document.querySelector('#game-end-modal h2'));
+  }
+
+  makeElementDraggable(element, handle) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+    if (!handle) return; // Need a handle
+
+    handle.onmousedown = dragMouseDown;
+
+    function dragMouseDown(e) {
+      e = e || window.event;
+      e.preventDefault();
+      // get the mouse cursor position at startup:
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      document.onmouseup = closeDragElement;
+      // call a function whenever the cursor moves:
+      document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+      e = e || window.event;
+      e.preventDefault();
+      // calculate the new cursor position:
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      // set the element's new position:
+      // We use offsets because the element is flex-positioned initially
+      // To make it movable, we might need to switch to relative/absolute or just use margins/transforms.
+      // Easiest for a flex item is often transforms, but top/left works if position is relative/absolute.
+      // Let's use Top/Left and ensure position is set.
+
+      // If element is not yet absolute/fixed, force it?
+      // Actually, since it's in a flex container (the modal wrapper), moving it might be tricky without position:relative.
+      // Let's simply adjust margin or transform? No, top/left is standard.
+
+      // Check if position is already set, if not, lock it to current computed
+      const style = window.getComputedStyle(element);
+      if (style.position === 'static') {
+        element.style.position = 'relative';
+      }
+
+      element.style.top = (element.offsetTop - pos2) + "px";
+      element.style.left = (element.offsetLeft - pos1) + "px";
+
+      // Reset margin if we want to rely purely on top/left (optional, but helps de-conflict flex alignment)
+      // element.style.margin = 0;
+    }
+
+    function closeDragElement() {
+      // stop moving when mouse button is released:
+      document.onmouseup = null;
+      document.onmousemove = null;
+    }
   }
 
   async requestWakeLock() {
