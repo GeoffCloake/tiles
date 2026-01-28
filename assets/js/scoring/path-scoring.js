@@ -38,6 +38,8 @@ class PathScoring {
     const centerSquares = this.findSpecialTilesForPlayer(gameState, 'squares', playerColor);
     const bonusCircles = this.findSpecialTilesForPlayer(gameState, 'circles', playerColor);
 
+    console.log(`PathScoring: Calculating bonus for ${playerId} (${playerColor}). Squares: ${centerSquares.length}, Circles: ${bonusCircles.length}`);
+
     if (!centerSquares.length || !bonusCircles.length) return 0;
 
     // 2. Find longest continuous path connecting a Center Square to ANY Bonus Circle
@@ -78,11 +80,18 @@ class PathScoring {
     for (let y = 0; y < gameState.boardSize; y++) {
       for (let x = 0; x < gameState.boardSize; x++) {
         const tile = gameState.boardState[y][x];
-        if (tile && tile.centerPattern?.toLowerCase() === patternType.toLowerCase() && tile.backgroundColor === playerColor) {
+        // Case-insensitive color matching
+        const tileColor = tile?.backgroundColor?.toLowerCase();
+        const targetColor = playerColor?.toLowerCase();
+
+        if (tile &&
+          tile.centerPattern?.toLowerCase() === patternType.toLowerCase() &&
+          tileColor && targetColor && tileColor === targetColor) {
           specialTiles.push({ x, y, tile });
         }
       }
     }
+    console.log(`PathScoring: Found ${specialTiles.length} ${patternType} for color ${playerColor}`);
     return specialTiles;
   }
 
