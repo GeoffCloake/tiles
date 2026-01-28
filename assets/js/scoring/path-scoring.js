@@ -80,18 +80,26 @@ class PathScoring {
     for (let y = 0; y < gameState.boardSize; y++) {
       for (let x = 0; x < gameState.boardSize; x++) {
         const tile = gameState.boardState[y][x];
-        // Case-insensitive color matching
-        const tileColor = tile?.backgroundColor?.toLowerCase();
-        const targetColor = playerColor?.toLowerCase();
+        if (!tile) continue;
 
-        if (tile &&
-          tile.centerPattern?.toLowerCase() === patternType.toLowerCase() &&
-          tileColor && targetColor && tileColor === targetColor) {
+        const tileColor = tile.backgroundColor?.toLowerCase();
+        const targetColor = playerColor?.toLowerCase();
+        const isColorMatch = tileColor && targetColor && tileColor === targetColor;
+
+        // Check 1: Explicit pattern match with color ownership
+        if (tile.centerPattern?.toLowerCase() === patternType.toLowerCase() && isColorMatch) {
+          specialTiles.push({ x, y, tile });
+          continue;
+        }
+
+        // Check 2: Starter Tiles count as 'circles' and are neutral (no color match needed)
+        // User referred to starter tiles as having circular centers and forming connections.
+        if (patternType.toLowerCase() === 'circles' && tile.isStarterTile) {
           specialTiles.push({ x, y, tile });
         }
       }
     }
-    console.log(`PathScoring: Found ${specialTiles.length} ${patternType} for color ${playerColor}`);
+    // console.log(`PathScoring: Found ${specialTiles.length} ${patternType} for color ${playerColor} (inc. starters)`);
     return specialTiles;
   }
 
