@@ -70,6 +70,10 @@ class Game {
       this.newGame();
     });
 
+    document.getElementById('view-board-modal')?.addEventListener('click', () => {
+      document.getElementById('game-end-modal').style.display = 'none';
+    });
+
     document.getElementById('return-setup')?.addEventListener('click', () => {
       document.getElementById('game-end-modal').style.display = 'none';
       this.setupManager.showSetup();
