@@ -14,12 +14,16 @@ export class Player {
         this.id = id || generateId();
         this.name = name;
         this.score = 0;
+        this.bonusScore = 0;
         this.tiles = [];
         this.color = null;
     }
 
-    addScore(points) {
+    addScore(points, isBonus = false) {
         this.score += points;
+        if (isBonus) {
+            this.bonusScore += points;
+        }
     }
 
     setTiles(tiles) {

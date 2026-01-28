@@ -79,8 +79,9 @@ export class PlayerUIManager {
         div.style.border = `1px solid ${playerColor}`;
       }
 
+      const bonusText = player.bonusScore > 0 ? ` <small style="color:var(--accent-green)">(${player.bonusScore} Bonus)</small>` : '';
       div.innerHTML = `<h3>${player.name}</h3>
-                       <p>Score: <span id="score-${player.id}">${player.score}</span></p>`;
+                       <p>Score: <span id="score-${player.id}">${player.score}${bonusText}</span></p>`;
 
       this.playerContainer.appendChild(div);
     });
@@ -88,7 +89,11 @@ export class PlayerUIManager {
 
   updatePlayerScore(player) {
     const el = document.getElementById(`score-${player.id}`);
-    if (el) el.textContent = player.score;
+    if (el) {
+      // Show breakdown if bonus exists
+      const bonusText = player.bonusScore > 0 ? ` <small style="color:var(--accent-green)">(${player.bonusScore} Bonus)</small>` : '';
+      el.innerHTML = `${player.score}${bonusText}`;
+    }
   }
 
   updatePlayerHighlight(player) {

@@ -43,6 +43,7 @@ export class SetupManager {
         this.intersectionBonusInput = document.getElementById('intersection-bonus');
         this.centerBonusInput = document.getElementById('center-bonus');
         this.pathPointsInput = document.getElementById('path-points');
+        this.completionBonusInput = document.getElementById('completion-bonus');
         this.enableEndGameBonusCheckbox = document.getElementById('enable-end-game-bonus');
 
         this.setupEventListeners();
@@ -204,6 +205,7 @@ export class SetupManager {
                 intersectionBonus: parseInt(this.intersectionBonusInput?.value || '5'),
                 centerBonus: parseInt(this.centerBonusInput?.value || '5'),
                 pathPoints: parseInt(this.pathPointsInput?.value || '3'),
+                completionBonus: parseInt(this.completionBonusInput?.value || '0'),
                 enableEndGameBonus: this.enableEndGameBonusCheckbox?.checked || false
             }
         };

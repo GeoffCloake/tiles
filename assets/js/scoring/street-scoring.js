@@ -34,6 +34,7 @@ export class StreetScoring extends ScoringSystem {
 
     calculateScore(gameState, position, tile) {
         let totalScore = 0;
+        let turnBonus = 0; // Track bonus points for this turn
 
         // 1. Calculate road connection score
         const roadConnections = this.countRoadMatches(gameState, position, tile);
@@ -47,17 +48,23 @@ export class StreetScoring extends ScoringSystem {
 
         // 3. Add center pattern bonus if present
         if (tile.centerPattern) {
-            totalScore += this.options.centerPatternScores[tile.centerPattern] || 0;
+            const patternBonus = this.options.centerPatternScores[tile.centerPattern] || 0;
+            totalScore += patternBonus;
+            turnBonus += patternBonus;
         }
 
         // 4. Add Intersection Bonus (Connection of 4 streets)
         if (this.isIntersection(tile)) {
-            totalScore += (this.options.intersectionBonus || 5);
+            const intBonus = (this.options.intersectionBonus || 5);
+            totalScore += intBonus;
+            turnBonus += intBonus;
         }
 
         // 5. Add Center Placement Bonus
         if (this.isCenterPlacement(gameState, position)) {
-            totalScore += (this.options.centerBonus || 5);
+            const ctrBonus = (this.options.centerBonus || 5);
+            totalScore += ctrBonus;
+            turnBonus += ctrBonus;
         }
 
         // 6. Path Scoring (ONLY if End-Game Bonus is DISABLED)
@@ -74,6 +81,13 @@ export class StreetScoring extends ScoringSystem {
                 // Get player's best path info
                 const bestPath = this.bestPaths.get(currentPlayer.id) || { length: 0, score: 0 };
 
+                // [NEW] Completion Bonus: First time forming a valid path (Square <-> Circle)
+                const completionBonus = this.options.completionBonus || 0;
+                if (completionBonus > 0 && bestPath.length === 0 && longestPath.length > 0) {
+                    totalScore += completionBonus;
+                    turnBonus += completionBonus;
+                }
+
                 // Only add score if this path is longer
                 if (longestPath.length > bestPath.length) {
                     // Calculate additional points for the improvement
@@ -87,6 +101,7 @@ export class StreetScoring extends ScoringSystem {
 
                     // Add only the improvement points to total score
                     totalScore += additionalScore;
+                    turnBonus += additionalScore;
                 }
 
                 // Update path length display regardless of scoring
@@ -95,6 +110,11 @@ export class StreetScoring extends ScoringSystem {
 
             // Remove the temporary tile since the actual placement happens later
             gameState.boardState[position.y][position.x] = null;
+
+            // Update Player's cumulative bonus score
+            if (currentPlayer) {
+                currentPlayer.bonusScore = (currentPlayer.bonusScore || 0) + turnBonus;
+            }
         }
 
         return totalScore;
