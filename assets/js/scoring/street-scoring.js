@@ -118,7 +118,10 @@ export class StreetScoring extends ScoringSystem {
             }
         }
 
-        return totalScore;
+        return {
+            total: totalScore,
+            bonus: turnBonus
+        };
     }
 
     getRotatedSides(tile) {

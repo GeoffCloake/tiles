@@ -88,10 +88,14 @@ export class BoardManager {
     });
   }
 
-  showScorePopup(position, score) {
+  showScorePopup(position, score, bonus = 0) {
     const index = position.y * this.gameState.boardSize + position.x;
     const cell = this.boardElement.children[index];
-    if (cell) createScorePopup(cell, score);
+    if (cell) {
+      // Format: "+9 (+5 Bonus)"
+      const text = bonus > 0 ? `+${score} (+${bonus} Bonus)` : `+${score}`;
+      createScorePopup(cell, text);
+    }
   }
 
   resizeBoard() {

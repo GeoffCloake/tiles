@@ -158,7 +158,10 @@ export class GameState {
             return { success: false, reason: 'Invalid placement' };
         }
 
-        const score = this.scoringSystem.calculateScore(this, position, rotatedTile);
+        const result = this.scoringSystem.calculateScore(this, position, rotatedTile);
+        // Handle object or number return
+        const score = typeof result === 'object' ? result.total : result;
+        const bonus = typeof result === 'object' ? result.bonus : 0;
 
         this.boardState[y][x] = rotatedTile;
 
@@ -178,7 +181,7 @@ export class GameState {
 
         this.nextTurn();
 
-        this.emit('tilePlaced', { position, tile: rotatedTile, score });
+        this.emit('tilePlaced', { position, tile: rotatedTile, score, bonus });
         this.emit('scoreUpdate', currentPlayer);
 
         return { success: true, score };

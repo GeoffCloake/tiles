@@ -206,9 +206,9 @@ class Game {
   }
 
   setupGameStateListeners() {
-    this.gameState.on('tilePlaced', ({ position, tile, score }) => {
+    this.gameState.on('tilePlaced', ({ position, tile, score, bonus }) => {
       this.boardManager.renderTile(position, tile);
-      if (score > 0) this.boardManager.showScorePopup(position, score);
+      if (score > 0) this.boardManager.showScorePopup(position, score, bonus);
     });
 
     this.gameState.on('turnChange', () => this.updateUIForCurrentPlayer());
