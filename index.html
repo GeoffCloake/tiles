@@ -104,6 +104,28 @@
             border: 1px solid #333;
         }
 
+        /* Specific Game End Modal Styling */
+        #game-end-modal {
+            background-color: transparent;
+            /* No backdrop */
+            pointer-events: none;
+            /* Let clicks pass through to board */
+            align-items: flex-end;
+            /* Align to bottom */
+            justify-content: center;
+            padding-bottom: 2rem;
+        }
+
+        #game-end-modal .modal-content {
+            pointer-events: auto;
+            /* Re-enable clicks on the box itself */
+            border: 1px solid var(--accent-color, #ffd700);
+            /* Highlight it slightly */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+
         .rules-content {
             margin-bottom: 2rem;
         }
