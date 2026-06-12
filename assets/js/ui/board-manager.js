@@ -79,12 +79,22 @@ export class BoardManager {
     setTimeout(() => cell.classList.remove('invalid'), 500);
   }
 
-  highlightPath(path) {
+  highlightPath(path, color = null) {
     if (!path || !path.length) return;
     path.forEach(pos => {
       const index = pos.y * this.gameState.boardSize + pos.x;
       const cell = this.boardElement.children[index];
-      if (cell) cell.classList.add('bonus-path');
+      if (!cell) return;
+      cell.classList.add('bonus-path');
+      if (color) cell.style.setProperty('--path-color', color);
+      else cell.style.removeProperty('--path-color');
+    });
+  }
+
+  clearPathHighlights() {
+    this.boardElement.querySelectorAll('.bonus-path').forEach(cell => {
+      cell.classList.remove('bonus-path');
+      cell.style.removeProperty('--path-color');
     });
   }
 

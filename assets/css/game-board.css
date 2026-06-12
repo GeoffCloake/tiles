@@ -82,8 +82,10 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-color: rgba(255, 215, 0, 0.3); /* Gold overlay */
-  border: 2px solid #FFD700;
+  /* Tinted with the owning player's colour; gold by default */
+  background-color: rgba(255, 215, 0, 0.3);
+  background-color: color-mix(in srgb, var(--path-color, #FFD700) 30%, transparent);
+  border: 2px solid var(--path-color, #FFD700);
   border-radius: 4px;
   pointer-events: none;
   z-index: 2;

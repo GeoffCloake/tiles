@@ -23,6 +23,7 @@ class Game {
 
     this._savedConfig = null; // latest normalized config for New Game
     this.wakeLock = null;
+    this.showingPaths = false;
   }
 
   async initialize() {
@@ -80,6 +81,7 @@ class Game {
     });
 
     document.getElementById('setup-button')?.addEventListener('click', () => this.setupManager.showSetup());
+    document.getElementById('show-paths')?.addEventListener('click', () => this.togglePathHighlights());
     document.getElementById('rules-button')?.addEventListener('click', () => this.showRules());
     document.getElementById('close-rules')?.addEventListener('click', () => this.hideRules());
     document.getElementById('close-rules-x')?.addEventListener('click', () => this.hideRules());
@@ -166,6 +168,13 @@ class Game {
 
     this.updateUIForCurrentPlayer();
 
+    // Path highlighting only applies to tile sets with path scoring
+    const showPathsButton = document.getElementById('show-paths');
+    if (showPathsButton) {
+      showPathsButton.style.display = this.gameState.scoringSystem?.pathScoring ? '' : 'none';
+    }
+    this.refreshPathHighlights();
+
     this.boardManager.setupResizeListener();
     this.boardManager.resizeBoard();
 
@@ -216,15 +225,17 @@ class Game {
     this.gameState.on('tilePlaced', ({ position, tile, score, bonus }) => {
       this.boardManager.renderTile(position, tile);
       if (score > 0) this.boardManager.showScorePopup(position, score, bonus);
+      this.refreshPathHighlights();
     });
 
     this.gameState.on('turnChange', () => this.updateUIForCurrentPlayer());
     this.gameState.on('gameEnd', (finalScores) => {
-      // Highlight bonus path if present for any player
-      // Prioritize the winner's path or all paths? Usually winner or just show all.
-      // Let's highlight all bonus paths found.
+      // Highlight every player's bonus path in their colour
       finalScores.forEach(s => {
-        if (s.path) this.boardManager.highlightPath(s.path);
+        if (s.path) {
+          const player = this.gameState.playerManager.getPlayerById(s.id);
+          this.boardManager.highlightPath(s.path, player?.color);
+        }
       });
 
       this.showGameEndModal(finalScores);
@@ -255,6 +266,27 @@ class Game {
     this.rackManager.updateRack(currentPlayer.tiles);
     this.playerUIManager.updateCurrentPlayer(currentPlayer);
     this.boardManager.clearValidMoves();
+  }
+
+  togglePathHighlights() {
+    this.showingPaths = !this.showingPaths;
+    document.getElementById('show-paths')?.classList.toggle('active', this.showingPaths);
+    this.refreshPathHighlights();
+  }
+
+  // Highlight each player's current best centre-to-bonus path in their colour
+  refreshPathHighlights() {
+    if (!this.boardManager || !this.gameState) return;
+    this.boardManager.clearPathHighlights();
+    if (!this.showingPaths) return;
+
+    const pathScoring = this.gameState.scoringSystem?.pathScoring;
+    if (!pathScoring) return;
+
+    this.gameState.playerManager.players.forEach(player => {
+      const path = pathScoring.findLongestPathForPlayer(this.gameState, player.id);
+      if (path) this.boardManager.highlightPath(path, player.color);
+    });
   }
 
   showRules() {
