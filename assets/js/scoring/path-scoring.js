@@ -1,8 +1,22 @@
 // assets/js/scoring/path-scoring.js
+// Finds a player's longest continuous street path between their own
+// Centre Squares and Bonus Circles. Neutral starter tiles count as circle
+// endpoints for every player. Streets owned by any player can form part
+// of the path; only the endpoints are player-specific.
+
+const DEFAULT_SEARCH_BUDGET = 150000;
+
 class PathScoring {
-  constructor(pointsPerTile = 3) {
+  constructor(pointsPerTile = 3, searchBudget = DEFAULT_SEARCH_BUDGET) {
     this.pointsPerTile = pointsPerTile;
-    this.playerPaths = new Map();
+    // Caps DFS node expansions per search so dense boards stay responsive;
+    // when the cap is hit, the best path found so far is returned.
+    this.searchBudget = searchBudget;
+    this.playerPaths = new Map(); // playerId -> last best path found
+  }
+
+  reset() {
+    this.playerPaths.clear();
   }
 
   findLongestPathForPlayer(gameState, playerId) {
@@ -10,20 +24,19 @@ class PathScoring {
     const centerSquares = this.findSpecialTilesForPlayer(gameState, 'squares', playerColor);
     const bonusCircles = this.findSpecialTilesForPlayer(gameState, 'circles', playerColor);
 
-    if (!centerSquares.length || !bonusCircles.length) return null;
+    if (!centerSquares.length || !bonusCircles.length) {
+      this.playerPaths.set(playerId, null);
+      return null;
+    }
 
+    const circleKeys = new Set(bonusCircles.map(({ x, y }) => `${x},${y}`));
+    const budget = { remaining: this.searchBudget };
     let longestPath = null;
-    let longestLength = 0;
 
     for (const start of centerSquares) {
-      for (const end of bonusCircles) {
-        const paths = this.findAllPathsForPlayer(gameState, start, end, playerColor);
-        for (const path of paths) {
-          if (path && path.length > longestLength) {
-            longestPath = path;
-            longestLength = path.length;
-          }
-        }
+      const path = this.findLongestPathFrom(gameState, start, circleKeys, budget);
+      if (path && (!longestPath || path.length > longestPath.length)) {
+        longestPath = path;
       }
     }
 
@@ -32,106 +45,80 @@ class PathScoring {
   }
 
   calculateEndGameBonus(gameState, playerId) {
-    const playerColor = this.getPlayerColor(gameState, playerId);
-
-    // 1. Find all relevant start/end points for this player
-    const centerSquares = this.findSpecialTilesForPlayer(gameState, 'squares', playerColor);
-    const bonusCircles = this.findSpecialTilesForPlayer(gameState, 'circles', playerColor);
-
-    console.log(`PathScoring: Calculating bonus for ${playerId} (${playerColor}). Squares: ${centerSquares.length}, Circles: ${bonusCircles.length}`);
-
-    if (!centerSquares.length || !bonusCircles.length) return 0;
-
-    // 2. Find longest continuous path connecting a Center Square to ANY Bonus Circle
-    // (Note: The user requested "connecting to bonus circles", possibly implicit plural.
-    // Standard rule interpretation: Longest single path chain that starts at a Square and ends at a Circle)
-
-    let longestPath = null;
-    let longestPathLength = 0;
-
-    for (const start of centerSquares) {
-      // We do a BFS/DFS from each center square to find the max depth that hits a circle
-      // Re-using findLongestPath logic but specifically targeting circle endpoints
-      for (const end of bonusCircles) {
-        const paths = this.findAllPathsForPlayer(gameState, start, end, playerColor);
-        for (const path of paths) {
-          if (path && path.length > longestPathLength) {
-            longestPathLength = path.length;
-            longestPath = path;
-          }
-        }
-      }
-    }
-
+    const path = this.findLongestPathForPlayer(gameState, playerId);
     return {
-      score: longestPathLength * this.pointsPerTile,
-      path: longestPath
+      score: this.calculatePathScore(path),
+      path
     };
   }
 
-  // FIX: use the player's assigned color, not “first rack tile”
+  // Depth-first search for the longest simple path from a square to any
+  // circle. Paths may pass through circles and keep extending; the best
+  // endpoint hit along the way is recorded.
+  findLongestPathFrom(gameState, start, targetKeys, budget) {
+    let best = null;
+    const visited = new Set();
+    const path = [start];
+
+    const visit = (current) => {
+      if (budget.remaining-- <= 0) return;
+
+      const key = `${current.x},${current.y}`;
+      visited.add(key);
+
+      if (path.length > 1 && targetKeys.has(key)) {
+        if (!best || path.length > best.length) best = [...path];
+      }
+
+      for (const neighbor of this.getConnectedNeighbors(gameState, current)) {
+        const neighborKey = `${neighbor.x},${neighbor.y}`;
+        if (visited.has(neighborKey)) continue;
+        path.push(neighbor);
+        visit(neighbor);
+        path.pop();
+      }
+
+      visited.delete(key);
+    };
+
+    visit(start);
+    return best;
+  }
+
   getPlayerColor(gameState, playerId) {
-    const p = gameState.playerManager.getPlayerById(playerId);
-    return p?.color ?? null;
+    const player = gameState.playerManager.getPlayerById(playerId);
+    return player?.color ?? null;
   }
 
   findSpecialTilesForPlayer(gameState, patternType, playerColor) {
     const specialTiles = [];
+    const targetColor = playerColor?.toLowerCase();
+    const wantedPattern = patternType.toLowerCase();
+
     for (let y = 0; y < gameState.boardSize; y++) {
       for (let x = 0; x < gameState.boardSize; x++) {
         const tile = gameState.boardState[y][x];
         if (!tile) continue;
 
         const tileColor = tile.backgroundColor?.toLowerCase();
-        const targetColor = playerColor?.toLowerCase();
-        const isColorMatch = tileColor && targetColor && tileColor === targetColor;
+        const isColorMatch = !!tileColor && !!targetColor && tileColor === targetColor;
 
-        // Check 1: Explicit pattern match with color ownership
-        if (tile.centerPattern?.toLowerCase() === patternType.toLowerCase() && isColorMatch) {
+        // Player-owned tiles with the matching centre pattern
+        if (tile.centerPattern?.toLowerCase() === wantedPattern && isColorMatch) {
           specialTiles.push({ x, y, tile });
           continue;
         }
 
-        // Check 2: Starter Tiles count as 'circles' and are neutral (no color match needed)
-        // User referred to starter tiles as having circular centers and forming connections.
-        if (patternType.toLowerCase() === 'circles' && tile.isStarterTile) {
+        // Neutral starter tiles count as circle endpoints for everyone
+        if (wantedPattern === 'circles' && tile.isStarterTile) {
           specialTiles.push({ x, y, tile });
         }
       }
     }
-    // console.log(`PathScoring: Found ${specialTiles.length} ${patternType} for color ${playerColor} (inc. starters)`);
     return specialTiles;
   }
 
-  findAllPathsForPlayer(gameState, start, end, playerColor) {
-    const visited = new Set();
-    const paths = [];
-    this.dfsSearch(gameState, start, end, [start], visited, paths, playerColor);
-    return paths;
-  }
-
-  dfsSearch(gameState, current, end, currentPath, visited, paths, playerColor) {
-    const key = `${current.x},${current.y}`;
-    visited.add(key);
-
-    if (current.x === end.x && current.y === end.y) {
-      paths.push([...currentPath]);
-    } else {
-      const neighbors = this.getConnectedNeighbors(gameState, current, playerColor);
-      for (const neighbor of neighbors) {
-        const neighborKey = `${neighbor.x},${neighbor.y}`;
-        if (!visited.has(neighborKey)) {
-          currentPath.push(neighbor);
-          this.dfsSearch(gameState, neighbor, end, currentPath, visited, paths, playerColor);
-          currentPath.pop();
-        }
-      }
-    }
-
-    visited.delete(key);
-  }
-
-  getConnectedNeighbors(gameState, position /* , playerColor */) {
+  getConnectedNeighbors(gameState, position) {
     const { x, y } = position;
     const currentTile = gameState.boardState[y][x];
     const rotatedSides = this.getRotatedSides(currentTile);
@@ -145,12 +132,16 @@ class PathScoring {
     ];
 
     for (const { dx, dy, currentEdge, neighborEdge } of directions) {
+      if (rotatedSides[currentEdge] !== 'street') continue;
+
       const newX = x + dx, newY = y + dy;
       if (newX < 0 || newX >= gameState.boardSize || newY < 0 || newY >= gameState.boardSize) continue;
+
       const neighborTile = gameState.boardState[newY][newX];
       if (!neighborTile) continue;
+
       const neighborSides = this.getRotatedSides(neighborTile);
-      if (rotatedSides[currentEdge] === 'street' && neighborSides[neighborEdge] === 'street') {
+      if (neighborSides[neighborEdge] === 'street') {
         neighbors.push({ x: newX, y: newY, tile: neighborTile });
       }
     }
@@ -159,8 +150,10 @@ class PathScoring {
 
   getRotatedSides(tile) {
     if (!tile) return [];
-    let sides = [...tile.sides];
-    if (tile.rotation) for (let i = 0; i < tile.rotation; i++) sides.unshift(sides.pop());
+    const sides = [...tile.sides];
+    if (tile.rotation) {
+      for (let i = 0; i < tile.rotation; i++) sides.unshift(sides.pop());
+    }
     return sides;
   }
 

@@ -139,10 +139,11 @@ export class PlayerManager {
         }
     }
 
-    updatePlayerScore(playerId, points) {
+    updatePlayerScore(playerId, points, bonusPoints = 0) {
         const player = this.getPlayerById(playerId);
         if (player) {
             player.addScore(points);
+            if (bonusPoints) player.bonusScore += bonusPoints;
             this.gameState.emit('scoreUpdate', player);
         }
     }

@@ -36,7 +36,7 @@ class Game {
     this.registry.registerTileSet('streets', new StreetsTileSet());
     this.registry.registerTileSet('shapes', new ShapesTileSet());
     this.registry.registerRuleset('basic', new BasicRuleset());
-    this.registry.registerScoringSystem('standard', new StandardScoring());
+    this.registry.registerScoringSystem('standard', new StandardScoring(), 'shapes');
     this.registry.registerScoringSystem('street', new StreetScoring(), 'streets');
   }
 
@@ -113,12 +113,9 @@ class Game {
     if (ruleset && cfg.rulesetOptions) ruleset.options = { ...ruleset.options, ...cfg.rulesetOptions };
     if (scoringSystem && cfg.scoringOptions) {
       scoringSystem.options = { ...scoringSystem.options, ...cfg.scoringOptions };
-
-      // Explicitly update path scoring instance if it exists
-      if (cfg.scoringOptions.pathPoints && scoringSystem.options.pathScoring) {
-        scoringSystem.options.pathScoring.pointsPerTile = cfg.scoringOptions.pathPoints;
-      }
     }
+    // Clear per-game scoring state (best paths etc.) after options are applied
+    scoringSystem?.onNewGame?.();
 
     // ---- Initial tiles handling (supports both Random and Arrangement) ----
     const isObj = typeof cfg.initialTiles === 'object' && cfg.initialTiles !== null;
@@ -265,31 +262,37 @@ class Game {
 
   updateRulesText() {
     const setup = this.setupManager;
-    const defaults = { multiplier: 2, pathPoints: 3, intersection: 5, center: 5 };
+    const opts = this._savedConfig?.scoringOptions || {};
 
-    const multiplier = this._savedConfig?.scoringOptions?.starterTileMultiplier
-      ?? parseInt(setup.starterMultiplierInput?.value || defaults.multiplier);
+    // Show only the sections relevant to the active tile set
+    const tileSet = this._savedConfig?.tileSet || setup?.tileSetSelect?.value || 'streets';
+    document.querySelectorAll('.rules-streets-only').forEach(el => {
+      el.style.display = tileSet === 'streets' ? '' : 'none';
+    });
+    document.querySelectorAll('.rules-shapes-only').forEach(el => {
+      el.style.display = tileSet === 'shapes' ? '' : 'none';
+    });
 
-    const pathPoints = this._savedConfig?.scoringOptions?.pathPoints
-      ?? parseInt(setup.pathPointsInput?.value || defaults.pathPoints);
+    const multiplier = opts.starterTileMultiplier
+      ?? parseInt(setup?.starterMultiplierInput?.value || '2', 10);
+    const pathPoints = opts.pathPoints
+      ?? parseInt(setup?.pathPointsInput?.value || '3', 10);
+    const intersectionBonus = opts.intersectionBonus
+      ?? parseInt(setup?.intersectionBonusInput?.value || '5', 10);
+    const centerBonus = opts.centerBonus
+      ?? parseInt(setup?.centerBonusInput?.value || '5', 10);
+    const completionBonus = opts.completionBonus
+      ?? parseInt(setup?.completionBonusInput?.value || '20', 10);
 
-    const intersectionBonus = this._savedConfig?.scoringOptions?.intersectionBonus
-      ?? parseInt(setup.intersectionBonusInput?.value || defaults.intersection);
-
-    const centerBonus = this._savedConfig?.scoringOptions?.centerBonus
-      ?? parseInt(setup.centerBonusInput?.value || defaults.center);
-
-    const setVal = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = val;
+    const setVals = (className, val) => {
+      document.querySelectorAll(`.${className}`).forEach(el => (el.textContent = val));
     };
 
-    setVal('rule-display-multiplier', multiplier);
-    setVal('rule-display-path-points', pathPoints);
-    setVal('rule-display-path-points-example', pathPoints);
-    setVal('rule-display-intersection', intersectionBonus);
-    setVal('rule-display-intersection-example', intersectionBonus);
-    setVal('rule-display-center', centerBonus);
+    setVals('rule-val-multiplier', multiplier);
+    setVals('rule-val-path-points', pathPoints);
+    setVals('rule-val-intersection', intersectionBonus);
+    setVals('rule-val-center', centerBonus);
+    setVals('rule-val-completion', completionBonus);
   }
 
   showGameEndModal(finalScores) {

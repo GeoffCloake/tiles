@@ -166,7 +166,7 @@ export class GameState {
         this.boardState[y][x] = rotatedTile;
 
         const currentPlayer = this.getCurrentPlayer();
-        this.playerManager.updatePlayerScore(currentPlayer.id, score);
+        this.playerManager.updatePlayerScore(currentPlayer.id, score, bonus);
 
         const playerIndex = this.playerManager.players.indexOf(currentPlayer);
         const newTile = this.tileSet.generateTile(playerIndex, this.playerManager.players.length);

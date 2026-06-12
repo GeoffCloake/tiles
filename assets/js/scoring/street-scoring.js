@@ -1,231 +1,127 @@
 // assets/js/scoring/street-scoring.js
-import { ScoringSystem } from '../core/base-classes.js';
+// Streets tile set scoring: shared adjacency scoring (street-to-street
+// connections) plus centre pattern, intersection and centre placement
+// bonuses, and path scoring between Centre Squares and Bonus Circles.
+import { AdjacencyScoring } from './adjacency-scoring.js';
 import { PathScoring } from './path-scoring.js';
 
-export class StreetScoring extends ScoringSystem {
+export class StreetScoring extends AdjacencyScoring {
     constructor(options = {}) {
         super({
             name: 'Street Scoring',
             description: 'Score based on road connections, special tiles, and paths',
             options: {
-                starterTileMultiplier: 2,
-                scores: {
-                    1: 1,  // 1 road connection
-                    2: 4,  // 2 road connections
-                    3: 9,  // 3 road connections
-                    4: 16  // 4 road connections
-                },
                 centerPatternScores: {
-                    squares: 20,  // Center square
+                    squares: 20,  // Centre square
                     circles: 10   // Bonus circle
                 },
-                pathScoring: new PathScoring(options.pathPoints || 3), // Configurable points per tile
                 intersectionBonus: 5,
                 centerBonus: 5,
+                pathPoints: 3,
                 completionBonus: 20,
-                enableEndGameBonus: options.enableEndGameBonus || false
+                enableEndGameBonus: false,
+                ...options
             }
         });
 
-        // Track best paths per player (only if NOT using end-game bonus)
-        if (!this.options.enableEndGameBonus) {
-            this.bestPaths = new Map(); // playerId -> {length: number, score: number}
-        }
+        this.pathScoring = new PathScoring(this.options.pathPoints);
+        this.bestPaths = new Map(); // playerId -> { length, score } (instant mode)
     }
 
-    calculateScore(gameState, position, tile) {
-        let totalScore = 0;
-        let turnBonus = 0; // Track bonus points for this turn
+    onNewGame() {
+        this.bestPaths.clear();
+        this.pathScoring.reset();
+        this.pathScoring.pointsPerTile = this.options.pathPoints || 3;
+    }
 
-        // 1. Calculate road connection score
-        const roadConnections = this.countRoadMatches(gameState, position, tile);
-        let connectionScore = this.options.scores[roadConnections] || 0;
+    // Only street-to-street edges count as connections
+    edgesMatch(tileSide, adjacentSide) {
+        return tileSide === 'street' && adjacentSide === 'street';
+    }
 
-        // 2. Apply starter tile multiplier ONLY to connection score
-        if (this.isConnectedToStarterTile(gameState, position)) {
-            connectionScore *= this.options.starterTileMultiplier;
-        }
-        totalScore += connectionScore;
+    calculateBonuses(gameState, position, tile) {
+        let bonus = 0;
 
-        // 3. Add center pattern bonus if present
         if (tile.centerPattern) {
-            const patternBonus = this.options.centerPatternScores[tile.centerPattern] || 0;
-            totalScore += patternBonus;
-            turnBonus += patternBonus;
+            bonus += this.options.centerPatternScores[tile.centerPattern] || 0;
         }
 
-        // 4. Add Intersection Bonus (Connection of 4 streets)
         if (this.isIntersection(tile)) {
-            const intBonus = (this.options.intersectionBonus || 5);
-            totalScore += intBonus;
-            turnBonus += intBonus;
+            bonus += this.options.intersectionBonus || 0;
         }
 
-        // 5. Add Center Placement Bonus
         if (this.isCenterPlacement(gameState, position)) {
-            const ctrBonus = (this.options.centerBonus || 5);
-            totalScore += ctrBonus;
-            turnBonus += ctrBonus;
+            bonus += this.options.centerBonus || 0;
         }
 
-        // 6. Path Scoring (ONLY if End-Game Bonus is DISABLED)
+        // Instant mode: path improvements score as tiles are placed.
+        // End-game mode scores the longest path once, in getFinalScore.
         if (!this.options.enableEndGameBonus) {
-            // Temporarily add the current tile to calculate path score
-            const currentPlayer = gameState.getCurrentPlayer();
-            gameState.boardState[position.y][position.x] = tile;  // Temporarily place tile
-
-            // Now calculate path score with the new tile in place
-            const longestPath = this.options.pathScoring.findLongestPathForPlayer(gameState, currentPlayer.id);
-            if (longestPath) {
-                const currentPathScore = this.options.pathScoring.calculatePathScore(longestPath);
-
-                // Get player's best path info
-                const bestPath = this.bestPaths.get(currentPlayer.id) || { length: 0, score: 0 };
-
-                // [NEW] Completion Bonus: First time forming a valid path (Square <-> Circle)
-                const completionBonus = this.options.completionBonus || 0;
-                if (completionBonus > 0 && bestPath.length === 0 && longestPath.length > 0) {
-                    totalScore += completionBonus;
-                    turnBonus += completionBonus;
-                }
-
-                // Only add score if this path is longer
-                if (longestPath.length > bestPath.length) {
-                    // Calculate additional points for the improvement
-                    const additionalScore = currentPathScore - bestPath.score;
-
-                    // Update best path
-                    this.bestPaths.set(currentPlayer.id, {
-                        length: longestPath.length,
-                        score: currentPathScore
-                    });
-
-                    // Add only the improvement points to total score
-                    totalScore += additionalScore;
-                    turnBonus += additionalScore;
-                }
-
-                // Update path length display regardless of scoring
-                gameState.emit('pathUpdate', { playerId: currentPlayer.id, path: longestPath });
-            }
-
-            // Remove the temporary tile since the actual placement happens later
-            gameState.boardState[position.y][position.x] = null;
-
-            // Update Player's cumulative bonus score
-            if (currentPlayer) {
-                currentPlayer.bonusScore = (currentPlayer.bonusScore || 0) + turnBonus;
-            }
+            bonus += this.scorePathProgress(gameState, position, tile);
         }
 
-        return {
-            total: totalScore,
-            bonus: turnBonus
-        };
+        return bonus;
     }
 
-    getRotatedSides(tile) {
-        // Create a copy of the sides array
-        let sides = [...tile.sides];
+    scorePathProgress(gameState, position, tile) {
+        const player = gameState.getCurrentPlayer();
+        if (!player) return 0;
 
-        // Apply rotation if specified
-        if (tile.rotation) {
-            for (let i = 0; i < tile.rotation; i++) {
-                sides.unshift(sides.pop());
-            }
+        // Search with the candidate tile on the board; the actual placement
+        // happens after scoring, so restore the cell afterwards.
+        const previous = gameState.boardState[position.y][position.x];
+        gameState.boardState[position.y][position.x] = tile;
+        const longestPath = this.pathScoring.findLongestPathForPlayer(gameState, player.id);
+        gameState.boardState[position.y][position.x] = previous;
 
+        if (!longestPath) return 0;
+
+        let bonus = 0;
+        const best = this.bestPaths.get(player.id) || { length: 0, score: 0 };
+
+        // One-off bonus the first time a centre-to-bonus connection is completed
+        if (best.length === 0 && (this.options.completionBonus || 0) > 0) {
+            bonus += this.options.completionBonus;
         }
-        return sides;
-    }
 
-    countRoadMatches(gameState, position, tile) {
-        const { x, y } = position;
-        let matches = 0;
+        // Award only the improvement over the player's previous best path
+        if (longestPath.length > best.length) {
+            const pathScore = this.pathScoring.calculatePathScore(longestPath);
+            bonus += pathScore - best.score;
+            this.bestPaths.set(player.id, {
+                length: longestPath.length,
+                score: pathScore
+            });
+        }
 
-        // Get rotated sides for the placed tile
-        const tileSides = this.getRotatedSides(tile);
-
-        const adjacentPositions = [
-            { x: x, y: y - 1, tileEdge: 0, adjacentEdge: 2 }, // top
-            { x: x + 1, y: y, tileEdge: 1, adjacentEdge: 3 }, // right
-            { x: x, y: y + 1, tileEdge: 2, adjacentEdge: 0 }, // bottom
-            { x: x - 1, y: y, tileEdge: 3, adjacentEdge: 1 }  // left
-        ];
-
-        adjacentPositions.forEach(({ x, y, tileEdge, adjacentEdge }) => {
-            // Skip if position is out of bounds
-            if (x < 0 || x >= gameState.boardSize || y < 0 || y >= gameState.boardSize) {
-                return;
-            }
-
-            const adjacentTile = gameState.boardState[y][x];
-            if (!adjacentTile) return;
-
-            // Get rotated sides for the adjacent tile
-            const adjacentSides = this.getRotatedSides(adjacentTile);
-
-            // Only count matches for road connections
-            if (tileSides[tileEdge] === 'street' && adjacentSides[adjacentEdge] === 'street') {
-                matches++;
-            }
-        });
-
-        return matches;
-    }
-
-    isConnectedToStarterTile(gameState, position) {
-        const { x, y } = position;
-        const adjacent = [
-            { x: x, y: y - 1 }, // top
-            { x: x + 1, y: y }, // right
-            { x: x, y: y + 1 }, // bottom
-            { x: x - 1, y: y }  // left
-        ];
-
-        return adjacent.some(({ x, y }) => {
-            if (x < 0 || x >= gameState.boardSize || y < 0 || y >= gameState.boardSize) {
-                return false;
-            }
-            const tile = gameState.boardState[y][x];
-            return tile?.isStarterTile === true;
-        });
+        gameState.emit('pathUpdate', { playerId: player.id, path: longestPath });
+        return bonus;
     }
 
     getFinalScore(gameState, player) {
-        let finalScore = player.score;
-        let bonusScore = 0;
-        let bonusPath = null;
-
         if (this.options.enableEndGameBonus) {
-            const result = this.options.pathScoring.calculateEndGameBonus(gameState, player.id);
-            if (result && result.score > 0) {
-                bonusScore = result.score;
-                bonusPath = result.path;
-                finalScore += bonusScore;
-            }
+            const { score: bonus, path } = this.pathScoring.calculateEndGameBonus(gameState, player.id);
+            return {
+                total: player.score + bonus,
+                base: player.score,
+                bonus,
+                path
+            };
         }
 
+        // Instant mode: bonuses are already included in the score; report the split
+        const bonus = player.bonusScore || 0;
         return {
-            total: finalScore,
-            base: player.score,
-            bonus: bonusScore,
-            path: bonusPath
+            total: player.score,
+            base: player.score - bonus,
+            bonus,
+            path: null
         };
     }
 
-    // Reset a player's best path (useful for new games)
-    resetPlayerPath(playerId) {
-        if (this.bestPaths) this.bestPaths.delete(playerId);
-    }
-
-    // Reset all player paths
-    resetAllPaths() {
-        if (this.bestPaths) this.bestPaths.clear();
-    }
-
     isIntersection(tile) {
-        // Check if all sides are streets (intersection of 4 roads)
-        return tile.sides && tile.sides.every(side => side === 'street');
+        // All four sides are streets (a 4-way intersection)
+        return Array.isArray(tile.sides) && tile.sides.every(side => side === 'street');
     }
 
     isCenterPlacement(gameState, position) {

@@ -38,13 +38,15 @@ export class SetupManager {
         this.enableFreePlayCheckbox = document.getElementById('enable-free-play');
         this.enableBorderRuleCheckbox = document.getElementById('enable-border-rule');
 
-        // Scoring Options
+        // Scoring Options (global)
         this.starterMultiplierInput = document.getElementById('starter-multiplier');
+
+        // Scoring Options (Streets-specific)
         this.intersectionBonusInput = document.getElementById('intersection-bonus');
         this.centerBonusInput = document.getElementById('center-bonus');
         this.pathPointsInput = document.getElementById('path-points');
         this.completionBonusInput = document.getElementById('completion-bonus');
-        this.enableEndGameBonusCheckbox = document.getElementById('enable-end-game-bonus');
+        this.endGameScoreModeRadio = document.getElementById('score-mode-endgame');
 
         this.setupEventListeners();
         this.initializeOptions();
@@ -113,14 +115,14 @@ export class SetupManager {
     }
 
     toggleTileSetOptions(tileSet) {
-        // Toggle Shapes-specific options
-        const shapeControls = document.querySelector('.shapes-only');
-        const streetsControls = document.querySelector('.streets-only');
-
-        if (shapeControls && streetsControls) {
-            shapeControls.style.display = tileSet === 'shapes' ? 'block' : 'none';
-            streetsControls.style.display = tileSet === 'streets' ? 'block' : 'none';
-        }
+        // Toggle ALL tile-set specific blocks (tile settings and scoring settings).
+        // An empty display value restores each element's stylesheet default.
+        document.querySelectorAll('.shapes-only').forEach(el => {
+            el.style.display = tileSet === 'shapes' ? '' : 'none';
+        });
+        document.querySelectorAll('.streets-only').forEach(el => {
+            el.style.display = tileSet === 'streets' ? '' : 'none';
+        });
     }
 
     updatePlayerNameInputs() {
@@ -175,12 +177,43 @@ export class SetupManager {
         };
     }
 
+    // Tile-set specific options, scoped so each set only receives its own
+    getTileSetOptions(tileSet) {
+        if (tileSet === 'shapes') {
+            return {
+                enableBlankSides: this.enableBlankSidesCheckbox?.checked || false,
+                shapeCount: parseInt(this.shapeCountSelect?.value || '6')
+            };
+        }
+        return {};
+    }
+
+    // Global scoring options plus the active tile set's extras
+    getScoringOptions(tileSet) {
+        const options = {
+            starterTileMultiplier: parseInt(this.starterMultiplierInput?.value || '2')
+        };
+
+        if (tileSet === 'streets') {
+            Object.assign(options, {
+                intersectionBonus: parseInt(this.intersectionBonusInput?.value || '5'),
+                centerBonus: parseInt(this.centerBonusInput?.value || '5'),
+                pathPoints: parseInt(this.pathPointsInput?.value || '3'),
+                completionBonus: parseInt(this.completionBonusInput?.value || '20'),
+                enableEndGameBonus: this.endGameScoreModeRadio?.checked || false
+            });
+        }
+
+        return options;
+    }
+
     startGame() {
         console.log("Setup Manager: Starting game...");
+        const tileSet = this.tileSetSelect.value;
         const config = {
             boardSize: parseInt(this.boardSizeSelect.value),
             rackSize: parseInt(this.rackSizeSelect.value),
-            tileSet: this.tileSetSelect.value,
+            tileSet,
             ruleset: 'basic',
             initialTiles: this.getInitialTilesConfig(),
             enableTimer: this.enableTimerCheckbox.checked,
@@ -188,26 +221,16 @@ export class SetupManager {
             players: this.getPlayerNames().map(name => ({ name })),
 
             // Tileset specific options
-            tileSetOptions: {
-                enableBlankSides: this.enableBlankSidesCheckbox?.checked || false,
-                shapeCount: parseInt(this.shapeCountSelect?.value || '6')
-            },
+            tileSetOptions: this.getTileSetOptions(tileSet),
 
-            // Rule variations
+            // Rule variations (global across tile sets)
             rulesetOptions: {
                 enableFreePlay: this.enableFreePlayCheckbox?.checked || false,
                 enableBorderRule: this.enableBorderRuleCheckbox?.checked || false
             },
 
-            // Scoring configuration
-            scoringOptions: {
-                starterTileMultiplier: parseInt(this.starterMultiplierInput?.value || '2'),
-                intersectionBonus: parseInt(this.intersectionBonusInput?.value || '5'),
-                centerBonus: parseInt(this.centerBonusInput?.value || '5'),
-                pathPoints: parseInt(this.pathPointsInput?.value || '3'),
-                completionBonus: parseInt(this.completionBonusInput?.value || '0'),
-                enableEndGameBonus: document.getElementById('score-mode-endgame')?.checked || false
-            }
+            // Scoring configuration (global + tile-set specific)
+            scoringOptions: this.getScoringOptions(tileSet)
         };
 
         console.log("Game config:", config);

@@ -93,8 +93,8 @@
                             <div class="value-display">0 tiles</div>
                         </div>
                         <div class="setup-option-arrangement">
+                            <label for="layout-tiles">Tile Arrangement:</label>
                             <select id="layout-tiles">
-                                <label for="layout-tiles">Tile Arrangement:</label>
                                 <option value="border">Random Border Tiles</option>
                                 <option value="centre">Centre Tile</option>
                             </select>
@@ -274,33 +274,49 @@
 
                     <section class="rule-section">
                         <h4>Game Setup</h4>
-                        <p>The game begins with starter tiles randomly placed on the board. These have circular centres.
-                            Each player receives 5 tiles in their rack. Board and rack size, and starter tiles are
-                            adjustable. Number of players is selectable and a timer can be set for turns</p>
+                        <p>The game can begin with starter tiles placed on the board, marked with grey circles.
+                            Each player receives a rack of tiles. Board size, rack size and starter tiles are
+                            adjustable. Number of players is selectable and a timer can be set for turns.</p>
                     </section>
 
                     <section class="rule-section">
                         <h4>Tile Mechanics</h4>
                         <ul>
-                            <li>Each tile has four colored edges that must match adjacent tiles.</li>
+                            <li>Each tile has four edges that must match adjacent tiles.</li>
                             <li>You can rotate tiles before placing them using the 'Rotate Tile' button.</li>
-                            <li>Tiles must be placed adjacent to at least one existing tile (except starter tiles).</li>
-                            <li>Colors on touching edges must match exactly.</li>
+                            <li>Tiles must be placed adjacent to at least one existing tile (unless Free Play mode
+                                is enabled).</li>
+                            <li class="rules-streets-only">Streets on touching edges must line up exactly.</li>
+                            <li class="rules-shapes-only">Colours on touching edges must match exactly.</li>
                         </ul>
                     </section>
 
                     <div class="section">
                         <h3>Basic Scoring</h3>
-                        <p>Points are awarded based on the number of road connections made when placing a tile:</p>
+                        <p class="rules-streets-only">Points are awarded based on the number of road connections made
+                            when placing a tile:</p>
+                        <p class="rules-shapes-only">Points are awarded based on the number of matching edges made
+                            when placing a tile:</p>
                         <ul>
                             <li><strong>1 connection:</strong> 1 point</li>
                             <li><strong>2 connections:</strong> 4 points</li>
                             <li><strong>3 connections:</strong> 9 points</li>
                             <li><strong>4 connections:</strong> 16 points</li>
                         </ul>
+                        <h4>Starter Tile Multiplier</h4>
+                        <ul>
+                            <li>Connecting to a starter tile multiplies the connection score by
+                                <strong>×<span class="rule-val-multiplier">2</span></strong></li>
+                            <li>Only applies to the base connection score, not to bonuses</li>
+                        </ul>
                     </div>
 
-                    <div class="section">
+                    <div class="section rules-shapes-only">
+                        <h3>Blank Sides</h3>
+                        <p>When blank sides are enabled, a blank edge never counts as a match and never scores.</p>
+                    </div>
+
+                    <div class="section rules-streets-only">
                         <h3>Bonus Points</h3>
 
                         <h4>Center Pattern Tiles</h4>
@@ -310,24 +326,30 @@
                             <li><strong>Bonus Circle (⭕):</strong> 10 points</li>
                         </ul>
 
-                        <h4>Path Bonuses</h4>
-                        <p>Players can earn additional points by creating continuous road paths:</p>
+                        <h4>Placement Bonuses</h4>
                         <ul>
-                            <li>Each new tile that extends your longest path earns 3 points per tile in the entire path
-                            </li>
-                            <li>Paths must connect between your Center Square tiles and Bonus Circle tiles</li>
-                            <li>Only improvements to your longest path count for scoring</li>
-                            <li>Path scores are calculated immediately when placing a tile</li>
+                            <li><strong>Intersection:</strong> a tile with streets on all four sides earns
+                                +<span class="rule-val-intersection">5</span> points</li>
+                            <li><strong>Board centre:</strong> placing on the centre cell earns
+                                +<span class="rule-val-center">5</span> points</li>
                         </ul>
-                        <h4>Starter Tile Multiplier</h4>
+
+                        <h4>Path Bonuses</h4>
+                        <p>Players earn additional points by building a continuous road path between their own
+                            Center Square tiles and Bonus Circle tiles. Neutral starter tiles also count as circle
+                            endpoints, and streets belonging to any player can form part of the path.</p>
                         <ul>
-                            <li>Connecting to a starter tile (marked with a gray circle) doubles the score for that
-                                placement</li>
-                            <li>Only applies to the base connection score, not to path or pattern bonuses</li>
+                            <li>Completing your first path earns a one-off connection bonus of
+                                +<span class="rule-val-completion">20</span> points</li>
+                            <li>Each tile in the path is worth <span class="rule-val-path-points">3</span> points</li>
+                            <li><strong>Instant (In-Play) mode:</strong> whenever your longest path grows, the
+                                improvement is scored immediately</li>
+                            <li><strong>End of Game mode:</strong> your longest path is scored once, when the game
+                                ends</li>
                         </ul>
                     </div>
 
-                    <div class="section">
+                    <div class="section rules-streets-only">
                         <h3>Strategy Tips</h3>
                         <ol>
                             <li>Look for opportunities to create long paths between your Center Squares and Bonus
@@ -338,16 +360,18 @@
                         </ol>
                     </div>
 
-                    <div class="section">
+                    <div class="section rules-streets-only">
                         <h3>Example Scoring</h3>
                         <p>A tile placement might score as follows:</p>
                         <ol>
                             <li>Base connection score (3 connections = 9 points)</li>
+                            <li>Starter tile multiplier (×<span class="rule-val-multiplier">2</span> on the
+                                connection score, if adjacent to a starter tile)</li>
                             <li>Center pattern bonus (if present, +10 or +20)</li>
-                            <li>Intersection bonus (if applicable, +5)</li>
-                            <li>Center placement bonus (if in center, +5)</li>
-                            <li>Path bonus (3 points × number of tiles in new longest path)</li>
-                            <li>Starter tile multiplier (doubles base connection score if applicable)</li>
+                            <li>Intersection bonus (if applicable, +<span class="rule-val-intersection">5</span>)</li>
+                            <li>Center placement bonus (if in center, +<span class="rule-val-center">5</span>)</li>
+                            <li>Path bonus (<span class="rule-val-path-points">3</span> points × number of tiles in
+                                new longest path)</li>
                         </ol>
                         <p class="note"><em>Note: Only the base connection score is affected by the starter tile
                                 multiplier. Pattern bonuses, path scores, and other special bonuses are added after
@@ -396,7 +420,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=1.1"></script>
+    <script type="module" src="assets/js/main.js?v=1.2"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');
@@ -425,23 +449,6 @@
             `;
             }
         });
-    </script>
-    <script>
-        // Rules modal functionality
-        const rulesModal = document.getElementById('rules-modal');
-        const rulesButton = document.getElementById('rules-button');
-        const closeRulesButton = document.getElementById('close-rules');
-        const setupScreen = document.getElementById('setup-screen');
-        const gameScreen = document.getElementById('game');
-
-        let previousScreen = null;
-
-        // Show rules modal
-        function showRulesModal() {
-            // Store which screen was visible
-            previousScreen = setupScreen.style.display === 'none' ? gameScreen : setupScreen;
-            rulesModal.style.display = 'flex';
-        }
     </script>
 </body>
 
