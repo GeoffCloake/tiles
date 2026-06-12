@@ -82,6 +82,16 @@ class Game {
     document.getElementById('setup-button')?.addEventListener('click', () => this.setupManager.showSetup());
     document.getElementById('rules-button')?.addEventListener('click', () => this.showRules());
     document.getElementById('close-rules')?.addEventListener('click', () => this.hideRules());
+    document.getElementById('close-rules-x')?.addEventListener('click', () => this.hideRules());
+
+    // Close the rules by clicking the backdrop or pressing Escape
+    const rulesModal = document.getElementById('rules-modal');
+    rulesModal?.addEventListener('click', (e) => {
+      if (e.target === rulesModal) this.hideRules();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.hideRules();
+    });
 
     document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
   }
