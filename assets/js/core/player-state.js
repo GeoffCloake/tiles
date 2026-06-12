@@ -15,6 +15,7 @@ export class Player {
         this.name = name;
         this.score = 0;
         this.bonusScore = 0;
+        this.tally = {}; // key -> { label, points } accumulated per score component
         this.tiles = [];
         this.color = null;
     }
@@ -139,11 +140,22 @@ export class PlayerManager {
         }
     }
 
-    updatePlayerScore(playerId, points, bonusPoints = 0) {
+    updatePlayerScore(playerId, points, bonusPoints = 0, breakdown = null) {
         const player = this.getPlayerById(playerId);
         if (player) {
             player.addScore(points);
             if (bonusPoints) player.bonusScore += bonusPoints;
+
+            // Tally what each score was made up of
+            if (Array.isArray(breakdown)) {
+                breakdown.forEach(({ key, label, points: p }) => {
+                    if (!p || !key) return;
+                    const entry = player.tally[key] || { label, points: 0 };
+                    entry.points += p;
+                    player.tally[key] = entry;
+                });
+            }
+
             this.gameState.emit('scoreUpdate', player);
         }
     }

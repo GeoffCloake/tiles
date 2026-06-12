@@ -341,14 +341,30 @@ class Game {
     const modal = document.getElementById('game-end-modal');
     const scoresDiv = document.getElementById('final-scores');
     finalScores.sort((a, b) => b.score - a.score);
+    const endBonusEnabled = this._savedConfig?.scoringOptions?.enableEndGameBonus;
     const scoreHtml = finalScores
       .map((score, i) => {
         let details = '';
-        const endBonusEnabled = this._savedConfig?.scoringOptions?.enableEndGameBonus;
         if (score.bonus > 0 || endBonusEnabled) {
           details = ` <span class="score-details">(${score.base || 0} Base + ${score.bonus || 0} Bonus)</span>`;
         }
-        return `<p${i === 0 ? ' class="winner"' : ''}>${score.name}: ${score.score} points${details}${i === 0 ? ' 🏆' : ''}</p>`;
+
+        // Tally of what the score comprised of
+        const player = this.gameState?.playerManager?.getPlayerById(score.id);
+        const tallyEntries = Object.values(player?.tally || {}).filter(t => t.points);
+        if (endBonusEnabled && score.bonus > 0) {
+          tallyEntries.push({ label: 'End-Game Path', points: score.bonus });
+        }
+        const tallyHtml = tallyEntries.length
+          ? `<ul class="score-tally">${tallyEntries
+              .map(t => `<li><span>${t.label}</span><span>+${t.points}</span></li>`)
+              .join('')}</ul>`
+          : '';
+
+        return `<div class="final-score-entry">
+                  <p${i === 0 ? ' class="winner"' : ''}>${score.name}: ${score.score} points${details}${i === 0 ? ' 🏆' : ''}</p>
+                  ${tallyHtml}
+                </div>`;
       })
       .join('');
     scoresDiv.innerHTML = scoreHtml;

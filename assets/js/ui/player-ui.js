@@ -81,9 +81,15 @@ export class PlayerUIManager {
 
       const bonusText = player.bonusScore > 0 ? ` <small style="color:var(--accent-green)">(${player.bonusScore} Bonus)</small>` : '';
       div.innerHTML = `<h3>${player.name}</h3>
-                       <p>Score: <span id="score-${player.id}">${player.score}${bonusText}</span></p>`;
+                       <p>Score: <span id="score-${player.id}">${player.score}${bonusText}</span></p>
+                       <div class="player-tally" id="tally-${player.id}"></div>`;
+
+      // Click the card to show/hide what the score comprises of
+      div.title = 'Click to show score breakdown';
+      div.addEventListener('click', () => div.classList.toggle('expanded'));
 
       this.playerContainer.appendChild(div);
+      this.updatePlayerTally(player);
     });
   }
 
@@ -94,6 +100,22 @@ export class PlayerUIManager {
       const bonusText = player.bonusScore > 0 ? ` <small style="color:#4ade80">(${player.bonusScore} Bonus)</small>` : '';
       el.innerHTML = `${player.score}${bonusText}`;
     }
+    this.updatePlayerTally(player);
+  }
+
+  updatePlayerTally(player) {
+    const tallyDiv = document.getElementById(`tally-${player.id}`);
+    if (!tallyDiv) return;
+
+    const entries = Object.values(player.tally || {}).filter(t => t.points);
+    if (!entries.length) {
+      tallyDiv.innerHTML = '<div class="tally-empty">No points scored yet</div>';
+      return;
+    }
+
+    tallyDiv.innerHTML = entries
+      .map(t => `<div class="tally-row"><span>${t.label}</span><span>+${t.points}</span></div>`)
+      .join('');
   }
 
   updatePlayerHighlight(player) {

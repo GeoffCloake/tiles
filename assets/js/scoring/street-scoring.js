@@ -39,33 +39,38 @@ export class StreetScoring extends AdjacencyScoring {
         return tileSide === 'street' && adjacentSide === 'street';
     }
 
-    calculateBonuses(gameState, position, tile) {
-        let bonus = 0;
+    bonusEntries(gameState, position, tile) {
+        const entries = [];
 
         if (tile.centerPattern) {
-            bonus += this.options.centerPatternScores[tile.centerPattern] || 0;
+            const points = this.options.centerPatternScores[tile.centerPattern] || 0;
+            if (points) {
+                entries.push(tile.centerPattern === 'squares'
+                    ? { key: 'centerSquares', label: 'Centre Squares', points }
+                    : { key: 'bonusCircles', label: 'Bonus Circles', points });
+            }
         }
 
-        if (this.isIntersection(tile)) {
-            bonus += this.options.intersectionBonus || 0;
+        if (this.isIntersection(tile) && this.options.intersectionBonus) {
+            entries.push({ key: 'intersections', label: 'Intersections', points: this.options.intersectionBonus });
         }
 
-        if (this.isCenterPlacement(gameState, position)) {
-            bonus += this.options.centerBonus || 0;
+        if (this.isCenterPlacement(gameState, position) && this.options.centerBonus) {
+            entries.push({ key: 'boardCentre', label: 'Board Centre', points: this.options.centerBonus });
         }
 
         // Instant mode: path improvements score as tiles are placed.
         // End-game mode scores the longest path once, in getFinalScore.
         if (!this.options.enableEndGameBonus) {
-            bonus += this.scorePathProgress(gameState, position, tile);
+            entries.push(...this.pathProgressEntries(gameState, position, tile));
         }
 
-        return bonus;
+        return entries;
     }
 
-    scorePathProgress(gameState, position, tile) {
+    pathProgressEntries(gameState, position, tile) {
         const player = gameState.getCurrentPlayer();
-        if (!player) return 0;
+        if (!player) return [];
 
         // Search with the candidate tile on the board; the actual placement
         // happens after scoring, so restore the cell afterwards.
@@ -74,20 +79,20 @@ export class StreetScoring extends AdjacencyScoring {
         const longestPath = this.pathScoring.findLongestPathForPlayer(gameState, player.id);
         gameState.boardState[position.y][position.x] = previous;
 
-        if (!longestPath) return 0;
+        if (!longestPath) return [];
 
-        let bonus = 0;
+        const entries = [];
         const best = this.bestPaths.get(player.id) || { length: 0, score: 0 };
 
         // One-off bonus the first time a centre-to-bonus connection is completed
         if (best.length === 0 && (this.options.completionBonus || 0) > 0) {
-            bonus += this.options.completionBonus;
+            entries.push({ key: 'completion', label: 'First Connection', points: this.options.completionBonus });
         }
 
         // Award only the improvement over the player's previous best path
         if (longestPath.length > best.length) {
             const pathScore = this.pathScoring.calculatePathScore(longestPath);
-            bonus += pathScore - best.score;
+            entries.push({ key: 'paths', label: 'Path Bonus', points: pathScore - best.score });
             this.bestPaths.set(player.id, {
                 length: longestPath.length,
                 score: pathScore
@@ -95,7 +100,7 @@ export class StreetScoring extends AdjacencyScoring {
         }
 
         gameState.emit('pathUpdate', { playerId: player.id, path: longestPath });
-        return bonus;
+        return entries;
     }
 
     getFinalScore(gameState, player) {

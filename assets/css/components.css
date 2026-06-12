@@ -178,6 +178,34 @@ select {
     flex-wrap: wrap;
 }
 
+/* Final score tallies in the game-end modal */
+.final-score-entry {
+    margin-bottom: 0.75rem;
+}
+
+.final-score-entry p {
+    margin: 0;
+}
+
+.score-tally {
+    list-style: none;
+    margin: 0.25rem 0 0;
+    padding: 0 0 0 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    max-width: 18rem;
+}
+
+.score-tally li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.score-tally li span:last-child {
+    color: var(--accent-green);
+}
+
 @media (max-width: 480px) {
     .modal {
         padding: 0.5rem;

@@ -162,11 +162,12 @@ export class GameState {
         // Handle object or number return
         const score = typeof result === 'object' ? result.total : result;
         const bonus = typeof result === 'object' ? result.bonus : 0;
+        const breakdown = typeof result === 'object' ? result.breakdown : null;
 
         this.boardState[y][x] = rotatedTile;
 
         const currentPlayer = this.getCurrentPlayer();
-        this.playerManager.updatePlayerScore(currentPlayer.id, score, bonus);
+        this.playerManager.updatePlayerScore(currentPlayer.id, score, bonus, breakdown);
 
         const playerIndex = this.playerManager.players.indexOf(currentPlayer);
         const newTile = this.tileSet.generateTile(playerIndex, this.playerManager.players.length);
@@ -181,7 +182,7 @@ export class GameState {
 
         this.nextTurn();
 
-        this.emit('tilePlaced', { position, tile: rotatedTile, score, bonus });
+        this.emit('tilePlaced', { position, tile: rotatedTile, score, bonus, breakdown });
         this.emit('scoreUpdate', currentPlayer);
 
         return { success: true, score };

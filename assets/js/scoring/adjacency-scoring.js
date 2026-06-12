@@ -32,26 +32,41 @@ export class AdjacencyScoring extends ScoringSystem {
         return tileSide === adjacentSide;
     }
 
-    // Default: no tile-set specific bonuses
-    calculateBonuses(gameState, position, tile) {
-        return 0;
+    // Default: no tile-set specific bonuses.
+    // Subclasses return an array of { key, label, points } entries.
+    bonusEntries(gameState, position, tile) {
+        return [];
     }
 
     calculateScore(gameState, position, tile) {
-        const matches = this.countMatches(gameState, position, tile);
-        let connectionScore = this.options.scores[matches] || 0;
+        const breakdown = [];
 
-        // Starter multiplier applies to the connection score only, never to bonuses
-        if (this.isConnectedToStarterTile(gameState, position)) {
-            connectionScore *= this.options.starterTileMultiplier;
+        const matches = this.countMatches(gameState, position, tile);
+        const connectionScore = this.options.scores[matches] || 0;
+        if (connectionScore) {
+            breakdown.push({ key: 'connections', label: 'Connections', points: connectionScore });
         }
 
-        const bonus = this.calculateBonuses(gameState, position, tile);
+        // Starter multiplier applies to the connection score only, never to bonuses;
+        // tracked as its own component so tallies show what it contributed
+        if (connectionScore && this.isConnectedToStarterTile(gameState, position)) {
+            const extra = connectionScore * (this.options.starterTileMultiplier - 1);
+            if (extra) {
+                breakdown.push({
+                    key: 'starterMultiplier',
+                    label: `Starter Multiplier (×${this.options.starterTileMultiplier})`,
+                    points: extra
+                });
+            }
+        }
 
-        return {
-            total: connectionScore + bonus,
-            bonus
-        };
+        const bonusItems = this.bonusEntries(gameState, position, tile).filter(e => e.points);
+        breakdown.push(...bonusItems);
+
+        const bonus = bonusItems.reduce((sum, e) => sum + e.points, 0);
+        const total = breakdown.reduce((sum, e) => sum + e.points, 0);
+
+        return { total, bonus, breakdown };
     }
 
     getRotatedSides(tile) {
