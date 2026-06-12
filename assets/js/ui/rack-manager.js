@@ -43,8 +43,14 @@ export class RackManager {
             
             tileDiv.appendChild(canvas);
             tileDiv.dataset.tileId = tile.id;
-            tileDiv.title = 'Click to select, click again to rotate';
+            tileDiv.title = 'Click to select · Double-click to rotate';
             tileDiv.onclick = () => this.selectTile(tile, tileDiv);
+            tileDiv.ondblclick = () => {
+                if (!tileDiv.classList.contains('selected')) {
+                    this.selectTile(tile, tileDiv);
+                }
+                this.handleRotate();
+            };
             
             this.rackElement.appendChild(tileDiv);
         });
@@ -52,12 +58,6 @@ export class RackManager {
 
     selectTile(tile, tileDiv) {
         const selectedDiv = document.querySelector('.rack .tile.selected');
-
-        // Clicking the already-selected tile rotates it
-        if (selectedDiv === tileDiv) {
-            this.handleRotate();
-            return;
-        }
 
         // Remove selection from previously selected tile
         if (selectedDiv) {

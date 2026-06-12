@@ -128,6 +128,14 @@
     gap: 0.5rem;
 }
 
+.version-badge {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-tertiary, #555);
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+}
+
 /* Setup Page Styles */
 .setup-container {
     background-color: var(--bg-secondary);

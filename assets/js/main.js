@@ -1,4 +1,6 @@
 // assets/js/main.js
+const VERSION = '1.6';
+
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js';
 import { StreetsTileSet } from './tile-sets/streets-tileset.js';
@@ -477,6 +479,9 @@ class Game {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const versionEl = document.getElementById('version-display');
+  if (versionEl) versionEl.textContent = `v${VERSION}`;
+
   const game = new Game();
   await game.initialize();
 });

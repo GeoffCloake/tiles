@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Multiplayer Tile Board Game</title>
-    <link rel="stylesheet" href="assets/css/styles.css?v=1.4">
+    <link rel="stylesheet" href="assets/css/styles.css?v=1.6">
     <style>
         #game-container {
             position: relative;
@@ -265,6 +265,7 @@
                     <button id="new-game-button" class="button">New Game</button>
                     <button id="setup-button" class="button">Setup</button>
                     <button id="rules-button" class="button">Rules</button>
+                    <span id="version-display" class="version-badge"></span>
                 </div>
             </div>
         </div>
@@ -425,7 +426,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=1.5"></script>
+    <script type="module" src="assets/js/main.js?v=1.6"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');
