@@ -43,6 +43,7 @@ export class RackManager {
             
             tileDiv.appendChild(canvas);
             tileDiv.dataset.tileId = tile.id;
+            tileDiv.title = 'Click to select, click again to rotate';
             tileDiv.onclick = () => this.selectTile(tile, tileDiv);
             
             this.rackElement.appendChild(tileDiv);
@@ -50,20 +51,22 @@ export class RackManager {
     }
 
     selectTile(tile, tileDiv) {
+        const selectedDiv = document.querySelector('.rack .tile.selected');
+
+        // Clicking the already-selected tile rotates it
+        if (selectedDiv === tileDiv) {
+            this.handleRotate();
+            return;
+        }
+
         // Remove selection from previously selected tile
-        const selectedTile = document.querySelector('.rack .tile.selected');
-        if (selectedTile) {
-            selectedTile.classList.remove('selected');
-            if (selectedTile === tileDiv) {
-                this.gameState.selectedTile = null;
-                this.clearValidMoves();
-                return;
-            }
+        if (selectedDiv) {
+            selectedDiv.classList.remove('selected');
         }
 
         // Select new tile
         tileDiv.classList.add('selected');
-        
+
         // Update game state and notify listeners
         if (this.onTileSelected) {
             this.onTileSelected(tile);
