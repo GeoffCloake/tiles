@@ -132,7 +132,19 @@ class StreetsTileSet extends TileSet {
       Math.random() < (this.options.centerPatternFrequency ?? 0.2) &&
       tile.type === 'normal'
     ) {
-      tile.centerPattern = Math.random() < (this.options.patternWeights?.circles ?? 0.7) ? 'circles' : 'squares';
+      const maxC = maxCounts.centerCircles || 0;
+      const maxS = maxCounts.centerSquares || 0;
+      const canCircle = !(maxC > 0 && (this._tileCounts.centerCircles || 0) >= maxC);
+      const canSquare = !(maxS > 0 && (this._tileCounts.centerSquares || 0) >= maxS);
+      if (canCircle || canSquare) {
+        const ratio = this.options.patternWeights?.circles ?? 0.7;
+        const pattern = (canCircle && canSquare)
+          ? (Math.random() < ratio ? 'circles' : 'squares')
+          : (canCircle ? 'circles' : 'squares');
+        tile.centerPattern = pattern;
+        const key = pattern === 'circles' ? 'centerCircles' : 'centerSquares';
+        this._tileCounts[key] = (this._tileCounts[key] || 0) + 1;
+      }
     }
 
     // Player colour

@@ -242,6 +242,7 @@ export class SetupManager {
             cross: m('tm-cross'), tJunction: m('tm-t'), straight: m('tm-straight'),
             corner: m('tm-corner'), deadEnd: m('tm-dead'), blank: m('tm-blank'),
             tunnel: m('tm-tunnel'), roadblock: m('tm-roadblock'), private: m('tm-private'),
+            centerCircles: m('tm-circles'), centerSquares: m('tm-squares'),
         };
     }
 
@@ -336,6 +337,7 @@ export class SetupManager {
             'center-pattern-freq','circles-ratio',
             'tw-cross','tw-t','tw-straight','tw-corner','tw-dead','tw-blank',
             'tw-tunnel','tw-roadblock','tw-private',
+            'tm-circles','tm-squares',
             'tm-cross','tm-t','tm-straight','tm-corner','tm-dead','tm-blank',
             'tm-tunnel','tm-roadblock','tm-private',
             'enable-blank-sides','shape-count',
