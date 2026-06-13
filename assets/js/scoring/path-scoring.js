@@ -161,6 +161,9 @@ class PathScoring {
       const neighborTile = gameState.boardState[newY][newX];
       if (!neighborTile) continue;
 
+      // Roadblock: streets connect for placement but paths cannot traverse it
+      if (neighborTile.type === 'roadblock') continue;
+
       // Private lane: skip if owned by a different player
       if (
         neighborTile.type === 'private' &&

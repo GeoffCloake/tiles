@@ -306,7 +306,7 @@ export class SetupManager {
             { key: 'deadEnd',   type: 'normal',    sides: ['street','non-street','non-street','non-street'],    weight: w('tw-dead', 10)     },
             { key: 'blank',     type: 'normal',    sides: ['non-street','non-street','non-street','non-street'],weight: w('tw-blank', 5)     },
             { key: 'tunnel',    type: 'tunnel',    sides: ['street','street','street','street'],                weight: w('tw-tunnel', 0)    },
-            { key: 'roadblock', type: 'roadblock', sides: ['non-street','non-street','non-street','non-street'],weight: w('tw-roadblock', 0) },
+            { key: 'roadblock', type: 'roadblock', sides: ['street','street','street','street'],                weight: w('tw-roadblock', 0) },
             { key: 'private',   type: 'private',   sides: ['street','non-street','street','non-street'],        weight: w('tw-private', 0)   },
         ];
     }

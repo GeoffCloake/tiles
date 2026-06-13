@@ -66,7 +66,7 @@ class StreetsTileSet extends TileSet {
       { key: 'blank',     type: 'normal',    sides: ['non-street','non-street','non-street','non-street'],weight: 5  },
       // Special tiles (disabled by default — set weight > 0 in setup to enable)
       { key: 'tunnel',    type: 'tunnel',    sides: ['street','street','street','street'],                weight: 0  },
-      { key: 'roadblock', type: 'roadblock', sides: ['non-street','non-street','non-street','non-street'],weight: 0  },
+      { key: 'roadblock', type: 'roadblock', sides: ['street','street','street','street'],                weight: 0  },
       { key: 'private',   type: 'private',   sides: ['street','non-street','street','non-street'],        weight: 0  },
     ];
   }
