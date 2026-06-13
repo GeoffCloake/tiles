@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Multiplayer Tile Board Game</title>
-    <link rel="stylesheet" href="assets/css/styles.css?v=1.9">
+    <link rel="stylesheet" href="assets/css/styles.css?v=1.9b">
     <style>
         #game-container {
             position: relative;
@@ -192,6 +192,30 @@
                         <div class="setup-option streets-only">
                             <label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label>
                             <div class="tile-weights-grid">
+                                <div class="tile-weight-item">
+                                    <label for="tm-cross">╬ Cross max</label>
+                                    <input type="number" id="tm-cross" min="0" max="99" value="0">
+                                </div>
+                                <div class="tile-weight-item">
+                                    <label for="tm-t">┬ T-Junction max</label>
+                                    <input type="number" id="tm-t" min="0" max="99" value="0">
+                                </div>
+                                <div class="tile-weight-item">
+                                    <label for="tm-straight">│ Straight max</label>
+                                    <input type="number" id="tm-straight" min="0" max="99" value="0">
+                                </div>
+                                <div class="tile-weight-item">
+                                    <label for="tm-corner">┘ Corner max</label>
+                                    <input type="number" id="tm-corner" min="0" max="99" value="0">
+                                </div>
+                                <div class="tile-weight-item">
+                                    <label for="tm-dead">╵ Dead End max</label>
+                                    <input type="number" id="tm-dead" min="0" max="99" value="0">
+                                </div>
+                                <div class="tile-weight-item">
+                                    <label for="tm-blank">□ Blank max</label>
+                                    <input type="number" id="tm-blank" min="0" max="99" value="0">
+                                </div>
                                 <div class="tile-weight-item tile-weight-special">
                                     <label for="tm-tunnel">⊕ Tunnel max</label>
                                     <input type="number" id="tm-tunnel" min="0" max="99" value="0">
@@ -575,7 +599,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=1.9"></script>
+    <script type="module" src="assets/js/main.js?v=1.9b"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

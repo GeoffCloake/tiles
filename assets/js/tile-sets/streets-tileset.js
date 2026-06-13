@@ -121,8 +121,8 @@ class StreetsTileSet extends TileSet {
     const rot      = Math.floor(Math.random() * maxRot);
     for (let i = 0; i < rot; i++) tile.sides.unshift(tile.sides.pop());
 
-    // Track per-game count for non-normal special tiles
-    if (shape.key && tile.type !== 'normal') {
+    // Track per-game count for all tile types
+    if (shape.key) {
       this._tileCounts[shape.key] = (this._tileCounts[shape.key] || 0) + 1;
     }
 
