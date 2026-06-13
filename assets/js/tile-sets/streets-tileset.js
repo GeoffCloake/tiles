@@ -100,6 +100,12 @@ class StreetsTileSet extends TileSet {
     const freq      = pp.centerPatternFrequency ?? this.options.centerPatternFrequency ?? 0.2;
     const circlesRatio = pp.patternWeights?.circles ?? this.options.patternWeights?.circles ?? 0.7;
 
+    // Debug: log on first tile per player each game
+    if (!counts._logged) {
+      counts._logged = true;
+      console.log(`[Tiles P${pi}] maxCounts:`, maxCounts, '| weights:', weights.map(w => `${w.key}:${w.weight}`).join(','));
+    }
+
     const valid = weights.filter(w => {
       if (w.weight <= 0) return false;
       const max = maxCounts[w.key];
