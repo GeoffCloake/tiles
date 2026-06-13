@@ -17,6 +17,15 @@ export class GameState {
         this.currentRotation = 0;
         this.firstMove = true;
 
+        // Online play: when locked, local input (select/rotate/place) is ignored
+        // because it isn't this device's turn. Set by the OnlineManager.
+        this.inputLocked = false;
+        // Optional hook invoked after a committed local move, so the online
+        // layer can broadcast the resulting snapshot. No-op in hotseat play.
+        this.onLocalCommit = null;
+        this._ended = false;
+        this._finalScores = null;
+
         this.eventHandlers = new Map();
 
         this.playerManager = new PlayerManager(this);
@@ -89,12 +98,14 @@ export class GameState {
     }
 
     selectTile(tile) {
+        if (this.inputLocked) return;
         this.selectedTile = tile;
         this.currentRotation = 0;
         this.emit('tileSelected', tile);
     }
 
     rotateTile() {
+        if (this.inputLocked) return null;
         if (!this.selectedTile) return null;
 
         this.currentRotation = (this.currentRotation + 1) % 4;
@@ -138,6 +149,10 @@ export class GameState {
 
     placeTile(position) {
         const { x, y } = position;
+
+        if (this.inputLocked) {
+            return { success: false, reason: 'Not your turn' };
+        }
 
         if (!this.selectedTile) {
             return { success: false, reason: 'No tile selected' };
@@ -184,6 +199,9 @@ export class GameState {
 
         this.emit('tilePlaced', { position, tile: rotatedTile, score, bonus, breakdown });
         this.emit('scoreUpdate', currentPlayer);
+
+        // Online: broadcast the resulting snapshot (no-op in hotseat play).
+        this.onLocalCommit?.();
 
         return { success: true, score };
     }
@@ -255,6 +273,10 @@ export class GameState {
         });
 
         finalScores.sort((a, b) => b.score - a.score);
+
+        // Record on the state so online play can broadcast the result.
+        this._ended = true;
+        this._finalScores = finalScores;
 
         this.playerManager.stopTurnTimer();
         this.emit('gameEnd', finalScores);

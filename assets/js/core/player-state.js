@@ -45,6 +45,18 @@ export class Player {
     addTile(tile) {
         this.tiles.push(tile);
     }
+
+    // Rebuild a Player (with methods) from a serialized snapshot. Used when
+    // adopting a remote game state in online play.
+    static fromJSON(obj) {
+        const p = new Player(obj.name, obj.id);
+        p.score = obj.score || 0;
+        p.bonusScore = obj.bonusScore || 0;
+        p.tally = obj.tally || {};
+        p.tiles = obj.tiles || [];
+        p.color = obj.color || null;
+        return p;
+    }
 }
 
 export class PlayerManager {
@@ -138,6 +150,9 @@ export class PlayerManager {
         if (this.turnTimer) {
             this.initializeTurnTimer(this.timeLimit);
         }
+
+        // Online: a skip advances the turn — broadcast the new state.
+        this.gameState.onLocalCommit?.();
     }
 
     updatePlayerScore(playerId, points, bonusPoints = 0, breakdown = null) {

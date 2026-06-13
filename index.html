@@ -11,7 +11,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Multiplayer Tile Board Game</title>
-    <link rel="stylesheet" href="assets/css/styles.css?v=2.5">
+    <link rel="stylesheet" href="assets/css/styles.css?v=3.0">
     <style>
         #game-container {
             position: relative;
@@ -57,6 +57,7 @@
               <button id="qs-load-play-btn" class="button" style="white-space: nowrap;">Load &amp; Play</button>
             </div>
             <button id="qs-default-play-btn" class="button">Quick Play</button>
+            <button id="qs-online-btn" class="button" style="background:var(--accent-green,#1f9100);">📱 Play Online</button>
             <div style="display:flex;gap:0.5rem;">
               <button id="qs-weights-btn" class="button" style="flex:1;background:transparent;border:1px solid var(--border-color);">Weights</button>
               <button id="qs-full-setup-btn" class="button" style="flex:1;background:transparent;border:1px solid var(--border-color);">Full Setup →</button>
@@ -311,6 +312,7 @@
             <!-- Sidebar -->
             <div class="game-sidebar">
                 <div class="turn-indicator">
+                    <div id="online-banner" class="online-banner" style="display:none;"></div>
                     <span id="current-player-display"></span>
                     <span id="round-indicator" class="round-indicator"></span>
                     <span id="turn-timer"></span>
@@ -601,10 +603,54 @@
             <p class="modal-note streets-hidden">Tile weights and limits apply to the Streets tile set.</p>
           </div>
         </div>
+
+        <!-- Online Play Modal -->
+        <div id="online-modal" class="modal" style="display: none;">
+          <div class="modal-content">
+            <button id="online-close-x" class="modal-close" aria-label="Close">&times;</button>
+            <h2>Play Online</h2>
+
+            <!-- Choose: host or join -->
+            <div id="online-pane-choose">
+              <div class="setup-option">
+                <label for="online-name">Your name</label>
+                <input type="text" id="online-name" placeholder="Your name" maxlength="20">
+              </div>
+              <div class="online-choose-grid">
+                <div class="online-card">
+                  <h3>Host a game</h3>
+                  <p class="label-hint">Creates a room using your current game settings (board, tiles, scoring, per-player weights). Share the code with friends.</p>
+                  <button id="online-host-btn" class="button">Create room</button>
+                </div>
+                <div class="online-card">
+                  <h3>Join a game</h3>
+                  <p class="label-hint">Enter the code your host shares with you.</p>
+                  <input type="text" id="online-join-code" class="online-code-input" placeholder="e.g. FOX-42" maxlength="16">
+                  <button id="online-join-btn" class="button">Join</button>
+                </div>
+              </div>
+              <p id="online-error" class="online-error"></p>
+            </div>
+
+            <!-- Lobby -->
+            <div id="online-pane-lobby" style="display:none;">
+              <p class="label-hint" style="margin-bottom:0.25rem;">Share this room code:</p>
+              <div id="online-room-code" class="online-room-code">—</div>
+              <h3 style="margin:0 0 0.5rem;">Players</h3>
+              <ul id="online-roster" class="online-roster"></ul>
+              <p id="online-waiting-msg" class="label-hint" style="display:none;">Waiting for the host to start…</p>
+              <div class="modal-buttons">
+                <button id="online-start-btn" class="button button--primary" disabled>Start Game</button>
+                <button id="online-leave-btn" class="button">Leave</button>
+              </div>
+              <p id="online-error-lobby" class="online-error"></p>
+            </div>
+          </div>
+        </div>
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=2.5"></script>
+    <script type="module" src="assets/js/main.js?v=3.0"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

@@ -206,8 +206,10 @@ export class SetupManager {
         };
     }
 
-    // Tile-set specific options, scoped so each set only receives its own
-    getTileSetOptions(tileSet) {
+    // Tile-set specific options, scoped so each set only receives its own.
+    // playerCountOverride lets online play request per-player options for the
+    // actual number of seated players, independent of the setup dropdown.
+    getTileSetOptions(tileSet, playerCountOverride = null) {
         if (tileSet === 'shapes') {
             return {
                 enableBlankSides: this.enableBlankSidesCheckbox?.checked || false,
@@ -215,7 +217,7 @@ export class SetupManager {
             };
         }
         if (tileSet === 'streets') {
-            const playerCount = parseInt(this.playerCountSelect?.value || '1');
+            const playerCount = playerCountOverride ?? parseInt(this.playerCountSelect?.value || '1');
             const perPlayerOptions = {};
             for (let i = 0; i < playerCount; i++) {
                 const freq = parseInt(document.getElementById(`center-pattern-freq-p${i}`)?.value || '20') / 100;
@@ -266,10 +268,11 @@ export class SetupManager {
         return options;
     }
 
-    startGame() {
-        console.log("Setup Manager: Starting game...");
+    // Assemble a complete game config from the current form values, with no
+    // side effects. Used both by Start Game and by online hosting.
+    buildConfig(playerCountOverride = null) {
         const tileSet = this.tileSetSelect.value;
-        const config = {
+        return {
             boardSize: parseInt(this.boardSizeSelect.value),
             rackSize: parseInt(this.rackSizeSelect.value),
             tileSet,
@@ -280,7 +283,7 @@ export class SetupManager {
             players: this.getPlayerNames().map(name => ({ name })),
 
             // Tileset specific options
-            tileSetOptions: this.getTileSetOptions(tileSet),
+            tileSetOptions: this.getTileSetOptions(tileSet, playerCountOverride),
 
             // Rule variations (global across tile sets)
             rulesetOptions: {
@@ -296,7 +299,11 @@ export class SetupManager {
                 ? { enabled: true, rounds: parseInt(this.tournamentRoundsSelect?.value || '3') }
                 : null
         };
+    }
 
+    startGame() {
+        console.log("Setup Manager: Starting game...");
+        const config = this.buildConfig();
         console.log("Game config:", config);
 
         // Hide setup/quick-start screens, show game screen

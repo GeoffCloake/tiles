@@ -89,6 +89,16 @@ class StreetsTileSet extends TileSet {
     this._debugLogged = new Set();
   }
 
+  // Per-player tile-issue counts travel with each online snapshot so that
+  // max-per-game limits stay correct no matter which device deals a tile.
+  exportCounts() {
+    return JSON.parse(JSON.stringify(this._tileCountsPerPlayer || {}));
+  }
+
+  importCounts(counts) {
+    this._tileCountsPerPlayer = counts ? JSON.parse(JSON.stringify(counts)) : {};
+  }
+
   generateTile(playerIndex = null, playerCount = 1) {
     const pi = playerIndex ?? 0;
     if (!this._tileCountsPerPlayer[pi]) this._tileCountsPerPlayer[pi] = {};

@@ -58,6 +58,26 @@ export class BoardManager {
     this.gameState.tileSet.renderTile(tile, canvas, tile.rotation || 0);
   }
 
+  // Re-render every cell from the current boardState. Used when adopting a
+  // remote game snapshot in online play: paints placed tiles and clears any
+  // cell that should be empty, so the board always matches the authority.
+  renderAll() {
+    if (!this.boardElement || !this.gameState) return;
+    const n = this.gameState.boardSize;
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        const tile = this.gameState.boardState[y][x];
+        if (tile) {
+          this.renderTile({ x, y }, tile);
+        } else {
+          const index = y * n + x;
+          const canvas = this.boardElement.children[index]?.querySelector('canvas');
+          if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+    }
+  }
+
   showValidMoves(validMoves) {
     this.clearValidMoves();
     validMoves.forEach(({ x, y }) => {

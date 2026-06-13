@@ -1,18 +1,20 @@
 // assets/js/main.js
-const VERSION = '2.5';
+const VERSION = '3.0';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js';
-import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=2.5';
+import { Player } from './core/player-state.js';
+import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=3.0';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js';
 import { StandardScoring } from './scoring/standard-scoring.js';
-import { StreetScoring } from './scoring/street-scoring.js?v=2.5';
+import { StreetScoring } from './scoring/street-scoring.js?v=3.0';
 import { BoardManager } from './ui/board-manager.js';
 import { RackManager } from './ui/rack-manager.js';
-import { SetupManager } from './ui/setup-manager.js?v=2.5';
+import { SetupManager } from './ui/setup-manager.js?v=3.0';
 import { PlayerUIManager } from './ui/player-ui.js';
 import { TournamentManager } from './core/tournament.js';
+import { OnlineManager } from './net/online-manager.js?v=3.0';
 
 class Game {
   constructor() {
@@ -29,12 +31,15 @@ class Game {
     this.tournament = null;
     this.wakeLock = null;
     this.showingPaths = false;
+    this.online = null; // OnlineManager, set in initialize()
   }
 
   async initialize() {
     this.registerGameComponents();
     this.initializeManagers();
     this.setupEventListeners();
+    this.online = new OnlineManager(this);
+    this.online.init();
     await this.requestWakeLock();
   }
 
@@ -84,10 +89,14 @@ class Game {
 
     document.getElementById('return-setup')?.addEventListener('click', () => {
       document.getElementById('game-end-modal').style.display = 'none';
+      if (this._exitOnline()) return;
       this.setupManager.showSetup();
     });
 
-    document.getElementById('setup-button')?.addEventListener('click', () => this.setupManager.showSetup());
+    document.getElementById('setup-button')?.addEventListener('click', () => {
+      if (this._exitOnline()) return;
+      this.setupManager.showSetup();
+    });
     document.getElementById('show-paths')?.addEventListener('click', () => this.togglePathHighlights());
 
     // Rules modal
@@ -157,6 +166,8 @@ class Game {
   }
 
   async newGame() {
+    // In online play, "New Game" leaves the room and returns to the menu.
+    if (this._exitOnline()) return;
     if (!this._savedConfig) {
       this.setupManager.showSetup();
       return;
@@ -263,6 +274,7 @@ class Game {
     const gameScreen = document.getElementById('game');
     if (setupScreen && gameScreen) {
       setupScreen.style.display = 'none';
+      document.getElementById('quick-start-screen')?.style.setProperty('display', 'none');
       gameScreen.style.display = 'flex';
     }
   }
@@ -346,13 +358,126 @@ class Game {
   }
 
   handleTileSelected(tile) { this.gameState.selectTile(tile); }
-  handleSkipTurn() { this.gameState?.playerManager?.skipTurn?.(); }
+  handleSkipTurn() {
+    if (this.gameState?.inputLocked) return; // online: not your turn
+    this.gameState?.playerManager?.skipTurn?.();
+  }
 
   updateUIForCurrentPlayer() {
     const currentPlayer = this.gameState.getCurrentPlayer();
+    const online = this.online?.active ? this.online : null;
+
+    // In online play each device shows its own rack (not the active player's),
+    // and input is locked unless it's this device's turn.
+    if (online) {
+      const players = this.gameState.playerManager.players;
+      const myTiles = players[online.mySlot]?.tiles || [];
+      this.rackManager.updateRack(myTiles);
+      this.playerUIManager.updateCurrentPlayer(currentPlayer);
+      this.boardManager.clearValidMoves();
+
+      const myTurn = this.gameState.playerManager.currentPlayerIndex === online.mySlot;
+      this.gameState.inputLocked = !myTurn;
+      document.getElementById('rack')?.classList.toggle('rack-locked', !myTurn);
+      this._updateOnlineBanner(myTurn, currentPlayer);
+      return;
+    }
+
     this.rackManager.updateRack(currentPlayer.tiles);
     this.playerUIManager.updateCurrentPlayer(currentPlayer);
     this.boardManager.clearValidMoves();
+  }
+
+  _updateOnlineBanner(myTurn, currentPlayer) {
+    const banner = document.getElementById('online-banner');
+    if (!banner || !this.online) return;
+    banner.style.display = '';
+    banner.classList.toggle('my-turn', myTurn);
+    banner.classList.toggle('waiting', !myTurn);
+    const label = myTurn ? '▶ Your turn' : `Waiting for ${currentPlayer?.name || '…'}`;
+    banner.innerHTML = `${label}<span class="code">Room ${this.online.code}</span>`;
+  }
+
+  // ---- Online game construction / adoption ----
+
+  // Host path: build the game normally (deals initial tiles) then wire the
+  // online broadcast hook. The snapshot is pushed by the OnlineManager.
+  buildHostedGame(config) {
+    this._buildGame({ ...config, tournament: null });
+    this.gameState.onLocalCommit = () => this.online.pushLocalMove();
+  }
+
+  // Joiner path: build scaffolding WITHOUT dealing (no players/initialTiles),
+  // then adopt the host's snapshot and initialise the managers once.
+  buildJoinedGame(config, snapshot) {
+    const tileSet = this.registry.getTileSet(config.tileSet);
+    const ruleset = this.registry.getRuleset(config.ruleset);
+    const scoringSystem = this.registry.getScoringSystemForTileSet(config.tileSet);
+
+    if (tileSet && config.tileSetOptions) tileSet.updateOptions(config.tileSetOptions);
+    if (ruleset && config.rulesetOptions) ruleset.options = { ...ruleset.options, ...config.rulesetOptions };
+    if (scoringSystem && config.scoringOptions) scoringSystem.options = { ...scoringSystem.options, ...config.scoringOptions };
+    tileSet?.onNewGame?.();
+    scoringSystem?.onNewGame?.();
+
+    // No players/initialTiles → constructor does not deal any tiles.
+    this.gameState = new GameState({
+      tileSet, ruleset, scoringSystem,
+      boardSize: config.boardSize, rackSize: config.rackSize,
+    });
+
+    this._applyOnlineSnapshotData(snapshot);
+
+    this.setupGameStateListeners();
+    this.boardManager.initialize(this.gameState);
+    this.rackManager.initialize(this.gameState);
+    this.playerUIManager.initialize(this.gameState);
+    this.gameState.onLocalCommit = () => this.online.pushLocalMove();
+
+    this.tournament = null;
+    this._updateRoundIndicator();
+    const lbBtn = document.getElementById('leaderboard-button');
+    if (lbBtn) lbBtn.style.display = 'none';
+    const showPathsButton = document.getElementById('show-paths');
+    if (showPathsButton) showPathsButton.style.display = this.gameState.scoringSystem?.pathScoring ? '' : 'none';
+
+    document.getElementById('setup-screen')?.style.setProperty('display', 'none');
+    document.getElementById('quick-start-screen')?.style.setProperty('display', 'none');
+    document.getElementById('game')?.style.setProperty('display', 'flex');
+
+    this._refreshOnlineView();
+  }
+
+  // Incremental update of an already-built online game from a fresh snapshot.
+  applyOnlineSnapshot(snapshot) {
+    this._applyOnlineSnapshotData(snapshot);
+    this.boardManager.renderAll();
+    this._refreshOnlineView();
+  }
+
+  _applyOnlineSnapshotData(snapshot) {
+    const s = snapshot.state;
+    if (!s) return;
+    const gs = this.gameState;
+    gs.boardState = s.boardState;
+    gs.firstMove = s.firstMove;
+    gs.playerManager.players = (s.players || []).map(p => Player.fromJSON(p));
+    gs.playerManager.currentPlayerIndex = s.currentPlayerIndex || 0;
+    gs._ended = !!snapshot.ended;
+    gs._finalScores = snapshot.finalScores || null;
+    if (snapshot.tileCounts && gs.tileSet.importCounts) gs.tileSet.importCounts(snapshot.tileCounts);
+  }
+
+  _refreshOnlineView() {
+    this.playerUIManager.updatePlayerList();
+    this.updateUIForCurrentPlayer();
+    this.refreshPathHighlights();
+  }
+
+  // Leave an online game (if any) and return to the quick-start screen.
+  _exitOnline() {
+    if (this.online?.active) { this.online.leave(); return true; }
+    return false;
   }
 
   togglePathHighlights() {

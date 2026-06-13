@@ -325,6 +325,101 @@
 }
 .copy-weights-btn:hover { background: var(--border-color); color: #fff; }
 
+/* ---- Online multiplayer ---- */
+.online-choose-grid {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+.online-card {
+    flex: 1;
+    min-width: 200px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+.online-card h3 { margin: 0 0 0.4rem; color: var(--accent-blue); }
+.online-card .button { margin-top: 0.6rem; width: 100%; }
+.online-code-input {
+    width: 100%;
+    box-sizing: border-box;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 0.4rem;
+}
+.online-room-code {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-align: center;
+    color: var(--accent-green);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.6rem;
+    border-radius: 10px;
+    margin: 0 0 1rem;
+    user-select: all;
+}
+.online-roster { list-style: none; padding: 0; margin: 0 0 1rem; }
+.online-roster li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 0.4rem;
+}
+.online-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: #666;
+    flex-shrink: 0;
+}
+.online-dot.on { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+.online-badge {
+    margin-left: 0.25rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary, #888);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.05rem 0.35rem;
+}
+.online-roster li .online-badge:last-child { margin-left: auto; }
+.online-error { color: #ff6b5e; min-height: 1.2em; font-size: 0.85rem; margin: 0.6rem 0 0; }
+
+/* In-game turn banner */
+.online-banner {
+    font-weight: 600;
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.95rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+.online-banner.my-turn { background: var(--accent-green); color: #06210e; }
+.online-banner.waiting { background: var(--bg-tertiary); color: var(--text-secondary); }
+.online-banner .code {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    opacity: 0.85;
+    margin-top: 0.15rem;
+    font-weight: 500;
+}
+
+/* Locked rack while it isn't this device's turn */
+.rack.rack-locked {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(0.35);
+}
+
 .button-group {
     display: flex;
     gap: 1rem;
