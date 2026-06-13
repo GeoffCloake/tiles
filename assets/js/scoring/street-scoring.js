@@ -167,19 +167,35 @@ export class StreetScoring extends AdjacencyScoring {
     }
 
     // BFS: set of all cells reachable from `starts` via connected street edges.
+    // Tunnels are directional — each (cell, entryDirection) pair is tracked
+    // separately so a tunnel can be traversed in both axes independently without
+    // allowing illegal turns through it.
     _streetReachableFrom(gameState, starts, playerId) {
-        const visited = new Set(starts.map(s => `${s.x},${s.y}`));
-        const queue = [...starts];
+        const cellVisited = new Set(starts.map(s => `${s.x},${s.y}`));
+        const tunnelVisited = new Set();
+        const queue = starts.map(s => ({ node: s, from: null }));
+
         while (queue.length) {
-            const cur = queue.shift();
-            for (const n of this.pathScoring.getConnectedNeighbors(gameState, cur, null, playerId)) {
+            const { node, from } = queue.shift();
+            for (const n of this.pathScoring.getConnectedNeighbors(gameState, node, from, playerId)) {
                 const key = `${n.x},${n.y}`;
-                if (!visited.has(key)) {
-                    visited.add(key);
-                    queue.push(n);
+                const nTile = gameState.boardState[n.y]?.[n.x];
+
+                if (nTile?.type === 'tunnel') {
+                    // Track each tunnel entry direction independently so both
+                    // axes are reachable but illegal turns are not.
+                    const dirKey = `${key}@${n.x - node.x},${n.y - node.y}`;
+                    if (!tunnelVisited.has(dirKey)) {
+                        tunnelVisited.add(dirKey);
+                        cellVisited.add(key);
+                        queue.push({ node: n, from: node });
+                    }
+                } else if (!cellVisited.has(key)) {
+                    cellVisited.add(key);
+                    queue.push({ node: n, from: node });
                 }
             }
         }
-        return visited;
+        return cellVisited;
     }
 }
