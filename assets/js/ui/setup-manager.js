@@ -116,6 +116,7 @@ export class SetupManager {
         document.getElementById('qs-load-play-btn')?.addEventListener('click', () => this.quickLoadAndPlay());
         document.getElementById('qs-full-setup-btn')?.addEventListener('click', () => this.showSetup());
         document.getElementById('qs-default-play-btn')?.addEventListener('click', () => this.startGame());
+        document.getElementById('qs-vs-ai-btn')?.addEventListener('click', () => this.quickPlayVsAI());
         document.getElementById('setup-back-btn')?.addEventListener('click', () => this.showQuickStart());
 
         // Tile generation presets (in the Weights modal)
@@ -165,14 +166,31 @@ export class SetupManager {
             inputGroup.className = 'player-name-input';
             inputGroup.innerHTML = `
                 <label for="player-${i}-name">Player ${i} Name:</label>
-                <input type="text" 
-                       id="player-${i}-name" 
-                       name="player-${i}-name" 
+                <input type="text"
+                       id="player-${i}-name"
+                       name="player-${i}-name"
                        placeholder="Enter name"
                        value="Player ${i}">
+                <select id="player-${i}-ai" class="player-ai-select" title="Who controls this player">
+                    <option value="">🧑 Human</option>
+                    <option value="easy">🤖 Computer · Easy</option>
+                    <option value="normal">🤖 Computer · Normal</option>
+                    <option value="hard">🤖 Computer · Hard</option>
+                </select>
             `;
             this.playerNamesContainer.appendChild(inputGroup);
         }
+    }
+
+    // Per-player setup: name plus optional computer-control level.
+    getPlayerConfigs() {
+        const configs = [];
+        document.querySelectorAll('[id^="player-"][id$="-name"]').forEach(input => {
+            const n = input.id.match(/^player-(\d+)-name$/)?.[1];
+            const ai = n ? (document.getElementById(`player-${n}-ai`)?.value || null) : null;
+            configs.push({ name: input.value || input.placeholder, ai: ai || null });
+        });
+        return configs;
     }
 
     getPlayerNames() {
@@ -280,7 +298,7 @@ export class SetupManager {
             initialTiles: this.getInitialTilesConfig(),
             enableTimer: this.enableTimerCheckbox.checked,
             timeLimit: parseInt(this.timeLimitInput.value),
-            players: this.getPlayerNames().map(name => ({ name })),
+            players: this.getPlayerConfigs(),
 
             // Tileset specific options
             tileSetOptions: this.getTileSetOptions(tileSet, playerCountOverride),
@@ -301,10 +319,10 @@ export class SetupManager {
         };
     }
 
-    startGame() {
-        console.log("Setup Manager: Starting game...");
-        const config = this.buildConfig();
-        console.log("Game config:", config);
+    startGame(config = null) {
+        // Allow callers to pass a prebuilt config; otherwise read the form.
+        if (!config || config instanceof Event) config = this.buildConfig();
+        console.log("Setup Manager: Starting game...", config);
 
         // Hide setup/quick-start screens, show game screen
         if (this.setupScreen) this.setupScreen.style.display = 'none';
@@ -315,6 +333,17 @@ export class SetupManager {
         if (this.onGameStart) {
             this.onGameStart(config);
         }
+    }
+
+    // Quick-start shortcut: you versus one Normal computer player, using the
+    // current default board/scoring settings.
+    quickPlayVsAI() {
+        const config = this.buildConfig(2); // per-player tile options for 2 seats
+        config.players = [
+            { name: 'You', ai: null },
+            { name: 'Computer', ai: 'normal' },
+        ];
+        this.startGame(config);
     }
 
     _getTileWeights(playerIndex = 0) {

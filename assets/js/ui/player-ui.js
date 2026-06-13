@@ -80,7 +80,8 @@ export class PlayerUIManager {
       }
 
       const bonusText = player.bonusScore > 0 ? ` <small style="color:var(--accent-green)">(${player.bonusScore} Bonus)</small>` : '';
-      div.innerHTML = `<h3>${player.name}</h3>
+      const aiBadge = player.aiLevel ? ` <span class="ai-badge" title="Computer (${player.aiLevel})">🤖</span>` : '';
+      div.innerHTML = `<h3>${player.name}${aiBadge}</h3>
                        <p>Score: <span id="score-${player.id}">${player.score}${bonusText}</span></p>
                        <div class="player-tally" id="tally-${player.id}"></div>`;
 
@@ -150,6 +151,12 @@ export class PlayerUIManager {
       g.innerHTML = `
         <label for="player-${i}-name">Player ${i} Name:</label>
         <input type="text" id="player-${i}-name" name="player-${i}-name" placeholder="Enter name" value="Player ${i}">
+        <select id="player-${i}-ai" class="player-ai-select" title="Who controls this player">
+          <option value="">🧑 Human</option>
+          <option value="easy">🤖 Computer · Easy</option>
+          <option value="normal">🤖 Computer · Normal</option>
+          <option value="hard">🤖 Computer · Hard</option>
+        </select>
       `;
       this.playerNamesContainer.appendChild(g);
     }

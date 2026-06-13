@@ -11,7 +11,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Multiplayer Tile Board Game</title>
-    <link rel="stylesheet" href="assets/css/styles.css?v=3.0">
+    <link rel="stylesheet" href="assets/css/styles.css?v=3.1">
     <style>
         #game-container {
             position: relative;
@@ -57,6 +57,7 @@
               <button id="qs-load-play-btn" class="button" style="white-space: nowrap;">Load &amp; Play</button>
             </div>
             <button id="qs-default-play-btn" class="button">Quick Play</button>
+            <button id="qs-vs-ai-btn" class="button" style="background:var(--accent-blue,#008bda);">🤖 Play vs Computer</button>
             <button id="qs-online-btn" class="button" style="background:var(--accent-green,#1f9100);">📱 Play Online</button>
             <div style="display:flex;gap:0.5rem;">
               <button id="qs-weights-btn" class="button" style="flex:1;background:transparent;border:1px solid var(--border-color);">Weights</button>
@@ -650,7 +651,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=3.0"></script>
+    <script type="module" src="assets/js/main.js?v=3.1"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

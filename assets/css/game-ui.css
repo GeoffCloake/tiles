@@ -325,6 +325,17 @@
 }
 .copy-weights-btn:hover { background: var(--border-color); color: #fff; }
 
+/* ---- Computer (AI) players ---- */
+.player-ai-select {
+    width: 100%;
+    margin-top: 0.4rem;
+    box-sizing: border-box;
+}
+.ai-badge {
+    font-size: 0.85em;
+    vertical-align: middle;
+}
+
 /* ---- Online multiplayer ---- */
 .online-choose-grid {
     display: flex;

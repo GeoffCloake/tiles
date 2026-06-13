@@ -18,6 +18,7 @@ export class Player {
         this.tally = {}; // key -> { label, points } accumulated per score component
         this.tiles = [];
         this.color = null;
+        this.aiLevel = null; // null = human; 'easy' | 'normal' | 'hard' for bots
     }
 
     addScore(points, isBonus = false) {
@@ -55,6 +56,7 @@ export class Player {
         p.tally = obj.tally || {};
         p.tiles = obj.tiles || [];
         p.color = obj.color || null;
+        p.aiLevel = obj.aiLevel || null;
         return p;
     }
 }
@@ -79,6 +81,9 @@ export class PlayerManager {
             // Set player color
             const playerColor = playerColors[index];
             player.setColor(playerColor);
+
+            // Mark computer-controlled seats (null/undefined = human)
+            player.aiLevel = config.ai || null;
 
             console.log(`PlayerManager: Player ${config.name} (Index ${index}) assigned color ${playerColor}.`);
 

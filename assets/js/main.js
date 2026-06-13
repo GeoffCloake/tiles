@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '3.0';
+const VERSION = '3.1';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js';
@@ -11,10 +11,11 @@ import { StandardScoring } from './scoring/standard-scoring.js';
 import { StreetScoring } from './scoring/street-scoring.js?v=3.0';
 import { BoardManager } from './ui/board-manager.js';
 import { RackManager } from './ui/rack-manager.js';
-import { SetupManager } from './ui/setup-manager.js?v=3.0';
+import { SetupManager } from './ui/setup-manager.js?v=3.1';
 import { PlayerUIManager } from './ui/player-ui.js';
 import { TournamentManager } from './core/tournament.js';
 import { OnlineManager } from './net/online-manager.js?v=3.0';
+import { AIController } from './core/ai-player.js?v=3.1';
 
 class Game {
   constructor() {
@@ -32,6 +33,7 @@ class Game {
     this.wakeLock = null;
     this.showingPaths = false;
     this.online = null; // OnlineManager, set in initialize()
+    this.ai = null;     // AIController, set in initialize()
   }
 
   async initialize() {
@@ -40,6 +42,7 @@ class Game {
     this.setupEventListeners();
     this.online = new OnlineManager(this);
     this.online.init();
+    this.ai = new AIController(this);
     await this.requestWakeLock();
   }
 
@@ -90,11 +93,13 @@ class Game {
     document.getElementById('return-setup')?.addEventListener('click', () => {
       document.getElementById('game-end-modal').style.display = 'none';
       if (this._exitOnline()) return;
+      this.ai?.detach(); // stop any computer players from playing the old game
       this.setupManager.showSetup();
     });
 
     document.getElementById('setup-button')?.addEventListener('click', () => {
       if (this._exitOnline()) return;
+      this.ai?.detach(); // stop any computer players from playing the old game
       this.setupManager.showSetup();
     });
     document.getElementById('show-paths')?.addEventListener('click', () => this.togglePathHighlights());
@@ -169,12 +174,18 @@ class Game {
     // In online play, "New Game" leaves the room and returns to the menu.
     if (this._exitOnline()) return;
     if (!this._savedConfig) {
+      this.ai?.detach();
       this.setupManager.showSetup();
       return;
     }
     const currentNames = this.playerUIManager.getPlayerNames?.();
     if (currentNames && currentNames.length) {
-      this._savedConfig.players = currentNames.map((name) => ({ name }));
+      // Keep each seat's computer-control level across New Game.
+      const prev = this._savedConfig.players || [];
+      this._savedConfig.players = currentNames.map((name, i) => ({
+        name,
+        ai: prev[i]?.ai || null,
+      }));
     }
     // Always re-read tileSetOptions from the current Weights modal so any
     // changes made during the game are picked up for the new game.
@@ -277,6 +288,10 @@ class Game {
       document.getElementById('quick-start-screen')?.style.setProperty('display', 'none');
       gameScreen.style.display = 'flex';
     }
+
+    // Hand any computer-controlled seats to the AI. Harmless online (the
+    // controller stands down while a network match is active).
+    this.ai?.attach(this.gameState);
   }
 
   _normalizeConfig(config) {
@@ -360,6 +375,7 @@ class Game {
   handleTileSelected(tile) { this.gameState.selectTile(tile); }
   handleSkipTurn() {
     if (this.gameState?.inputLocked) return; // online: not your turn
+    if (this.gameState?.getCurrentPlayer()?.aiLevel) return; // AI plays its own turn
     this.gameState?.playerManager?.skipTurn?.();
   }
 
@@ -386,6 +402,12 @@ class Game {
     this.rackManager.updateRack(currentPlayer.tiles);
     this.playerUIManager.updateCurrentPlayer(currentPlayer);
     this.boardManager.clearValidMoves();
+
+    // On a computer player's turn, dim the rack so a human can't play for it.
+    // We don't set inputLocked: the AI itself reaches placeTile through the
+    // same API, and pointer-events:none on the rack is enough to block taps.
+    const isAI = !!currentPlayer.aiLevel;
+    document.getElementById('rack')?.classList.toggle('rack-locked', isAI);
   }
 
   _updateOnlineBanner(myTurn, currentPlayer) {
