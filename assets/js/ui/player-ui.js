@@ -84,10 +84,6 @@ export class PlayerUIManager {
                        <p>Score: <span id="score-${player.id}">${player.score}${bonusText}</span></p>
                        <div class="player-tally" id="tally-${player.id}"></div>`;
 
-      // Click the card to show/hide what the score comprises of
-      div.title = 'Click to show score breakdown';
-      div.addEventListener('click', () => div.classList.toggle('expanded'));
-
       this.playerContainer.appendChild(div);
       this.updatePlayerTally(player);
     });

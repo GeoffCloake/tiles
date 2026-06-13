@@ -122,9 +122,16 @@
                                 <option value="shapes">Shapes</option>
                             </select>
                         </div>
-                        <!-- Streets-specific options -->
+                        <!-- Streets-specific tile generation options -->
                         <div class="setup-option streets-only">
-                            <!-- Reserved for future Streets-specific options -->
+                            <label for="center-pattern-freq">Special Tile Frequency:</label>
+                            <input type="range" id="center-pattern-freq" min="0" max="50" value="20" step="5">
+                            <div class="value-display" id="center-pattern-freq-display">20%</div>
+                        </div>
+                        <div class="setup-option streets-only">
+                            <label for="circles-ratio">Pattern Mix:</label>
+                            <input type="range" id="circles-ratio" min="10" max="90" value="70" step="10">
+                            <div class="value-display" id="circles-ratio-display">70% Circles · 30% Squares</div>
                         </div>
 
                         <!-- Shapes-only options -->
@@ -158,6 +165,14 @@
 
                         <!-- Street-Specific Scoring Options -->
                         <div class="streets-only">
+                            <div class="setup-option">
+                                <label for="circle-score">Bonus Circle Score:</label>
+                                <input type="number" id="circle-score" min="0" max="50" value="10" step="5">
+                            </div>
+                            <div class="setup-option">
+                                <label for="square-score">Centre Square Score:</label>
+                                <input type="number" id="square-score" min="0" max="50" value="20" step="5">
+                            </div>
                             <div class="setup-option">
                                 <label for="intersection-bonus">Intersection Bonus:</label>
                                 <input type="number" id="intersection-bonus" min="0" max="50" value="5" step="5">
@@ -328,8 +343,8 @@
                         <h4>Center Pattern Tiles</h4>
                         <p>Special tiles with patterns in their center provide immediate bonus points:</p>
                         <ul>
-                            <li><strong>Center Square (⬛):</strong> 20 points</li>
-                            <li><strong>Bonus Circle (⭕):</strong> 10 points</li>
+                            <li><strong>Centre Square (⬛):</strong> +<span class="rule-val-square-score">20</span> points</li>
+                            <li><strong>Bonus Circle (⭕):</strong> +<span class="rule-val-circle-score">10</span> points</li>
                         </ul>
 
                         <h4>Placement Bonuses</h4>

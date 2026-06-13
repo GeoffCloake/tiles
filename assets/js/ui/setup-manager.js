@@ -42,11 +42,17 @@ export class SetupManager {
         this.starterMultiplierInput = document.getElementById('starter-multiplier');
 
         // Scoring Options (Streets-specific)
+        this.circleScoreInput = document.getElementById('circle-score');
+        this.squareScoreInput = document.getElementById('square-score');
         this.intersectionBonusInput = document.getElementById('intersection-bonus');
         this.centerBonusInput = document.getElementById('center-bonus');
         this.pathPointsInput = document.getElementById('path-points');
         this.completionBonusInput = document.getElementById('completion-bonus');
         this.endGameScoreModeRadio = document.getElementById('score-mode-endgame');
+
+        // Tile generation options (Streets-specific)
+        this.centerPatternFreqInput = document.getElementById('center-pattern-freq');
+        this.circlesRatioInput = document.getElementById('circles-ratio');
 
         this.setupEventListeners();
         this.initializeOptions();
@@ -83,9 +89,24 @@ export class SetupManager {
         if (this.initialTilesInput) {
             this.initialTilesInput.addEventListener('input', (e) => {
                 const display = e.target.parentElement.querySelector('.value-display');
-                if (display) {
-                    display.textContent = `${e.target.value} tiles`;
-                }
+                if (display) display.textContent = `${e.target.value} tiles`;
+            });
+        }
+
+        // Special tile frequency display
+        if (this.centerPatternFreqInput) {
+            this.centerPatternFreqInput.addEventListener('input', (e) => {
+                const display = document.getElementById('center-pattern-freq-display');
+                if (display) display.textContent = `${e.target.value}%`;
+            });
+        }
+
+        // Circles ratio display
+        if (this.circlesRatioInput) {
+            this.circlesRatioInput.addEventListener('input', (e) => {
+                const c = parseInt(e.target.value, 10);
+                const display = document.getElementById('circles-ratio-display');
+                if (display) display.textContent = `${c}% Circles · ${100 - c}% Squares`;
             });
         }
 
@@ -185,6 +206,14 @@ export class SetupManager {
                 shapeCount: parseInt(this.shapeCountSelect?.value || '6')
             };
         }
+        if (tileSet === 'streets') {
+            const freq = parseInt(this.centerPatternFreqInput?.value || '20') / 100;
+            const circlesPct = parseInt(this.circlesRatioInput?.value || '70') / 100;
+            return {
+                centerPatternFrequency: freq,
+                patternWeights: { circles: circlesPct, squares: 1 - circlesPct }
+            };
+        }
         return {};
     }
 
@@ -196,6 +225,10 @@ export class SetupManager {
 
         if (tileSet === 'streets') {
             Object.assign(options, {
+                centerPatternScores: {
+                    circles: parseInt(this.circleScoreInput?.value || '10'),
+                    squares: parseInt(this.squareScoreInput?.value || '20')
+                },
                 intersectionBonus: parseInt(this.intersectionBonusInput?.value || '5'),
                 centerBonus: parseInt(this.centerBonusInput?.value || '5'),
                 pathPoints: parseInt(this.pathPointsInput?.value || '3'),

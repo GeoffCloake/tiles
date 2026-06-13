@@ -327,6 +327,10 @@ class Game {
       ?? parseInt(setup?.centerBonusInput?.value || '5', 10);
     const completionBonus = opts.completionBonus
       ?? parseInt(setup?.completionBonusInput?.value || '20', 10);
+    const circleScore = opts.centerPatternScores?.circles
+      ?? parseInt(setup?.circleScoreInput?.value || '10', 10);
+    const squareScore = opts.centerPatternScores?.squares
+      ?? parseInt(setup?.squareScoreInput?.value || '20', 10);
 
     const setVals = (className, val) => {
       document.querySelectorAll(`.${className}`).forEach(el => (el.textContent = val));
@@ -337,6 +341,8 @@ class Game {
     setVals('rule-val-intersection', intersectionBonus);
     setVals('rule-val-center', centerBonus);
     setVals('rule-val-completion', completionBonus);
+    setVals('rule-val-circle-score', circleScore);
+    setVals('rule-val-square-score', squareScore);
   }
 
   showGameEndModal(finalScores) {

@@ -83,22 +83,14 @@
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
-/* Score breakdown tally (click player card to expand) */
-.player-info {
-    cursor: pointer;
-}
-
+/* Score breakdown tally — always visible */
 .player-tally {
-    display: none;
+    display: block;
     margin-top: 0.5rem;
     padding-top: 0.5rem;
     border-top: 1px solid var(--border-color);
     font-size: 0.8rem;
     color: var(--text-secondary);
-}
-
-.player-info.expanded .player-tally {
-    display: block;
 }
 
 .tally-row {
