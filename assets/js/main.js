@@ -1,16 +1,16 @@
 // assets/js/main.js
-const VERSION = '2.2';
+const VERSION = '2.3';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js';
-import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=2.2';
+import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=2.3';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js';
 import { StandardScoring } from './scoring/standard-scoring.js';
-import { StreetScoring } from './scoring/street-scoring.js?v=2.2';
+import { StreetScoring } from './scoring/street-scoring.js?v=2.3';
 import { BoardManager } from './ui/board-manager.js';
 import { RackManager } from './ui/rack-manager.js';
-import { SetupManager } from './ui/setup-manager.js?v=2.2';
+import { SetupManager } from './ui/setup-manager.js?v=2.3';
 import { PlayerUIManager } from './ui/player-ui.js';
 import { TournamentManager } from './core/tournament.js';
 
@@ -110,10 +110,11 @@ class Game {
     const configModal = document.getElementById('config-modal');
     configModal?.addEventListener('click', (e) => { if (e.target === configModal) this.hideConfig(); });
 
-    // Weights modal
+    // Weights modal (game sidebar, setup screen, quick-start screen)
     document.getElementById('weights-button')?.addEventListener('click', () => this.showWeights());
     document.getElementById('close-weights-x')?.addEventListener('click', () => this.hideWeights());
     document.getElementById('setup-weights-btn')?.addEventListener('click', () => this.showWeights());
+    document.getElementById('qs-weights-btn')?.addEventListener('click', () => this.showWeights());
     const weightsModal = document.getElementById('weights-modal');
     weightsModal?.addEventListener('click', (e) => { if (e.target === weightsModal) this.hideWeights(); });
 
@@ -164,6 +165,11 @@ class Game {
     if (currentNames && currentNames.length) {
       this._savedConfig.players = currentNames.map((name) => ({ name }));
     }
+    // Always re-read tileSetOptions from the current Weights modal so any
+    // changes made during the game are picked up for the new game.
+    const freshOpts = this.setupManager?.getTileSetOptions(this._savedConfig.tileSet);
+    if (freshOpts) this._savedConfig.tileSetOptions = freshOpts;
+
     await this._buildGame({ ...this._savedConfig });
   }
 
