@@ -73,22 +73,8 @@
   pointer-events: none;
 }
 
-/* Bonus Path Highlight */
-.bonus-path {
-  position: relative;
-}
-
-.bonus-path::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 2px solid var(--path-color, #FFD700);
-  border-radius: 3px;
-  box-shadow: 0 0 5px var(--path-color, #FFD700);
-  pointer-events: none;
-  z-index: 2;
-  animation: pathPulse 1.5s ease-in-out infinite;
-}
+/* Bonus Path Highlight — visual handled entirely on canvas via _drawPathHighlight */
+.bonus-path {}
 
 /* Invalid Placement Animation */
 .tile.invalid {
@@ -103,10 +89,6 @@
   100% { outline-color: rgba(76, 175, 80, 0.6); }
 }
 
-@keyframes pathPulse {
-  0%, 100% { opacity: 0.65; }
-  50% { opacity: 1; }
-}
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-5px); }
