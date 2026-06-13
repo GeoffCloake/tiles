@@ -156,7 +156,7 @@ class StreetsTileSet extends TileSet {
 
     // Special overlays on top of road graphics
     if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size);
-    if (tile.type === 'private') this._drawPrivateIndicator(ctx, size);
+    if (tile.type === 'private') this._drawPrivateIndicator(ctx, size, tile);
 
     if (tile.isStarterTile) {
       ctx.fillStyle = 'rgba(68, 68, 68, 0.5)';
@@ -193,44 +193,74 @@ class StreetsTileSet extends TileSet {
     const cy = size / 2;
     const roadW = size * 0.34;
 
-    // Darken E-W crossing band (under-road)
-    ctx.fillStyle = 'rgba(0,0,0,0.50)';
+    // Deep shadow over the E-W underground crossing
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
     ctx.fillRect(0, cy - roadW * 0.5, size, roadW);
 
-    // Bridge deck (N-S over-road)
-    ctx.fillStyle = 'rgba(38,38,38,0.88)';
+    // Tunnel portal mouths — dark concrete blocks at E and W openings
+    ctx.fillStyle = '#1e1e1e';
+    const portalW = roadW * 0.45;
+    ctx.fillRect(0,            cy - roadW * 0.5, portalW, roadW);
+    ctx.fillRect(size - portalW, cy - roadW * 0.5, portalW, roadW);
+
+    // Bridge deck (N-S elevated road) — concrete grey
+    ctx.fillStyle = '#4a4a4a';
     ctx.fillRect(cx - roadW * 0.5, 0, roadW, size);
 
     // Redraw N-S road markings over the bridge deck
     renderPattern(ctx, size, this.patterns['street'], 0);
     renderPattern(ctx, size, this.patterns['street'], 2);
 
-    // Bridge support pillars at crossing edges
-    ctx.fillStyle = '#606060';
-    const pw = size * 0.045;
-    const ph = roadW * 0.7;
-    ctx.fillRect(cx - roadW * 0.5 - pw, cy - ph / 2, pw, ph);
-    ctx.fillRect(cx + roadW * 0.5,       cy - ph / 2, pw, ph);
+    // Safety railing bars at the top and bottom edges of the bridge crossing
+    const railH = Math.max(3, size * 0.055);
+    ctx.fillStyle = '#e87800';
+    ctx.fillRect(cx - roadW * 0.5, cy - roadW * 0.5 - railH, roadW, railH);
+    ctx.fillRect(cx - roadW * 0.5, cy + roadW * 0.5,          roadW, railH);
 
-    // Flyover directional label
-    ctx.fillStyle = 'rgba(255,200,0,0.9)';
-    ctx.font = `bold ${Math.max(7, size * 0.14)}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('↕', cx, cy - roadW * 0.12);
+    // Railing posts (vertical stubs)
+    ctx.fillStyle = '#cc5500';
+    const postW   = Math.max(1, size * 0.03);
+    const postH   = railH * 2.2;
+    const nPosts  = 3;
+    for (let i = 0; i < nPosts; i++) {
+      const px = cx - roadW * 0.4 + i * (roadW * 0.4);
+      ctx.fillRect(px - postW / 2, cy - roadW * 0.5 - postH, postW, postH);
+      ctx.fillRect(px - postW / 2, cy + roadW * 0.5,          postW, postH);
+    }
   }
 
-  // Small circular badge marking a player-only private lane
-  _drawPrivateIndicator(ctx, size) {
+  // Player-owned private lane: coloured shoulder stripes + badge
+  _drawPrivateIndicator(ctx, size, tile) {
     const cx = size / 2;
     const cy = size / 2;
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    const playerColor = tile?.backgroundColor || '#4488ff';
+    const roadHalfW   = size * 0.17;
+    const stripeW     = Math.max(2, size * 0.055);
+
+    // Shoulder stripes in the player's colour along both road edges
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    ctx.fillStyle   = playerColor;
+    ctx.fillRect(cx - roadHalfW - stripeW, 0, stripeW, size);
+    ctx.fillRect(cx + roadHalfW,           0, stripeW, size);
+    ctx.restore();
+
+    // Centre badge — larger, with player-colour border
+    const r = size * 0.22;
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
     ctx.beginPath();
-    ctx.arc(cx, cy, size * 0.14, 0, Math.PI * 2);
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.font = `bold ${Math.max(6, size * 0.17)}px sans-serif`;
-    ctx.textAlign = 'center';
+
+    ctx.strokeStyle = playerColor;
+    ctx.lineWidth   = Math.max(2, size * 0.04);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font      = `bold ${Math.max(9, size * 0.26)}px sans-serif`;
+    ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('P', cx, cy + size * 0.01);
   }
