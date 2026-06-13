@@ -109,20 +109,29 @@ class StreetsTileSet extends TileSet {
       console.log(`[Tiles P${pi}] weights: ${weights.map(w => `${w.key}:${w.weight}`).join(', ')} | limits: ${limits}`);
     }
 
-    const valid = weights.filter(w => {
-      if (w.weight <= 0) return false;
-      const max = maxCounts[w.key];
-      return !(max > 0 && (counts[w.key] || 0) >= max);
-    });
+    // A tile type is eligible if it still has capacity AND is enabled — either
+    // by a positive weight, or by having a max set (a max alone switches the
+    // type on so the limit can drive how many appear). Weight-0 + max types are
+    // picked with a baseline weight of 1.
+    const valid = weights
+      .map(w => {
+        const max  = maxCounts[w.key] || 0;
+        const used = counts[w.key] || 0;
+        if (max > 0 && used >= max) return null;       // hit its cap
+        if (w.weight <= 0 && max <= 0) return null;     // disabled
+        return { ...w, weight: w.weight > 0 ? w.weight : 1 };
+      })
+      .filter(Boolean);
 
     let shape;
     if (valid.length) {
       shape = this._weightedSelect(valid);
     } else {
-      // Legacy fallback: fully random
+      // Everything is disabled or has hit its cap — fall back to a neutral
+      // blank tile rather than random ones, so limits are never exceeded.
       shape = {
         type: 'normal',
-        sides: Array(4).fill(null).map(() => Math.random() < 0.75 ? 'street' : 'non-street'),
+        sides: ['non-street', 'non-street', 'non-street', 'non-street'],
       };
     }
 

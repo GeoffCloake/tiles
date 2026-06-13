@@ -1,16 +1,16 @@
 // assets/js/main.js
-const VERSION = '2.4';
+const VERSION = '2.5';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js';
-import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=2.4';
+import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=2.5';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js';
 import { StandardScoring } from './scoring/standard-scoring.js';
-import { StreetScoring } from './scoring/street-scoring.js?v=2.4';
+import { StreetScoring } from './scoring/street-scoring.js?v=2.5';
 import { BoardManager } from './ui/board-manager.js';
 import { RackManager } from './ui/rack-manager.js';
-import { SetupManager } from './ui/setup-manager.js?v=2.4';
+import { SetupManager } from './ui/setup-manager.js?v=2.5';
 import { PlayerUIManager } from './ui/player-ui.js';
 import { TournamentManager } from './core/tournament.js';
 
