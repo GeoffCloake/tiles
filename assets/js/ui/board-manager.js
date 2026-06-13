@@ -6,6 +6,7 @@ export class BoardManager {
     this.boardElement = config.boardElement;
     this.onTilePlaced = config.onTilePlaced;
     this.gameState = null;
+    this._pathHighlights = new Map(); // "x,y" -> color
   }
 
   initialize(gameState) {
@@ -49,13 +50,13 @@ export class BoardManager {
 
   handleCellClick(x, y) { if (this.onTilePlaced) this.onTilePlaced({ x, y }); }
 
-  renderTile(position, tile) {
+  renderTile(position, tile, pathColor = null) {
     const index = position.y * this.gameState.boardSize + position.x;
     const cell = this.boardElement.children[index];
     if (!cell) return;
     const canvas = cell.querySelector('canvas');
     if (!canvas) return;
-    this.gameState.tileSet.renderTile(tile, canvas, tile.rotation || 0);
+    this.gameState.tileSet.renderTile(tile, canvas, tile.rotation || 0, pathColor);
   }
 
   // Re-render every cell from the current boardState. Used when adopting a
@@ -102,16 +103,26 @@ export class BoardManager {
   highlightPath(path, color = null) {
     if (!path || !path.length) return;
     path.forEach(pos => {
-      const index = pos.y * this.gameState.boardSize + pos.x;
+      const { x, y } = pos;
+      this._pathHighlights.set(`${x},${y}`, color);
+      const index = y * this.gameState.boardSize + x;
       const cell = this.boardElement.children[index];
       if (!cell) return;
       cell.classList.add('bonus-path');
       if (color) cell.style.setProperty('--path-color', color);
       else cell.style.removeProperty('--path-color');
+      const tile = this.gameState.boardState[y][x];
+      if (tile) this.renderTile(pos, tile, color);
     });
   }
 
   clearPathHighlights() {
+    for (const [key] of this._pathHighlights) {
+      const [x, y] = key.split(',').map(Number);
+      const tile = this.gameState.boardState[y][x];
+      if (tile) this.renderTile({ x, y }, tile);
+    }
+    this._pathHighlights.clear();
     this.boardElement.querySelectorAll('.bonus-path').forEach(cell => {
       cell.classList.remove('bonus-path');
       cell.style.removeProperty('--path-color');
@@ -141,7 +152,10 @@ export class BoardManager {
       const x = parseInt(cell.dataset.col, 10);
       const y = parseInt(cell.dataset.row, 10);
       const tile = this.gameState.boardState[y][x];
-      if (tile) this.renderTile({ x, y }, tile);
+      if (tile) {
+        const pathColor = this._pathHighlights.get(`${x},${y}`) ?? null;
+        this.renderTile({ x, y }, tile, pathColor);
+      }
     }
   }
 

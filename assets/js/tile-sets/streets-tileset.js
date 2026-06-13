@@ -194,7 +194,7 @@ class StreetsTileSet extends TileSet {
     return tile;
   }
 
-  renderTile(tile, canvas, rotation = 0) {
+  renderTile(tile, canvas, rotation = 0, pathColor = null) {
     const ctx = canvas.getContext('2d');
     const size = canvas.width;
 
@@ -230,6 +230,39 @@ class StreetsTileSet extends TileSet {
       ctx.arc(size / 2, size / 2, size * 0.45, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    if (pathColor) this._drawPathHighlight(ctx, size, rotatedSides, pathColor);
+  }
+
+  // Draws a coloured glow along the road segments for path highlighting.
+  // Two layers: a wide semi-transparent fill over the road width, and a
+  // narrower bright centreline for clarity.
+  _drawPathHighlight(ctx, size, rotatedSides, color) {
+    if (!rotatedSides.some(s => s === 'street')) return;
+    const cx = size / 2;
+    const cy = size / 2;
+    const roadHW = size * 0.168;  // half road width (≈ 50/300 of the pattern scale)
+
+    ctx.save();
+    ctx.fillStyle = color;
+
+    // Road-width highlight (45% opacity)
+    ctx.globalAlpha = 0.45;
+    if (rotatedSides[0] === 'street') ctx.fillRect(cx - roadHW, 0,          roadHW * 2, cy);           // N
+    if (rotatedSides[1] === 'street') ctx.fillRect(cx,          cy - roadHW, size - cx,  roadHW * 2);   // E
+    if (rotatedSides[2] === 'street') ctx.fillRect(cx - roadHW, cy,          roadHW * 2, size - cy);    // S
+    if (rotatedSides[3] === 'street') ctx.fillRect(0,           cy - roadHW, cx,         roadHW * 2);   // W
+    ctx.fillRect(cx - roadHW, cy - roadHW, roadHW * 2, roadHW * 2); // center junction
+
+    // Bright centreline (70% opacity, narrow)
+    ctx.globalAlpha = 0.7;
+    const lineHW = size * 0.035;
+    if (rotatedSides[0] === 'street') ctx.fillRect(cx - lineHW, 0,          lineHW * 2, cy);
+    if (rotatedSides[1] === 'street') ctx.fillRect(cx,          cy - lineHW, size - cx,  lineHW * 2);
+    if (rotatedSides[2] === 'street') ctx.fillRect(cx - lineHW, cy,          lineHW * 2, size - cy);
+    if (rotatedSides[3] === 'street') ctx.fillRect(0,           cy - lineHW, cx,         lineHW * 2);
+
+    ctx.restore();
   }
 
   // Dark tile with red X — no road connections
