@@ -234,33 +234,36 @@ class StreetsTileSet extends TileSet {
     if (pathColor) this._drawPathHighlight(ctx, size, rotatedSides, pathColor);
   }
 
-  // Draws a coloured glow along the road segments for path highlighting.
-  // Two layers: a wide semi-transparent fill over the road width, and a
-  // narrower bright centreline for clarity.
+  // Draws a continuous centreline stroke along each street edge of the tile.
+  // Two passes: a wide translucent glow halo, then a bright narrow line on top.
   _drawPathHighlight(ctx, size, rotatedSides, color) {
     if (!rotatedSides.some(s => s === 'street')) return;
     const cx = size / 2;
     const cy = size / 2;
-    const roadHW = size * 0.168;  // half road width (≈ 50/300 of the pattern scale)
+
+    const drawSegments = () => {
+      ctx.beginPath();
+      if (rotatedSides[0] === 'street') { ctx.moveTo(cx, 0);    ctx.lineTo(cx, cy); }
+      if (rotatedSides[1] === 'street') { ctx.moveTo(size, cy); ctx.lineTo(cx, cy); }
+      if (rotatedSides[2] === 'street') { ctx.moveTo(cx, size); ctx.lineTo(cx, cy); }
+      if (rotatedSides[3] === 'street') { ctx.moveTo(0,    cy); ctx.lineTo(cx, cy); }
+      ctx.stroke();
+    };
 
     ctx.save();
-    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
-    // Road-width highlight (45% opacity)
-    ctx.globalAlpha = 0.45;
-    if (rotatedSides[0] === 'street') ctx.fillRect(cx - roadHW, 0,          roadHW * 2, cy);           // N
-    if (rotatedSides[1] === 'street') ctx.fillRect(cx,          cy - roadHW, size - cx,  roadHW * 2);   // E
-    if (rotatedSides[2] === 'street') ctx.fillRect(cx - roadHW, cy,          roadHW * 2, size - cy);    // S
-    if (rotatedSides[3] === 'street') ctx.fillRect(0,           cy - roadHW, cx,         roadHW * 2);   // W
-    ctx.fillRect(cx - roadHW, cy - roadHW, roadHW * 2, roadHW * 2); // center junction
+    // Glow halo
+    ctx.lineWidth = size * 0.12;
+    ctx.globalAlpha = 0.25;
+    drawSegments();
 
-    // Bright centreline (70% opacity, narrow)
-    ctx.globalAlpha = 0.7;
-    const lineHW = size * 0.035;
-    if (rotatedSides[0] === 'street') ctx.fillRect(cx - lineHW, 0,          lineHW * 2, cy);
-    if (rotatedSides[1] === 'street') ctx.fillRect(cx,          cy - lineHW, size - cx,  lineHW * 2);
-    if (rotatedSides[2] === 'street') ctx.fillRect(cx - lineHW, cy,          lineHW * 2, size - cy);
-    if (rotatedSides[3] === 'street') ctx.fillRect(0,           cy - lineHW, cx,         lineHW * 2);
+    // Bright centreline
+    ctx.lineWidth = size * 0.045;
+    ctx.globalAlpha = 0.9;
+    drawSegments();
 
     ctx.restore();
   }
