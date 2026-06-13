@@ -209,7 +209,24 @@ function generateBorderBonusTiles(gameState) {
         },
     });
 
+    const makeCorner = (x, y) => ({
+        position: { x, y },
+        tile: {
+            id: `blocker-${x}-${y}`,
+            sides: ['non-street', 'non-street', 'non-street', 'non-street'],
+            type: 'blocker',
+            rotation: 0,
+            isStarterTile: true, // keeps isFirstMove() working; no centerPattern so no path effect
+        },
+    });
+
     const results = [];
+    // Corners (sealed — no player placement)
+    results.push(makeCorner(0,     0    ));
+    results.push(makeCorner(N - 1, 0    ));
+    results.push(makeCorner(0,     N - 1));
+    results.push(makeCorner(N - 1, N - 1));
+
     // Top row (y=0): street faces south (into board) → rotation 2
     for (let x = 1; x < N - 1; x++) results.push(make(x, 0, 2));
     // Bottom row (y=N-1): street faces north → rotation 0

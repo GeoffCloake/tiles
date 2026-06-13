@@ -204,6 +204,12 @@ class StreetsTileSet extends TileSet {
       return;
     }
 
+    // Blocker: non-playable sealed cell
+    if (tile.type === 'blocker') {
+      this._drawBlocker(ctx, size);
+      return;
+    }
+
     ctx.fillStyle = tile.backgroundColor || '#ffffff';
     ctx.fillRect(0, 0, size, size);
 
@@ -245,6 +251,28 @@ class StreetsTileSet extends TileSet {
     ctx.moveTo(size * 0.78, size * 0.22);
     ctx.lineTo(size * 0.22, size * 0.78);
     ctx.stroke();
+  }
+
+  // Non-playable sealed corner — dark with fine hatching
+  _drawBlocker(ctx, size) {
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, 0, size, size);
+
+    // Diagonal hatch lines to signal "out of bounds"
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = Math.max(1, size * 0.025);
+    const step = size * 0.22;
+    ctx.beginPath();
+    for (let i = -size; i < size * 2; i += step) {
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + size, size);
+    }
+    ctx.stroke();
+
+    // Subtle inset border
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = Math.max(1, size * 0.03);
+    ctx.strokeRect(size * 0.06, size * 0.06, size * 0.88, size * 0.88);
   }
 
   // 4-way cross with bridge: N-S road goes over E-W road at the centre
