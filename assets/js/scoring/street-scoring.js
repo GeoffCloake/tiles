@@ -3,7 +3,7 @@
 // connections) plus centre pattern, intersection and centre placement
 // bonuses, and path scoring between Centre Squares and Bonus Circles.
 import { AdjacencyScoring } from './adjacency-scoring.js';
-import { PathScoring } from './path-scoring.js?v=2.3';
+import { PathScoring } from './path-scoring.js?v=2.4';
 
 export class StreetScoring extends AdjacencyScoring {
     constructor(options = {}) {

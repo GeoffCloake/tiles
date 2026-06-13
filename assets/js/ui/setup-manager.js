@@ -117,6 +117,13 @@ export class SetupManager {
         document.getElementById('qs-full-setup-btn')?.addEventListener('click', () => this.showSetup());
         document.getElementById('qs-default-play-btn')?.addEventListener('click', () => this.startGame());
         document.getElementById('setup-back-btn')?.addEventListener('click', () => this.showQuickStart());
+
+        // Tile generation presets (in the Weights modal)
+        document.getElementById('weights-apply-preset')?.addEventListener('click', () => {
+            const sel = document.getElementById('weights-preset');
+            if (sel?.value) this.applyTilePreset(sel.value);
+        });
+        document.getElementById('weights-reset')?.addEventListener('click', () => this.resetTileSettings());
     }
 
     toggleInitialTileOptions(layoutType) {
@@ -319,6 +326,111 @@ export class SetupManager {
         ];
     }
 
+    // ---- Tile generation presets ----
+
+    // Base field names (without the -pN player suffix) covering every
+    // per-player tile-generation control: bonus freq/mix, tile weights, maxes.
+    static get _TILE_FIELDS() {
+        return [
+            'center-pattern-freq', 'circles-ratio',
+            'tw-cross', 'tw-t', 'tw-straight', 'tw-corner', 'tw-dead', 'tw-blank',
+            'tw-tunnel', 'tw-roadblock', 'tw-private',
+            'tm-circles', 'tm-squares',
+            'tm-cross', 'tm-t', 'tm-straight', 'tm-corner', 'tm-dead', 'tm-blank',
+            'tm-tunnel', 'tm-roadblock', 'tm-private',
+        ];
+    }
+
+    // Ready-made tile profiles. Each is applied to all players; tweak
+    // individual tabs afterwards for asymmetric games. Any field left out
+    // defaults to 0. Saved configs capture the resulting values.
+    static get TILE_PRESETS() {
+        const base = overrides => ({
+            'center-pattern-freq': 20, 'circles-ratio': 70,
+            'tw-cross': 0, 'tw-t': 0, 'tw-straight': 0, 'tw-corner': 0, 'tw-dead': 0, 'tw-blank': 0,
+            'tw-tunnel': 0, 'tw-roadblock': 0, 'tw-private': 0,
+            'tm-circles': 0, 'tm-squares': 0,
+            'tm-cross': 0, 'tm-t': 0, 'tm-straight': 0, 'tm-corner': 0, 'tm-dead': 0, 'tm-blank': 0,
+            'tm-tunnel': 0, 'tm-roadblock': 0, 'tm-private': 0,
+            ...overrides,
+        });
+        return {
+            'classic': {
+                label: 'Classic (default)',
+                values: base({ 'tw-cross': 5, 'tw-t': 15, 'tw-straight': 10, 'tw-corner': 15, 'tw-dead': 10, 'tw-blank': 5 }),
+            },
+            'special-tiles': {
+                label: 'Special Tiles',
+                values: base({
+                    'circles-ratio': 60,
+                    'tw-cross': 5, 'tw-t': 12, 'tw-straight': 10, 'tw-corner': 12, 'tw-dead': 8, 'tw-blank': 4,
+                    'tw-tunnel': 8, 'tw-roadblock': 6, 'tw-private': 8,
+                }),
+            },
+            'highways': {
+                label: 'Highways',
+                values: base({
+                    'center-pattern-freq': 15,
+                    'tw-cross': 16, 'tw-t': 10, 'tw-straight': 28, 'tw-corner': 8, 'tw-dead': 4, 'tw-blank': 2,
+                    'tw-tunnel': 6,
+                }),
+            },
+            'sparse': {
+                label: 'Sparse / Strategic',
+                values: base({
+                    'center-pattern-freq': 10, 'circles-ratio': 80,
+                    'tw-cross': 3, 'tw-t': 8, 'tw-straight': 8, 'tw-corner': 12, 'tw-dead': 16, 'tw-blank': 16,
+                }),
+            },
+            'bonus-rush': {
+                label: 'Bonus Rush',
+                values: base({
+                    'center-pattern-freq': 45, 'circles-ratio': 50,
+                    'tw-cross': 6, 'tw-t': 14, 'tw-straight': 12, 'tw-corner': 14, 'tw-dead': 8, 'tw-blank': 4,
+                }),
+            },
+            'limited-specials': {
+                label: 'Limited Specials (capped)',
+                values: base({
+                    'circles-ratio': 60,
+                    'tw-cross': 5, 'tw-t': 12, 'tw-straight': 10, 'tw-corner': 12, 'tw-dead': 8, 'tw-blank': 4,
+                    'tw-tunnel': 6, 'tw-roadblock': 5, 'tw-private': 6,
+                    'tm-tunnel': 3, 'tm-roadblock': 2, 'tm-private': 4, 'tm-circles': 6, 'tm-squares': 4,
+                }),
+            },
+        };
+    }
+
+    // Write a preset's values into every player tab and refresh displays.
+    applyTilePreset(name) {
+        const preset = SetupManager.TILE_PRESETS[name];
+        if (!preset) return;
+        for (let p = 0; p < 4; p++) {
+            for (const [field, val] of Object.entries(preset.values)) {
+                const el = document.getElementById(`${field}-p${p}`);
+                if (!el) continue;
+                el.value = val;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+    }
+
+    resetTileSettings() {
+        this.applyTilePreset('classic');
+    }
+
+    populateTilePresetSelect() {
+        const sel = document.getElementById('weights-preset');
+        if (!sel || sel.dataset.populated) return;
+        for (const [key, p] of Object.entries(SetupManager.TILE_PRESETS)) {
+            const o = document.createElement('option');
+            o.value = key;
+            o.textContent = p.label;
+            sel.appendChild(o);
+        }
+        sel.dataset.populated = '1';
+    }
+
     // ---- Game Configuration save / load ----
 
     static get _CONFIG_FIELDS() {
@@ -453,7 +565,8 @@ export class SetupManager {
         // Initialize player names based on default player count
         this.updatePlayerNameInputs();
 
-        // Populate saved configs dropdown
+        // Populate saved configs + tile preset dropdowns
         this.populateConfigSelect();
+        this.populateTilePresetSelect();
     }
 }

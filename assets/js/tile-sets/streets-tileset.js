@@ -86,6 +86,7 @@ class StreetsTileSet extends TileSet {
 
   onNewGame() {
     this._tileCountsPerPlayer = {};
+    this._debugLogged = new Set();
   }
 
   generateTile(playerIndex = null, playerCount = 1) {
@@ -100,10 +101,12 @@ class StreetsTileSet extends TileSet {
     const freq      = pp.centerPatternFrequency ?? this.options.centerPatternFrequency ?? 0.2;
     const circlesRatio = pp.patternWeights?.circles ?? this.options.patternWeights?.circles ?? 0.7;
 
-    // Debug: log on first tile per player each game
-    if (!counts._logged) {
-      counts._logged = true;
-      console.log(`[Tiles P${pi}] maxCounts:`, maxCounts, '| weights:', weights.map(w => `${w.key}:${w.weight}`).join(','));
+    // Debug: log the active profile once per player each game
+    this._debugLogged ??= new Set();
+    if (!this._debugLogged.has(pi)) {
+      this._debugLogged.add(pi);
+      const limits = Object.entries(maxCounts).filter(([, v]) => v > 0).map(([k, v]) => `${k}≤${v}`).join(', ') || 'none';
+      console.log(`[Tiles P${pi}] weights: ${weights.map(w => `${w.key}:${w.weight}`).join(', ')} | limits: ${limits}`);
     }
 
     const valid = weights.filter(w => {

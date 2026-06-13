@@ -1,16 +1,16 @@
 // assets/js/main.js
-const VERSION = '2.3';
+const VERSION = '2.4';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js';
-import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=2.3';
+import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=2.4';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js';
 import { StandardScoring } from './scoring/standard-scoring.js';
-import { StreetScoring } from './scoring/street-scoring.js?v=2.3';
+import { StreetScoring } from './scoring/street-scoring.js?v=2.4';
 import { BoardManager } from './ui/board-manager.js';
 import { RackManager } from './ui/rack-manager.js';
-import { SetupManager } from './ui/setup-manager.js?v=2.3';
+import { SetupManager } from './ui/setup-manager.js?v=2.4';
 import { PlayerUIManager } from './ui/player-ui.js';
 import { TournamentManager } from './core/tournament.js';
 
@@ -180,7 +180,8 @@ class Game {
 
     if (tileSet && cfg.tileSetOptions) {
       tileSet.updateOptions(cfg.tileSetOptions);
-      console.log('[_buildGame] tileSetOptions applied:', JSON.stringify(cfg.tileSetOptions).slice(0, 300));
+      const players = Object.keys(cfg.tileSetOptions.perPlayerOptions || {}).length;
+      if (players) console.log(`[_buildGame] applied per-player tile options for ${players} player(s)`);
     }
     if (ruleset && cfg.rulesetOptions) ruleset.options = { ...ruleset.options, ...cfg.rulesetOptions };
     if (scoringSystem && cfg.scoringOptions) {

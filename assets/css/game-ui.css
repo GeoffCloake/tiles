@@ -282,6 +282,14 @@
     max-width: 600px;
 }
 
+.weights-preset-bar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+.weights-preset-bar select { flex: 1; min-width: 0; }
+
 .weights-tab-bar {
     display: flex;
     gap: 0.25rem;
