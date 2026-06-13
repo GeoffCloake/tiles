@@ -221,6 +221,39 @@ select {
     }
 }
 
+/* Tournament table */
+.tournament-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.tournament-table th,
+.tournament-table td {
+    padding: 0.35rem 0.6rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tournament-table th {
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+.tournament-table td:first-child,
+.tournament-table th:first-child {
+    text-align: center;
+    width: 2.5rem;
+}
+
+.tournament-winner {
+    margin-top: 1rem;
+    font-size: 1.05rem;
+    color: var(--accent-yellow, #FFE600);
+    text-align: center;
+}
+
 /* Score Popup */
 .score-popup {
     position: absolute;

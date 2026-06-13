@@ -43,6 +43,14 @@
     gap: 1rem;
 }
 
+/* Round indicator (tournament mode) */
+.round-indicator {
+    font-size: 0.75rem;
+    color: var(--accent-blue);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
 /* Turn Indicator */
 .turn-indicator {
     background: var(--bg-tertiary);

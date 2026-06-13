@@ -54,6 +54,10 @@ export class SetupManager {
         this.centerPatternFreqInput = document.getElementById('center-pattern-freq');
         this.circlesRatioInput = document.getElementById('circles-ratio');
 
+        // Tournament options
+        this.enableTournamentCheckbox = document.getElementById('enable-tournament');
+        this.tournamentRoundsSelect = document.getElementById('tournament-rounds');
+
         this.setupEventListeners();
         this.initializeOptions();
     }
@@ -114,6 +118,14 @@ export class SetupManager {
         if (this.tileSetSelect) {
             this.tileSetSelect.addEventListener('change', (e) => {
                 this.toggleTileSetOptions(e.target.value);
+            });
+        }
+
+        // Tournament toggle
+        if (this.enableTournamentCheckbox) {
+            this.enableTournamentCheckbox.addEventListener('change', () => {
+                const opt = document.getElementById('tournament-rounds-option');
+                if (opt) opt.style.display = this.enableTournamentCheckbox.checked ? 'block' : 'none';
             });
         }
     }
@@ -263,7 +275,12 @@ export class SetupManager {
             },
 
             // Scoring configuration (global + tile-set specific)
-            scoringOptions: this.getScoringOptions(tileSet)
+            scoringOptions: this.getScoringOptions(tileSet),
+
+            // Tournament configuration
+            tournament: this.enableTournamentCheckbox?.checked
+                ? { enabled: true, rounds: parseInt(this.tournamentRoundsSelect?.value || '3') }
+                : null
         };
 
         console.log("Game config:", config);

@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Multiplayer Tile Board Game</title>
-    <link rel="stylesheet" href="assets/css/styles.css?v=1.6">
+    <link rel="stylesheet" href="assets/css/styles.css?v=1.7">
     <style>
         #game-container {
             position: relative;
@@ -210,6 +210,29 @@
                         </div>
                     </div>
 
+                    <!-- Tournament Mode Section -->
+                    <div class="setup-section">
+                        <h2>Tournament</h2>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="enable-tournament">
+                            <label for="enable-tournament">Enable Tournament Mode</label>
+                        </div>
+                        <div class="setup-option" id="tournament-rounds-option" style="display: none;">
+                            <label for="tournament-rounds">Number of Rounds:</label>
+                            <select id="tournament-rounds">
+                                <option value="2">2 Rounds</option>
+                                <option value="3" selected>3 Rounds</option>
+                                <option value="5">5 Rounds</option>
+                                <option value="7">7 Rounds</option>
+                                <option value="10">10 Rounds</option>
+                            </select>
+                        </div>
+                        <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.5rem;">
+                            Plays a series of games with the same settings. Scores accumulate across rounds.
+                            Results are saved to the all-time leaderboard.
+                        </p>
+                    </div>
+
                     <!-- Game Rules Section -->
                     <div class="setup-section">
                         <h2>Game Rules</h2>
@@ -272,6 +295,7 @@
             <div class="game-sidebar">
                 <div class="turn-indicator">
                     <span id="current-player-display"></span>
+                    <span id="round-indicator" class="round-indicator"></span>
                     <span id="turn-timer"></span>
                     <button id="skip-turn" class="button">Miss Turn</button>
                 </div>
@@ -280,6 +304,8 @@
                     <button id="new-game-button" class="button">New Game</button>
                     <button id="setup-button" class="button">Setup</button>
                     <button id="rules-button" class="button">Rules</button>
+                    <button id="scoring-button" class="button">Scoring</button>
+                    <button id="leaderboard-button" class="button" style="display:none;">🏆 Leaderboard</button>
                     <span id="version-display" class="version-badge"></span>
                 </div>
             </div>
@@ -438,10 +464,45 @@
                 </div>
             </div>
         </div>
+
+        <!-- Scoring Settings Modal -->
+        <div id="scoring-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <button id="close-scoring-x" class="modal-close" aria-label="Close">&times;</button>
+                <h2>Scoring Settings</h2>
+                <div id="scoring-display" class="rules-content"></div>
+            </div>
+        </div>
+
+        <!-- Tournament Standings Modal -->
+        <div id="tournament-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2 id="tournament-modal-title">Round Complete</h2>
+                <div id="tournament-standings" class="rules-content"></div>
+                <div class="modal-buttons">
+                    <button id="tournament-next" class="button button--primary">Next Round</button>
+                    <button id="tournament-show-leaderboard" class="button">Leaderboard</button>
+                    <button id="tournament-return-setup" class="button">New Tournament</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- All-Time Leaderboard Modal -->
+        <div id="leaderboard-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <button id="close-leaderboard-x" class="modal-close" aria-label="Close">&times;</button>
+                <h2>🏆 All-Time Leaderboard</h2>
+                <div id="leaderboard-display" class="rules-content"></div>
+                <div class="modal-buttons">
+                    <button id="close-leaderboard" class="button">Close</button>
+                    <button id="clear-leaderboard" class="button" style="color:var(--accent-red,#df0000)">Clear</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=1.6"></script>
+    <script type="module" src="assets/js/main.js?v=1.7"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

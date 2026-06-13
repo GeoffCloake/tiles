@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '1.6';
+const VERSION = '1.7';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js';
@@ -12,6 +12,7 @@ import { BoardManager } from './ui/board-manager.js';
 import { RackManager } from './ui/rack-manager.js';
 import { SetupManager } from './ui/setup-manager.js';
 import { PlayerUIManager } from './ui/player-ui.js';
+import { TournamentManager } from './core/tournament.js';
 
 class Game {
   constructor() {
@@ -24,6 +25,8 @@ class Game {
     this.playerUIManager = null;
 
     this._savedConfig = null; // latest normalized config for New Game
+    this._freshTournament = false; // force new TournamentManager on next _buildGame
+    this.tournament = null;
     this.wakeLock = null;
     this.showingPaths = false;
   }
@@ -84,17 +87,46 @@ class Game {
 
     document.getElementById('setup-button')?.addEventListener('click', () => this.setupManager.showSetup());
     document.getElementById('show-paths')?.addEventListener('click', () => this.togglePathHighlights());
+
+    // Rules modal
     document.getElementById('rules-button')?.addEventListener('click', () => this.showRules());
     document.getElementById('close-rules')?.addEventListener('click', () => this.hideRules());
     document.getElementById('close-rules-x')?.addEventListener('click', () => this.hideRules());
-
-    // Close the rules by clicking the backdrop or pressing Escape
     const rulesModal = document.getElementById('rules-modal');
-    rulesModal?.addEventListener('click', (e) => {
-      if (e.target === rulesModal) this.hideRules();
+    rulesModal?.addEventListener('click', (e) => { if (e.target === rulesModal) this.hideRules(); });
+
+    // Scoring Settings modal
+    document.getElementById('scoring-button')?.addEventListener('click', () => this.showScoring());
+    document.getElementById('close-scoring-x')?.addEventListener('click', () => this.hideScoring());
+    const scoringModal = document.getElementById('scoring-modal');
+    scoringModal?.addEventListener('click', (e) => { if (e.target === scoringModal) this.hideScoring(); });
+
+    // Tournament modal
+    document.getElementById('tournament-next')?.addEventListener('click', () => {
+      document.getElementById('tournament-modal').style.display = 'none';
+      this.newGame();
     });
+    document.getElementById('tournament-show-leaderboard')?.addEventListener('click', () => this.showLeaderboard());
+    document.getElementById('tournament-return-setup')?.addEventListener('click', () => {
+      document.getElementById('tournament-modal').style.display = 'none';
+      this._freshTournament = true;
+      this.tournament = null;
+      this.setupManager.showSetup();
+    });
+
+    // Leaderboard modal
+    document.getElementById('leaderboard-button')?.addEventListener('click', () => this.showLeaderboard());
+    document.getElementById('close-leaderboard-x')?.addEventListener('click', () => this.hideLeaderboard());
+    document.getElementById('close-leaderboard')?.addEventListener('click', () => this.hideLeaderboard());
+    document.getElementById('clear-leaderboard')?.addEventListener('click', () => {
+      TournamentManager.clearLeaderboard();
+      this.showLeaderboard(); // refresh
+    });
+    const leaderboardModal = document.getElementById('leaderboard-modal');
+    leaderboardModal?.addEventListener('click', (e) => { if (e.target === leaderboardModal) this.hideLeaderboard(); });
+
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') this.hideRules();
+      if (e.key === 'Escape') { this.hideRules(); this.hideScoring(); this.hideLeaderboard(); }
     });
 
     document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
@@ -103,6 +135,7 @@ class Game {
   async startGame(config) {
     const normalized = this._normalizeConfig(config);
     this._savedConfig = normalized;
+    this._freshTournament = true; // always start a new tournament when coming from Setup
     await this._buildGame(normalized);
   }
 
@@ -169,6 +202,25 @@ class Game {
     // when initialTilesArg is provided (random or arrangement).
 
     this.updateUIForCurrentPlayer();
+
+    // Tournament state
+    if (cfg.tournament?.enabled) {
+      if (this._freshTournament || !this.tournament || this.tournament.isComplete()) {
+        this.tournament = new TournamentManager({
+          players: cfg.players,
+          rounds: cfg.tournament.rounds
+        });
+      }
+      this._freshTournament = false;
+      this.tournament.startRound();
+    } else {
+      this.tournament = null;
+    }
+    this._updateRoundIndicator();
+
+    // Leaderboard button visible when tournament data exists
+    const lbBtn = document.getElementById('leaderboard-button');
+    if (lbBtn) lbBtn.style.display = TournamentManager.getLeaderboard().length ? '' : 'none';
 
     // Path highlighting only applies to tile sets with path scoring
     const showPathsButton = document.getElementById('show-paths');
@@ -240,7 +292,13 @@ class Game {
         }
       });
 
-      this.showGameEndModal(finalScores);
+      if (this.tournament) {
+        this.tournament.recordResult(finalScores);
+        this._updateRoundIndicator();
+        this.showTournamentStandings(finalScores);
+      } else {
+        this.showGameEndModal(finalScores);
+      }
     });
 
     this.gameState.on('tileSelected', (tile) => {
@@ -289,6 +347,142 @@ class Game {
       const path = pathScoring.findLongestPathForPlayer(this.gameState, player.id);
       if (path) this.boardManager.highlightPath(path, player.color);
     });
+  }
+
+  // ---- Scoring Settings Panel ----
+
+  showScoring() {
+    this.populateScoringPanel();
+    const m = document.getElementById('scoring-modal');
+    if (m) m.style.display = 'flex';
+  }
+
+  hideScoring() {
+    const m = document.getElementById('scoring-modal');
+    if (m) m.style.display = 'none';
+  }
+
+  populateScoringPanel() {
+    const display = document.getElementById('scoring-display');
+    if (!display || !this.gameState) return;
+
+    const opts = this.gameState.scoringSystem?.options || {};
+    const tileOpts = this.gameState.tileSet?.options || {};
+    const tileSet = this._savedConfig?.tileSet || 'streets';
+
+    const row = (label, val) =>
+      `<div class="tally-row"><span>${label}</span><span>${val}</span></div>`;
+    const sec = (title) => `<h4>${title}</h4>`;
+
+    let html = sec('Connection Scoring');
+    const scores = opts.scores || { 1: 1, 2: 4, 3: 9, 4: 16 };
+    [1, 2, 3, 4].forEach(n => { html += row(`${n} match${n > 1 ? 'es' : ''}`, `+${scores[n] ?? '?'} pts`); });
+    html += row('Starter tile multiplier', `×${opts.starterTileMultiplier ?? 2}`);
+
+    if (tileSet === 'streets') {
+      const ps = opts.centerPatternScores || { circles: 10, squares: 20 };
+      html += sec('Centre Pattern Tiles');
+      html += row('Bonus Circle (⭕)', `+${ps.circles} pts`);
+      html += row('Centre Square (⬛)', `+${ps.squares} pts`);
+
+      html += sec('Placement Bonuses');
+      html += row('Intersection (4-way street)', `+${opts.intersectionBonus ?? 0} pts`);
+      html += row('Board centre cell', `+${opts.centerBonus ?? 0} pts`);
+
+      html += sec('Path Bonuses');
+      html += row('Per path tile', `+${opts.pathPoints ?? 3} pts`);
+      html += row('First connection', `+${opts.completionBonus ?? 0} pts`);
+      html += row('Scoring mode', opts.enableEndGameBonus ? 'End of game' : 'Instant (in-play)');
+
+      const freq = tileOpts.centerPatternFrequency ?? 0.2;
+      const cr = tileOpts.patternWeights?.circles ?? 0.7;
+      html += sec('Tile Generation');
+      html += row('Special tile frequency', `${Math.round(freq * 100)}%`);
+      html += row('Pattern mix', `${Math.round(cr * 100)}% Circles · ${Math.round((1 - cr) * 100)}% Squares`);
+    }
+
+    display.innerHTML = html;
+  }
+
+  // ---- Tournament ----
+
+  _updateRoundIndicator() {
+    const el = document.getElementById('round-indicator');
+    if (!el) return;
+    el.textContent = this.tournament
+      ? `Round ${this.tournament.currentRound} of ${this.tournament.totalRounds}`
+      : '';
+  }
+
+  showTournamentStandings(finalScores) {
+    const isComplete = this.tournament.isComplete();
+    const titleEl = document.getElementById('tournament-modal-title');
+    const standingsDiv = document.getElementById('tournament-standings');
+    const nextBtn = document.getElementById('tournament-next');
+
+    if (titleEl) {
+      titleEl.textContent = isComplete
+        ? '🏆 Tournament Complete!'
+        : `Round ${this.tournament.currentRound} of ${this.tournament.totalRounds} Complete`;
+    }
+
+    const sorted = this.tournament.getSortedStandings();
+    const medals = ['🥇', '🥈', '🥉'];
+
+    let html = '<h4>Round Results</h4>';
+    finalScores.sort((a, b) => b.score - a.score);
+    finalScores.forEach((s, i) => {
+      html += `<div class="tally-row"><span>${medals[i] || (i + 1)} ${s.name}</span><span>${s.score} pts</span></div>`;
+    });
+
+    html += '<h4 style="margin-top:1rem;">Cumulative Standings</h4>';
+    html += '<table class="tournament-table"><tr><th></th><th>Player</th><th>Total</th>';
+    for (let r = 1; r <= this.tournament.currentRound; r++) html += `<th>R${r}</th>`;
+    html += '</tr>';
+    sorted.forEach((p, i) => {
+      html += `<tr><td>${medals[i] || i + 1}</td><td>${p.name}</td><td><strong>${p.total}</strong></td>`;
+      p.rounds.forEach(r => { html += `<td>${r}</td>`; });
+      html += '</tr>';
+    });
+    html += '</table>';
+
+    if (isComplete) {
+      html += `<p class="tournament-winner">🏆 ${sorted[0].name} wins with ${sorted[0].total} points!</p>`;
+      this.tournament.saveToLeaderboard();
+      const lbBtn = document.getElementById('leaderboard-button');
+      if (lbBtn) lbBtn.style.display = '';
+    }
+
+    if (standingsDiv) standingsDiv.innerHTML = html;
+    if (nextBtn) nextBtn.style.display = isComplete ? 'none' : '';
+
+    document.getElementById('tournament-modal').style.display = 'flex';
+  }
+
+  showLeaderboard() {
+    const display = document.getElementById('leaderboard-display');
+    if (!display) return;
+
+    const board = TournamentManager.getLeaderboard();
+    if (!board.length) {
+      display.innerHTML = '<p style="color:var(--text-secondary)">No tournament results yet. Complete a tournament to see records here.</p>';
+    } else {
+      let html = '<table class="tournament-table">';
+      html += '<tr><th>#</th><th>Winner</th><th>Score</th><th>Rounds</th><th>Players</th><th>Date</th></tr>';
+      board.forEach((entry, i) => {
+        html += `<tr>
+          <td>${i + 1}</td><td>${entry.winner}</td><td><strong>${entry.score}</strong></td>
+          <td>${entry.rounds}</td><td>${entry.players}</td><td>${entry.date}</td>
+        </tr>`;
+      });
+      html += '</table>';
+      display.innerHTML = html;
+    }
+    document.getElementById('leaderboard-modal').style.display = 'flex';
+  }
+
+  hideLeaderboard() {
+    document.getElementById('leaderboard-modal').style.display = 'none';
   }
 
   showRules() {
