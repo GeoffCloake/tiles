@@ -184,6 +184,9 @@ export class GameState {
         const currentPlayer = this.getCurrentPlayer();
         this.playerManager.updatePlayerScore(currentPlayer.id, score, bonus, breakdown);
 
+        // Claim any border-bonus tiles now connected to this player's street path
+        const claimed = this.scoringSystem.claimBorderBonusTiles?.(this, currentPlayer) ?? [];
+
         const playerIndex = this.playerManager.players.indexOf(currentPlayer);
         const newTile = this.tileSet.generateTile(playerIndex, this.playerManager.players.length);
         this.playerManager.replaceTile(currentPlayer.id, this.selectedTile.id, newTile);
@@ -197,7 +200,7 @@ export class GameState {
 
         this.nextTurn();
 
-        this.emit('tilePlaced', { position, tile: rotatedTile, score, bonus, breakdown });
+        this.emit('tilePlaced', { position, tile: rotatedTile, score, bonus, breakdown, claimed });
         this.emit('scoreUpdate', currentPlayer);
 
         // Online: broadcast the resulting snapshot (no-op in hotseat play).

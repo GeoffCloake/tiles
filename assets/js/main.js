@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '3.1';
+const VERSION = '3.2';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js';
@@ -330,9 +330,13 @@ class Game {
   }
 
   setupGameStateListeners() {
-    this.gameState.on('tilePlaced', ({ position, tile, score, bonus }) => {
+    this.gameState.on('tilePlaced', ({ position, tile, score, bonus, claimed }) => {
       this.boardManager.renderTile(position, tile);
       if (score > 0) this.boardManager.showScorePopup(position, score, bonus);
+      // Re-render any border-bonus tiles that were just claimed
+      for (const c of (claimed ?? [])) {
+        this.boardManager.renderTile({ x: c.x, y: c.y }, c.tile);
+      }
       this.refreshPathHighlights();
     });
 

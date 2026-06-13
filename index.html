@@ -11,7 +11,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Multiplayer Tile Board Game</title>
-    <link rel="stylesheet" href="assets/css/styles.css?v=3.1">
+    <link rel="stylesheet" href="assets/css/styles.css?v=3.2">
     <style>
         #game-container {
             position: relative;
@@ -128,6 +128,7 @@
                             <select id="layout-tiles">
                                 <option value="border">Random Border Tiles</option>
                                 <option value="centre">Centre Tile</option>
+                                <option value="border-bonus">Border Bonus Tiles (Streets)</option>
                             </select>
                         </div>
                     </div>
@@ -651,7 +652,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=3.1"></script>
+    <script type="module" src="assets/js/main.js?v=3.2"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

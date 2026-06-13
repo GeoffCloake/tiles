@@ -133,4 +133,53 @@ export class StreetScoring extends AdjacencyScoring {
         const center = Math.floor(gameState.boardSize / 2);
         return position.x === center && position.y === center;
     }
+
+    // Called after a tile is placed on the board. Finds every unclaimed border-bonus
+    // tile that is now street-reachable from the player's centre squares and claims it
+    // (colours it, removes neutral status). Returns the list of claimed tiles so the
+    // caller can re-render them.
+    claimBorderBonusTiles(gameState, player) {
+        const unclaimed = [];
+        for (let y = 0; y < gameState.boardSize; y++) {
+            for (let x = 0; x < gameState.boardSize; x++) {
+                const t = gameState.boardState[y][x];
+                if (t?.isBorderBonus && !t.claimed) unclaimed.push({ x, y, tile: t });
+            }
+        }
+        if (!unclaimed.length) return [];
+
+        const centerSquares = this.pathScoring.findSpecialTilesForPlayer(
+            gameState, 'squares', player.color
+        );
+        if (!centerSquares.length) return [];
+
+        const reachable = this._streetReachableFrom(gameState, centerSquares, player.id);
+        const claimed = [];
+        for (const { x, y, tile } of unclaimed) {
+            if (reachable.has(`${x},${y}`)) {
+                tile.backgroundColor = player.color;
+                tile.claimed = true;
+                tile.isStarterTile = false; // now exclusively this player's circle
+                claimed.push({ x, y, tile });
+            }
+        }
+        return claimed;
+    }
+
+    // BFS: set of all cells reachable from `starts` via connected street edges.
+    _streetReachableFrom(gameState, starts, playerId) {
+        const visited = new Set(starts.map(s => `${s.x},${s.y}`));
+        const queue = [...starts];
+        while (queue.length) {
+            const cur = queue.shift();
+            for (const n of this.pathScoring.getConnectedNeighbors(gameState, cur, null, playerId)) {
+                const key = `${n.x},${n.y}`;
+                if (!visited.has(key)) {
+                    visited.add(key);
+                    queue.push(n);
+                }
+            }
+        }
+        return visited;
+    }
 }
