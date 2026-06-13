@@ -50,7 +50,7 @@ export class SetupManager {
         this.completionBonusInput = document.getElementById('completion-bonus');
         this.endGameScoreModeRadio = document.getElementById('score-mode-endgame');
 
-        // Tile generation options (Streets-specific)
+            // Tile generation options (Streets-specific)
         this.centerPatternFreqInput = document.getElementById('center-pattern-freq');
         this.circlesRatioInput = document.getElementById('circles-ratio');
 
@@ -223,7 +223,8 @@ export class SetupManager {
             const circlesPct = parseInt(this.circlesRatioInput?.value || '70') / 100;
             return {
                 centerPatternFrequency: freq,
-                patternWeights: { circles: circlesPct, squares: 1 - circlesPct }
+                patternWeights: { circles: circlesPct, squares: 1 - circlesPct },
+                tileWeights: this._getTileWeights()
             };
         }
         return {};
@@ -293,6 +294,21 @@ export class SetupManager {
         if (this.onGameStart) {
             this.onGameStart(config);
         }
+    }
+
+    _getTileWeights() {
+        const w = (id, def) => Math.max(0, parseInt(document.getElementById(id)?.value ?? def, 10));
+        return [
+            { key: 'cross',     type: 'normal',    sides: ['street','street','street','street'],                weight: w('tw-cross', 5)     },
+            { key: 'tJunction', type: 'normal',    sides: ['street','street','street','non-street'],            weight: w('tw-t', 15)        },
+            { key: 'straight',  type: 'normal',    sides: ['street','non-street','street','non-street'],        weight: w('tw-straight', 10) },
+            { key: 'corner',    type: 'normal',    sides: ['street','street','non-street','non-street'],        weight: w('tw-corner', 15)   },
+            { key: 'deadEnd',   type: 'normal',    sides: ['street','non-street','non-street','non-street'],    weight: w('tw-dead', 10)     },
+            { key: 'blank',     type: 'normal',    sides: ['non-street','non-street','non-street','non-street'],weight: w('tw-blank', 5)     },
+            { key: 'tunnel',    type: 'tunnel',    sides: ['street','street','street','street'],                weight: w('tw-tunnel', 0)    },
+            { key: 'roadblock', type: 'roadblock', sides: ['non-street','non-street','non-street','non-street'],weight: w('tw-roadblock', 0) },
+            { key: 'private',   type: 'private',   sides: ['street','non-street','street','non-street'],        weight: w('tw-private', 0)   },
+        ];
     }
 
     showSetup() {

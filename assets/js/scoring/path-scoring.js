@@ -34,7 +34,7 @@ class PathScoring {
     let longestPath = null;
 
     for (const start of centerSquares) {
-      const path = this.findLongestPathFrom(gameState, start, circleKeys, budget);
+      const path = this.findLongestPathFrom(gameState, start, circleKeys, budget, playerId);
       if (path && (!longestPath || path.length > longestPath.length)) {
         longestPath = path;
       }
@@ -55,12 +55,14 @@ class PathScoring {
   // Depth-first search for the longest simple path from a square to any
   // circle. Paths may pass through circles and keep extending; the best
   // endpoint hit along the way is recorded.
-  findLongestPathFrom(gameState, start, targetKeys, budget) {
+  // playerId is threaded through so private-lane ownership can be checked.
+  // fromPos tracks the previous position so tunnel directionality is enforced.
+  findLongestPathFrom(gameState, start, targetKeys, budget, playerId = null) {
     let best = null;
     const visited = new Set();
     const path = [start];
 
-    const visit = (current) => {
+    const visit = (current, fromPos = null) => {
       if (budget.remaining-- <= 0) return;
 
       const key = `${current.x},${current.y}`;
@@ -70,18 +72,18 @@ class PathScoring {
         if (!best || path.length > best.length) best = [...path];
       }
 
-      for (const neighbor of this.getConnectedNeighbors(gameState, current)) {
+      for (const neighbor of this.getConnectedNeighbors(gameState, current, fromPos, playerId)) {
         const neighborKey = `${neighbor.x},${neighbor.y}`;
         if (visited.has(neighborKey)) continue;
         path.push(neighbor);
-        visit(neighbor);
+        visit(neighbor, current);
         path.pop();
       }
 
       visited.delete(key);
     };
 
-    visit(start);
+    visit(start, null);
     return best;
   }
 
@@ -118,7 +120,9 @@ class PathScoring {
     return specialTiles;
   }
 
-  getConnectedNeighbors(gameState, position) {
+  // fromPos: the cell we arrived from (for tunnel directionality)
+  // playerId: the player whose path is being searched (for private lane filtering)
+  getConnectedNeighbors(gameState, position, fromPos = null, playerId = null) {
     const { x, y } = position;
     const currentTile = gameState.boardState[y][x];
     const rotatedSides = this.getRotatedSides(currentTile);
@@ -126,19 +130,44 @@ class PathScoring {
 
     const directions = [
       { dx: 0, dy: -1, currentEdge: 0, neighborEdge: 2 }, // top
-      { dx: 1, dy: 0, currentEdge: 1, neighborEdge: 3 },  // right
-      { dx: 0, dy: 1, currentEdge: 2, neighborEdge: 0 },  // bottom
+      { dx: 1, dy: 0,  currentEdge: 1, neighborEdge: 3 }, // right
+      { dx: 0, dy: 1,  currentEdge: 2, neighborEdge: 0 }, // bottom
       { dx: -1, dy: 0, currentEdge: 3, neighborEdge: 1 }  // left
     ];
 
+    // Tunnel tiles only allow straight-through movement: exit direction must
+    // equal entry direction (no turns).
+    let allowedDx = null, allowedDy = null;
+    if (currentTile.type === 'tunnel' && fromPos !== null) {
+      allowedDx = x - fromPos.x;
+      allowedDy = y - fromPos.y;
+    }
+
+    // Resolve the current player's index for private-lane ownership checks
+    let playerIndex = -1;
+    if (playerId !== null) {
+      playerIndex = gameState.playerManager.players.findIndex(p => p.id === playerId);
+    }
+
     for (const { dx, dy, currentEdge, neighborEdge } of directions) {
       if (rotatedSides[currentEdge] !== 'street') continue;
+
+      // Tunnel: skip exits that aren't straight ahead
+      if (allowedDx !== null && (dx !== allowedDx || dy !== allowedDy)) continue;
 
       const newX = x + dx, newY = y + dy;
       if (newX < 0 || newX >= gameState.boardSize || newY < 0 || newY >= gameState.boardSize) continue;
 
       const neighborTile = gameState.boardState[newY][newX];
       if (!neighborTile) continue;
+
+      // Private lane: skip if owned by a different player
+      if (
+        neighborTile.type === 'private' &&
+        playerIndex >= 0 &&
+        neighborTile.ownedByIndex !== undefined &&
+        neighborTile.ownedByIndex !== playerIndex
+      ) continue;
 
       const neighborSides = this.getRotatedSides(neighborTile);
       if (neighborSides[neighborEdge] === 'street') {

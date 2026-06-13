@@ -125,7 +125,7 @@ export class StreetScoring extends AdjacencyScoring {
     }
 
     isIntersection(tile) {
-        // All four sides are streets (a 4-way intersection)
+        if (tile.type === 'tunnel') return false; // flyover — streets cross but don't meet
         return Array.isArray(tile.sides) && tile.sides.every(side => side === 'street');
     }
 

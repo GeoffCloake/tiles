@@ -200,6 +200,41 @@
     margin-bottom: 0.5rem;
 }
 
+.label-hint {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-weight: normal;
+}
+
+.tile-weights-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.tile-weight-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.tile-weight-item label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0;
+}
+
+.tile-weight-item input {
+    width: 100%;
+    padding: 0.3rem 0.4rem;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+}
+
+.tile-weight-special label {
+    color: var(--accent-blue);
+}
+
 .button-group {
     display: flex;
     gap: 1rem;

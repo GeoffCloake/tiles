@@ -133,6 +133,47 @@
                             <input type="range" id="circles-ratio" min="10" max="90" value="70" step="10">
                             <div class="value-display" id="circles-ratio-display">70% Circles · 30% Squares</div>
                         </div>
+                        <div class="setup-option streets-only">
+                            <label>Tile Type Weights <span class="label-hint">(0 = disabled)</span></label>
+                            <div class="tile-weights-grid">
+                                <div class="tile-weight-item">
+                                    <label for="tw-cross">╬ Cross</label>
+                                    <input type="number" id="tw-cross" min="0" max="99" value="5">
+                                </div>
+                                <div class="tile-weight-item">
+                                    <label for="tw-t">┬ T-Junction</label>
+                                    <input type="number" id="tw-t" min="0" max="99" value="15">
+                                </div>
+                                <div class="tile-weight-item">
+                                    <label for="tw-straight">│ Straight</label>
+                                    <input type="number" id="tw-straight" min="0" max="99" value="10">
+                                </div>
+                                <div class="tile-weight-item">
+                                    <label for="tw-corner">┘ Corner</label>
+                                    <input type="number" id="tw-corner" min="0" max="99" value="15">
+                                </div>
+                                <div class="tile-weight-item">
+                                    <label for="tw-dead">╵ Dead End</label>
+                                    <input type="number" id="tw-dead" min="0" max="99" value="10">
+                                </div>
+                                <div class="tile-weight-item">
+                                    <label for="tw-blank">□ Blank</label>
+                                    <input type="number" id="tw-blank" min="0" max="99" value="5">
+                                </div>
+                                <div class="tile-weight-item tile-weight-special">
+                                    <label for="tw-tunnel">⊕ Tunnel</label>
+                                    <input type="number" id="tw-tunnel" min="0" max="99" value="0">
+                                </div>
+                                <div class="tile-weight-item tile-weight-special">
+                                    <label for="tw-roadblock">✕ Roadblock</label>
+                                    <input type="number" id="tw-roadblock" min="0" max="99" value="0">
+                                </div>
+                                <div class="tile-weight-item tile-weight-special">
+                                    <label for="tw-private">🔒 Private</label>
+                                    <input type="number" id="tw-private" min="0" max="99" value="0">
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Shapes-only options -->
                         <div class="setup-option shapes-only">
