@@ -145,17 +145,6 @@
                                 <option value="shapes">Shapes</option>
                             </select>
                         </div>
-                        <!-- Streets-specific tile generation options -->
-                        <div class="setup-option streets-only">
-                            <label for="center-pattern-freq">Special Tile Frequency:</label>
-                            <input type="range" id="center-pattern-freq" min="0" max="50" value="20" step="5">
-                            <div class="value-display" id="center-pattern-freq-display">20%</div>
-                        </div>
-                        <div class="setup-option streets-only">
-                            <label for="circles-ratio">Pattern Mix:</label>
-                            <input type="range" id="circles-ratio" min="10" max="90" value="70" step="10">
-                            <div class="value-display" id="circles-ratio-display">70% Circles · 30% Squares</div>
-                        </div>
                         <!-- Shapes-only options -->
                         <div class="setup-option shapes-only">
                             <label for="shape-count">Number of Shapes:</label>
@@ -549,103 +538,50 @@
             <button id="close-weights-x" class="modal-close" aria-label="Close">&times;</button>
             <h2>Tile Weights &amp; Limits</h2>
             <div class="streets-only">
-              <!-- Max Bonus Patterns Per Game -->
-              <div class="setup-option">
-                <label>Max Bonus Patterns Per Game <span class="label-hint">(0 = unlimited)</span></label>
-                <div class="tile-weights-grid">
-                  <div class="tile-weight-item">
-                    <label for="tm-circles">○ Circles max</label>
-                    <input type="number" id="tm-circles" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tm-squares">□ Squares max</label>
-                    <input type="number" id="tm-squares" min="0" max="99" value="0">
-                  </div>
-                </div>
+              <div class="weights-tab-bar">
+                <button class="weights-tab active" data-player="0">P1</button>
+                <button class="weights-tab" data-player="1">P2</button>
+                <button class="weights-tab" data-player="2">P3</button>
+                <button class="weights-tab" data-player="3">P4</button>
               </div>
-              <!-- Tile Type Weights -->
-              <div class="setup-option">
-                <label>Tile Type Weights <span class="label-hint">(0 = disabled)</span></label>
-                <div class="tile-weights-grid">
-                  <div class="tile-weight-item">
-                    <label for="tw-cross">╬ Cross</label>
-                    <input type="number" id="tw-cross" min="0" max="99" value="5">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tw-t">┬ T-Junction</label>
-                    <input type="number" id="tw-t" min="0" max="99" value="15">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tw-straight">│ Straight</label>
-                    <input type="number" id="tw-straight" min="0" max="99" value="10">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tw-corner">┘ Corner</label>
-                    <input type="number" id="tw-corner" min="0" max="99" value="15">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tw-dead">╵ Dead End</label>
-                    <input type="number" id="tw-dead" min="0" max="99" value="10">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tw-blank">□ Blank</label>
-                    <input type="number" id="tw-blank" min="0" max="99" value="5">
-                  </div>
-                  <div class="tile-weight-item tile-weight-special">
-                    <label for="tw-tunnel">⊕ Tunnel</label>
-                    <input type="number" id="tw-tunnel" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item tile-weight-special">
-                    <label for="tw-roadblock">✕ Roadblock</label>
-                    <input type="number" id="tw-roadblock" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item tile-weight-special">
-                    <label for="tw-private">🔒 Private</label>
-                    <input type="number" id="tw-private" min="0" max="99" value="0">
-                  </div>
-                </div>
+
+              <!-- Player 1 panel -->
+              <div id="weights-panel-0" class="weights-panel active" data-player="0">
+                <div class="setup-option"><label>Bonus Pattern Frequency <span class="label-hint">(0 = none)</span></label><input type="range" id="center-pattern-freq-p0" min="0" max="50" value="20" step="5" oninput="this.nextElementSibling.textContent=this.value+'%'"><div class="value-display">20%</div></div>
+                <div class="setup-option"><label>Pattern Mix <span class="label-hint">(circles vs squares)</span></label><input type="range" id="circles-ratio-p0" min="10" max="90" value="70" step="10" oninput="var v=+this.value;this.nextElementSibling.textContent=v+'% Circles · '+(100-v)+'% Squares'"><div class="value-display">70% Circles · 30% Squares</div></div>
+                <div class="setup-option"><label>Max Bonus Patterns <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-circles-p0">○ Circles</label><input type="number" id="tm-circles-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-squares-p0">□ Squares</label><input type="number" id="tm-squares-p0" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Tile Weights <span class="label-hint">(0 = disabled)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tw-cross-p0">╬ Cross</label><input type="number" id="tw-cross-p0" min="0" max="99" value="5"></div><div class="tile-weight-item"><label for="tw-t-p0">┬ T-Junction</label><input type="number" id="tw-t-p0" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-straight-p0">│ Straight</label><input type="number" id="tw-straight-p0" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-corner-p0">┘ Corner</label><input type="number" id="tw-corner-p0" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-dead-p0">╵ Dead End</label><input type="number" id="tw-dead-p0" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-blank-p0">□ Blank</label><input type="number" id="tw-blank-p0" min="0" max="99" value="5"></div><div class="tile-weight-item tile-weight-special"><label for="tw-tunnel-p0">⊕ Tunnel</label><input type="number" id="tw-tunnel-p0" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-roadblock-p0">✕ Roadblock</label><input type="number" id="tw-roadblock-p0" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-private-p0">🔒 Private</label><input type="number" id="tw-private-p0" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-cross-p0">╬ Cross</label><input type="number" id="tm-cross-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-t-p0">┬ T-Junction</label><input type="number" id="tm-t-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-straight-p0">│ Straight</label><input type="number" id="tm-straight-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-corner-p0">┘ Corner</label><input type="number" id="tm-corner-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-dead-p0">╵ Dead End</label><input type="number" id="tm-dead-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-blank-p0">□ Blank</label><input type="number" id="tm-blank-p0" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-tunnel-p0">⊕ Tunnel</label><input type="number" id="tm-tunnel-p0" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-roadblock-p0">✕ Roadblock</label><input type="number" id="tm-roadblock-p0" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-private-p0">🔒 Private</label><input type="number" id="tm-private-p0" min="0" max="99" value="0"></div></div></div>
               </div>
-              <!-- Max Per Game -->
-              <div class="setup-option">
-                <label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label>
-                <div class="tile-weights-grid">
-                  <div class="tile-weight-item">
-                    <label for="tm-cross">╬ Cross max</label>
-                    <input type="number" id="tm-cross" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tm-t">┬ T-Junction max</label>
-                    <input type="number" id="tm-t" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tm-straight">│ Straight max</label>
-                    <input type="number" id="tm-straight" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tm-corner">┘ Corner max</label>
-                    <input type="number" id="tm-corner" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tm-dead">╵ Dead End max</label>
-                    <input type="number" id="tm-dead" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item">
-                    <label for="tm-blank">□ Blank max</label>
-                    <input type="number" id="tm-blank" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item tile-weight-special">
-                    <label for="tm-tunnel">⊕ Tunnel max</label>
-                    <input type="number" id="tm-tunnel" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item tile-weight-special">
-                    <label for="tm-roadblock">✕ Roadblock max</label>
-                    <input type="number" id="tm-roadblock" min="0" max="99" value="0">
-                  </div>
-                  <div class="tile-weight-item tile-weight-special">
-                    <label for="tm-private">🔒 Private max</label>
-                    <input type="number" id="tm-private" min="0" max="99" value="0">
-                  </div>
-                </div>
+
+              <!-- Player 2 panel -->
+              <div id="weights-panel-1" class="weights-panel" data-player="1">
+                <button class="copy-weights-btn" data-from="0">Copy P1 settings</button>
+                <div class="setup-option"><label>Bonus Pattern Frequency <span class="label-hint">(0 = none)</span></label><input type="range" id="center-pattern-freq-p1" min="0" max="50" value="20" step="5" oninput="this.nextElementSibling.textContent=this.value+'%'"><div class="value-display">20%</div></div>
+                <div class="setup-option"><label>Pattern Mix <span class="label-hint">(circles vs squares)</span></label><input type="range" id="circles-ratio-p1" min="10" max="90" value="70" step="10" oninput="var v=+this.value;this.nextElementSibling.textContent=v+'% Circles · '+(100-v)+'% Squares'"><div class="value-display">70% Circles · 30% Squares</div></div>
+                <div class="setup-option"><label>Max Bonus Patterns <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-circles-p1">○ Circles</label><input type="number" id="tm-circles-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-squares-p1">□ Squares</label><input type="number" id="tm-squares-p1" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Tile Weights <span class="label-hint">(0 = disabled)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tw-cross-p1">╬ Cross</label><input type="number" id="tw-cross-p1" min="0" max="99" value="5"></div><div class="tile-weight-item"><label for="tw-t-p1">┬ T-Junction</label><input type="number" id="tw-t-p1" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-straight-p1">│ Straight</label><input type="number" id="tw-straight-p1" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-corner-p1">┘ Corner</label><input type="number" id="tw-corner-p1" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-dead-p1">╵ Dead End</label><input type="number" id="tw-dead-p1" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-blank-p1">□ Blank</label><input type="number" id="tw-blank-p1" min="0" max="99" value="5"></div><div class="tile-weight-item tile-weight-special"><label for="tw-tunnel-p1">⊕ Tunnel</label><input type="number" id="tw-tunnel-p1" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-roadblock-p1">✕ Roadblock</label><input type="number" id="tw-roadblock-p1" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-private-p1">🔒 Private</label><input type="number" id="tw-private-p1" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-cross-p1">╬ Cross</label><input type="number" id="tm-cross-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-t-p1">┬ T-Junction</label><input type="number" id="tm-t-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-straight-p1">│ Straight</label><input type="number" id="tm-straight-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-corner-p1">┘ Corner</label><input type="number" id="tm-corner-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-dead-p1">╵ Dead End</label><input type="number" id="tm-dead-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-blank-p1">□ Blank</label><input type="number" id="tm-blank-p1" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-tunnel-p1">⊕ Tunnel</label><input type="number" id="tm-tunnel-p1" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-roadblock-p1">✕ Roadblock</label><input type="number" id="tm-roadblock-p1" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-private-p1">🔒 Private</label><input type="number" id="tm-private-p1" min="0" max="99" value="0"></div></div></div>
+              </div>
+
+              <!-- Player 3 panel -->
+              <div id="weights-panel-2" class="weights-panel" data-player="2">
+                <button class="copy-weights-btn" data-from="0">Copy P1 settings</button>
+                <div class="setup-option"><label>Bonus Pattern Frequency <span class="label-hint">(0 = none)</span></label><input type="range" id="center-pattern-freq-p2" min="0" max="50" value="20" step="5" oninput="this.nextElementSibling.textContent=this.value+'%'"><div class="value-display">20%</div></div>
+                <div class="setup-option"><label>Pattern Mix <span class="label-hint">(circles vs squares)</span></label><input type="range" id="circles-ratio-p2" min="10" max="90" value="70" step="10" oninput="var v=+this.value;this.nextElementSibling.textContent=v+'% Circles · '+(100-v)+'% Squares'"><div class="value-display">70% Circles · 30% Squares</div></div>
+                <div class="setup-option"><label>Max Bonus Patterns <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-circles-p2">○ Circles</label><input type="number" id="tm-circles-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-squares-p2">□ Squares</label><input type="number" id="tm-squares-p2" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Tile Weights <span class="label-hint">(0 = disabled)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tw-cross-p2">╬ Cross</label><input type="number" id="tw-cross-p2" min="0" max="99" value="5"></div><div class="tile-weight-item"><label for="tw-t-p2">┬ T-Junction</label><input type="number" id="tw-t-p2" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-straight-p2">│ Straight</label><input type="number" id="tw-straight-p2" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-corner-p2">┘ Corner</label><input type="number" id="tw-corner-p2" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-dead-p2">╵ Dead End</label><input type="number" id="tw-dead-p2" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-blank-p2">□ Blank</label><input type="number" id="tw-blank-p2" min="0" max="99" value="5"></div><div class="tile-weight-item tile-weight-special"><label for="tw-tunnel-p2">⊕ Tunnel</label><input type="number" id="tw-tunnel-p2" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-roadblock-p2">✕ Roadblock</label><input type="number" id="tw-roadblock-p2" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-private-p2">🔒 Private</label><input type="number" id="tw-private-p2" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-cross-p2">╬ Cross</label><input type="number" id="tm-cross-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-t-p2">┬ T-Junction</label><input type="number" id="tm-t-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-straight-p2">│ Straight</label><input type="number" id="tm-straight-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-corner-p2">┘ Corner</label><input type="number" id="tm-corner-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-dead-p2">╵ Dead End</label><input type="number" id="tm-dead-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-blank-p2">□ Blank</label><input type="number" id="tm-blank-p2" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-tunnel-p2">⊕ Tunnel</label><input type="number" id="tm-tunnel-p2" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-roadblock-p2">✕ Roadblock</label><input type="number" id="tm-roadblock-p2" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-private-p2">🔒 Private</label><input type="number" id="tm-private-p2" min="0" max="99" value="0"></div></div></div>
+              </div>
+
+              <!-- Player 4 panel -->
+              <div id="weights-panel-3" class="weights-panel" data-player="3">
+                <button class="copy-weights-btn" data-from="0">Copy P1 settings</button>
+                <div class="setup-option"><label>Bonus Pattern Frequency <span class="label-hint">(0 = none)</span></label><input type="range" id="center-pattern-freq-p3" min="0" max="50" value="20" step="5" oninput="this.nextElementSibling.textContent=this.value+'%'"><div class="value-display">20%</div></div>
+                <div class="setup-option"><label>Pattern Mix <span class="label-hint">(circles vs squares)</span></label><input type="range" id="circles-ratio-p3" min="10" max="90" value="70" step="10" oninput="var v=+this.value;this.nextElementSibling.textContent=v+'% Circles · '+(100-v)+'% Squares'"><div class="value-display">70% Circles · 30% Squares</div></div>
+                <div class="setup-option"><label>Max Bonus Patterns <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-circles-p3">○ Circles</label><input type="number" id="tm-circles-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-squares-p3">□ Squares</label><input type="number" id="tm-squares-p3" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Tile Weights <span class="label-hint">(0 = disabled)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tw-cross-p3">╬ Cross</label><input type="number" id="tw-cross-p3" min="0" max="99" value="5"></div><div class="tile-weight-item"><label for="tw-t-p3">┬ T-Junction</label><input type="number" id="tw-t-p3" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-straight-p3">│ Straight</label><input type="number" id="tw-straight-p3" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-corner-p3">┘ Corner</label><input type="number" id="tw-corner-p3" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-dead-p3">╵ Dead End</label><input type="number" id="tw-dead-p3" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-blank-p3">□ Blank</label><input type="number" id="tw-blank-p3" min="0" max="99" value="5"></div><div class="tile-weight-item tile-weight-special"><label for="tw-tunnel-p3">⊕ Tunnel</label><input type="number" id="tw-tunnel-p3" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-roadblock-p3">✕ Roadblock</label><input type="number" id="tw-roadblock-p3" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-private-p3">🔒 Private</label><input type="number" id="tw-private-p3" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-cross-p3">╬ Cross</label><input type="number" id="tm-cross-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-t-p3">┬ T-Junction</label><input type="number" id="tm-t-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-straight-p3">│ Straight</label><input type="number" id="tm-straight-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-corner-p3">┘ Corner</label><input type="number" id="tm-corner-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-dead-p3">╵ Dead End</label><input type="number" id="tm-dead-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-blank-p3">□ Blank</label><input type="number" id="tm-blank-p3" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-tunnel-p3">⊕ Tunnel</label><input type="number" id="tm-tunnel-p3" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-roadblock-p3">✕ Roadblock</label><input type="number" id="tm-roadblock-p3" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-private-p3">🔒 Private</label><input type="number" id="tm-private-p3" min="0" max="99" value="0"></div></div></div>
               </div>
             </div>
             <p class="modal-note streets-hidden">Tile weights and limits apply to the Streets tile set.</p>
@@ -654,7 +590,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=2.0"></script>
+    <script type="module" src="assets/js/main.js?v=2.1"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

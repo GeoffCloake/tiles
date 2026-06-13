@@ -1,16 +1,16 @@
 // assets/js/main.js
-const VERSION = '1.8';
+const VERSION = '2.1';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js';
-import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=2.0';
+import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=2.1';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js';
 import { StandardScoring } from './scoring/standard-scoring.js';
-import { StreetScoring } from './scoring/street-scoring.js?v=2.0';
+import { StreetScoring } from './scoring/street-scoring.js?v=2.1';
 import { BoardManager } from './ui/board-manager.js';
 import { RackManager } from './ui/rack-manager.js';
-import { SetupManager } from './ui/setup-manager.js?v=2.0';
+import { SetupManager } from './ui/setup-manager.js?v=2.1';
 import { PlayerUIManager } from './ui/player-ui.js';
 import { TournamentManager } from './core/tournament.js';
 
@@ -69,6 +69,8 @@ class Game {
   }
 
   setupEventListeners() {
+    this._initWeightsTabs();
+
     document.getElementById('new-game-button')?.addEventListener('click', () => this.newGame());
 
     document.getElementById('new-game-modal')?.addEventListener('click', () => {
@@ -526,7 +528,56 @@ class Game {
 
   showWeights() {
     const m = document.getElementById('weights-modal');
-    if (m) m.style.display = 'flex';
+    if (!m) return;
+
+    // Sync tab visibility to current player count
+    const playerCount = parseInt(document.getElementById('player-count')?.value || '1');
+    document.querySelectorAll('.weights-tab').forEach(tab => {
+      tab.style.display = parseInt(tab.dataset.player) < playerCount ? '' : 'none';
+    });
+
+    // Ensure an active tab is visible; reset to P1 if current is hidden
+    const activeTab = document.querySelector('.weights-tab.active');
+    if (!activeTab || activeTab.style.display === 'none') {
+      document.querySelectorAll('.weights-tab')[0]?.click();
+    }
+
+    m.style.display = 'flex';
+  }
+
+  _initWeightsTabs() {
+    document.querySelectorAll('.weights-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.weights-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.weights-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`weights-panel-${tab.dataset.player}`)?.classList.add('active');
+      });
+    });
+
+    const weightFields = [
+      'center-pattern-freq','circles-ratio',
+      'tm-circles','tm-squares',
+      'tw-cross','tw-t','tw-straight','tw-corner','tw-dead','tw-blank',
+      'tw-tunnel','tw-roadblock','tw-private',
+      'tm-cross','tm-t','tm-straight','tm-corner','tm-dead','tm-blank',
+      'tm-tunnel','tm-roadblock','tm-private',
+    ];
+    document.querySelectorAll('.copy-weights-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetPanel = btn.closest('.weights-panel');
+        const ti = targetPanel?.dataset.player;
+        if (ti == null) return;
+        weightFields.forEach(field => {
+          const src = document.getElementById(`${field}-p0`);
+          const dst = document.getElementById(`${field}-p${ti}`);
+          if (src && dst) {
+            dst.value = src.value;
+            dst.dispatchEvent(new Event('input'));
+          }
+        });
+      });
+    });
   }
 
   hideWeights() {

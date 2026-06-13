@@ -16,7 +16,7 @@ class StreetsTileSet extends TileSet {
       },
     });
 
-    this._tileCounts = {};
+    this._tileCountsPerPlayer = {};
 
     this.patterns = {
       street: {
@@ -85,16 +85,25 @@ class StreetsTileSet extends TileSet {
   }
 
   onNewGame() {
-    this._tileCounts = {};
+    this._tileCountsPerPlayer = {};
   }
 
   generateTile(playerIndex = null, playerCount = 1) {
-    const weights   = this.options.tileWeights || this._defaultWeights();
-    const maxCounts = this.options.tileMaxCounts || {};
+    const pi = playerIndex ?? 0;
+    if (!this._tileCountsPerPlayer[pi]) this._tileCountsPerPlayer[pi] = {};
+    const counts = this._tileCountsPerPlayer[pi];
+
+    // Per-player options with fallback to global options
+    const pp = this.options.perPlayerOptions?.[pi] || {};
+    const weights   = pp.tileWeights   || this.options.tileWeights   || this._defaultWeights();
+    const maxCounts = pp.tileMaxCounts  || this.options.tileMaxCounts  || {};
+    const freq      = pp.centerPatternFrequency ?? this.options.centerPatternFrequency ?? 0.2;
+    const circlesRatio = pp.patternWeights?.circles ?? this.options.patternWeights?.circles ?? 0.7;
+
     const valid = weights.filter(w => {
       if (w.weight <= 0) return false;
       const max = maxCounts[w.key];
-      return !(max > 0 && (this._tileCounts[w.key] || 0) >= max);
+      return !(max > 0 && (counts[w.key] || 0) >= max);
     });
 
     let shape;
@@ -121,29 +130,24 @@ class StreetsTileSet extends TileSet {
     const rot      = Math.floor(Math.random() * maxRot);
     for (let i = 0; i < rot; i++) tile.sides.unshift(tile.sides.pop());
 
-    // Track per-game count for all tile types
+    // Track per-player count for all tile types
     if (shape.key) {
-      this._tileCounts[shape.key] = (this._tileCounts[shape.key] || 0) + 1;
+      counts[shape.key] = (counts[shape.key] || 0) + 1;
     }
 
-    // Centre pattern (normal tiles only)
-    if (
-      this.options.enableCenterPatterns &&
-      Math.random() < (this.options.centerPatternFrequency ?? 0.2) &&
-      tile.type === 'normal'
-    ) {
+    // Centre pattern (normal, non-special tiles only)
+    if (this.options.enableCenterPatterns && Math.random() < freq && tile.type === 'normal') {
       const maxC = maxCounts.centerCircles || 0;
       const maxS = maxCounts.centerSquares || 0;
-      const canCircle = !(maxC > 0 && (this._tileCounts.centerCircles || 0) >= maxC);
-      const canSquare = !(maxS > 0 && (this._tileCounts.centerSquares || 0) >= maxS);
+      const canCircle = !(maxC > 0 && (counts.centerCircles || 0) >= maxC);
+      const canSquare = !(maxS > 0 && (counts.centerSquares || 0) >= maxS);
       if (canCircle || canSquare) {
-        const ratio = this.options.patternWeights?.circles ?? 0.7;
         const pattern = (canCircle && canSquare)
-          ? (Math.random() < ratio ? 'circles' : 'squares')
+          ? (Math.random() < circlesRatio ? 'circles' : 'squares')
           : (canCircle ? 'circles' : 'squares');
         tile.centerPattern = pattern;
         const key = pattern === 'circles' ? 'centerCircles' : 'centerSquares';
-        this._tileCounts[key] = (this._tileCounts[key] || 0) + 1;
+        counts[key] = (counts[key] || 0) + 1;
       }
     }
 

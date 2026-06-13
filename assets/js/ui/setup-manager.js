@@ -50,10 +50,6 @@ export class SetupManager {
         this.completionBonusInput = document.getElementById('completion-bonus');
         this.endGameScoreModeRadio = document.getElementById('score-mode-endgame');
 
-            // Tile generation options (Streets-specific)
-        this.centerPatternFreqInput = document.getElementById('center-pattern-freq');
-        this.circlesRatioInput = document.getElementById('circles-ratio');
-
         // Tournament options
         this.enableTournamentCheckbox = document.getElementById('enable-tournament');
         this.tournamentRoundsSelect = document.getElementById('tournament-rounds');
@@ -94,23 +90,6 @@ export class SetupManager {
             this.initialTilesInput.addEventListener('input', (e) => {
                 const display = e.target.parentElement.querySelector('.value-display');
                 if (display) display.textContent = `${e.target.value} tiles`;
-            });
-        }
-
-        // Special tile frequency display
-        if (this.centerPatternFreqInput) {
-            this.centerPatternFreqInput.addEventListener('input', (e) => {
-                const display = document.getElementById('center-pattern-freq-display');
-                if (display) display.textContent = `${e.target.value}%`;
-            });
-        }
-
-        // Circles ratio display
-        if (this.circlesRatioInput) {
-            this.circlesRatioInput.addEventListener('input', (e) => {
-                const c = parseInt(e.target.value, 10);
-                const display = document.getElementById('circles-ratio-display');
-                if (display) display.textContent = `${c}% Circles · ${100 - c}% Squares`;
             });
         }
 
@@ -229,20 +208,26 @@ export class SetupManager {
             };
         }
         if (tileSet === 'streets') {
-            const freq = parseInt(this.centerPatternFreqInput?.value || '20') / 100;
-            const circlesPct = parseInt(this.circlesRatioInput?.value || '70') / 100;
-            return {
-                centerPatternFrequency: freq,
-                patternWeights: { circles: circlesPct, squares: 1 - circlesPct },
-                tileWeights: this._getTileWeights(),
-                tileMaxCounts: this._getTileMaxCounts()
-            };
+            const playerCount = parseInt(this.playerCountSelect?.value || '1');
+            const perPlayerOptions = {};
+            for (let i = 0; i < playerCount; i++) {
+                const freq = parseInt(document.getElementById(`center-pattern-freq-p${i}`)?.value || '20') / 100;
+                const circlesPct = parseInt(document.getElementById(`circles-ratio-p${i}`)?.value || '70') / 100;
+                perPlayerOptions[i] = {
+                    centerPatternFrequency: freq,
+                    patternWeights: { circles: circlesPct, squares: 1 - circlesPct },
+                    tileWeights: this._getTileWeights(i),
+                    tileMaxCounts: this._getTileMaxCounts(i),
+                };
+            }
+            return { perPlayerOptions };
         }
         return {};
     }
 
-    _getTileMaxCounts() {
-        const m = id => Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10));
+    _getTileMaxCounts(playerIndex = 0) {
+        const p = playerIndex;
+        const m = id => Math.max(0, parseInt(document.getElementById(`${id}-p${p}`)?.value || '0', 10));
         return {
             cross: m('tm-cross'), tJunction: m('tm-t'), straight: m('tm-straight'),
             corner: m('tm-corner'), deadEnd: m('tm-dead'), blank: m('tm-blank'),
@@ -318,8 +303,9 @@ export class SetupManager {
         }
     }
 
-    _getTileWeights() {
-        const w = (id, def) => Math.max(0, parseInt(document.getElementById(id)?.value ?? def, 10));
+    _getTileWeights(playerIndex = 0) {
+        const p = playerIndex;
+        const w = (id, def) => Math.max(0, parseInt(document.getElementById(`${id}-p${p}`)?.value ?? def, 10));
         return [
             { key: 'cross',     type: 'normal',    sides: ['street','street','street','street'],                weight: w('tw-cross', 5)     },
             { key: 'tJunction', type: 'normal',    sides: ['street','street','street','non-street'],            weight: w('tw-t', 15)        },
@@ -336,16 +322,19 @@ export class SetupManager {
     // ---- Game Configuration save / load ----
 
     static get _CONFIG_FIELDS() {
+        const perPlayerFields = Array.from({ length: 4 }, (_, i) => [
+            `center-pattern-freq-p${i}`, `circles-ratio-p${i}`,
+            `tm-circles-p${i}`, `tm-squares-p${i}`,
+            `tw-cross-p${i}`, `tw-t-p${i}`, `tw-straight-p${i}`, `tw-corner-p${i}`,
+            `tw-dead-p${i}`, `tw-blank-p${i}`, `tw-tunnel-p${i}`, `tw-roadblock-p${i}`, `tw-private-p${i}`,
+            `tm-cross-p${i}`, `tm-t-p${i}`, `tm-straight-p${i}`, `tm-corner-p${i}`,
+            `tm-dead-p${i}`, `tm-blank-p${i}`, `tm-tunnel-p${i}`, `tm-roadblock-p${i}`, `tm-private-p${i}`,
+        ]).flat();
         return [
             'board-size','rack-size','tile-set','player-count',
             'initial-tile-layout','initial-tiles','layout-tiles',
             'enable-timer','time-limit',
-            'center-pattern-freq','circles-ratio',
-            'tw-cross','tw-t','tw-straight','tw-corner','tw-dead','tw-blank',
-            'tw-tunnel','tw-roadblock','tw-private',
-            'tm-circles','tm-squares',
-            'tm-cross','tm-t','tm-straight','tm-corner','tm-dead','tm-blank',
-            'tm-tunnel','tm-roadblock','tm-private',
+            ...perPlayerFields,
             'enable-blank-sides','shape-count',
             'enable-free-play','enable-border-rule',
             'starter-multiplier','circle-score','square-score',
