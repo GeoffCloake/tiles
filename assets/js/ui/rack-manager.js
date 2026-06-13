@@ -44,11 +44,13 @@ export class RackManager {
             tileDiv.appendChild(canvas);
             tileDiv.dataset.tileId = tile.id;
             tileDiv.title = 'Click to select · Double-click to rotate';
-            tileDiv.onclick = () => this.selectTile(tile, tileDiv);
-            tileDiv.ondblclick = () => {
+            tileDiv.onclick = () => {
                 if (!tileDiv.classList.contains('selected')) {
                     this.selectTile(tile, tileDiv);
                 }
+            };
+            tileDiv.ondblclick = () => {
+                if (!tileDiv.classList.contains('selected')) this.selectTile(tile, tileDiv);
                 this.handleRotate();
             };
             

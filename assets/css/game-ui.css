@@ -268,6 +268,20 @@
 .config-btn:hover { background: var(--accent-blue); }
 .config-btn-danger:hover { background: #cc2200; }
 
+.setup-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.setup-top-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+.modal-content-wide {
+    max-width: 600px;
+}
+
 .button-group {
     display: flex;
     gap: 1rem;

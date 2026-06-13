@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Multiplayer Tile Board Game</title>
-    <link rel="stylesheet" href="assets/css/styles.css?v=1.9c">
+    <link rel="stylesheet" href="assets/css/styles.css?v=2.0">
     <style>
         #game-container {
             position: relative;
@@ -42,27 +42,35 @@
             </svg>
         </button>
 
+        <!-- Quick Start Screen -->
+        <div id="quick-start-screen" style="display: none; position: fixed; inset: 0; background: var(--bg-primary); z-index: 10; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem;">
+          <h1 style="color: var(--accent-blue); font-size: 2.5rem; margin: 0;">Tiles</h1>
+          <p style="color: var(--text-secondary); margin: 0;">City Roads</p>
+          <div style="display: flex; gap: 0.75rem; width: min(380px, 90vw); flex-direction: column;">
+            <div style="display: flex; gap: 0.5rem;">
+              <select id="qs-config-select" style="flex: 1; min-width: 0;">
+                <option value="">— Load saved config —</option>
+              </select>
+              <button id="qs-load-play-btn" class="button" style="white-space: nowrap;">Load &amp; Play</button>
+            </div>
+            <button id="qs-default-play-btn" class="button">Quick Play</button>
+            <button id="qs-full-setup-btn" class="button" style="background: transparent; border: 1px solid var(--border-color);">Customize Setup →</button>
+          </div>
+        </div>
+
         <!-- Setup Screen -->
         <div id="setup-screen" class="setup-screen">
             <div class="setup-container">
+                <div class="setup-top-bar">
+                  <button id="setup-back-btn" class="config-btn">← Back</button>
+                  <div class="setup-top-actions">
+                    <button id="setup-config-btn" class="config-btn">Config</button>
+                    <button id="setup-weights-btn" class="config-btn">Weights</button>
+                  </div>
+                </div>
                 <div class="setup-header">
                     <h1>Game Setup</h1>
                     <p>Customize your game experience</p>
-                </div>
-                <!-- Game Configurations (full-width, above grid) -->
-                <div class="setup-section config-section">
-                    <h2>Game Configurations</h2>
-                    <div class="config-row">
-                        <select id="config-select" class="config-select">
-                            <option value="">— Saved configs —</option>
-                        </select>
-                        <button id="config-load-btn" class="config-btn">Load</button>
-                        <button id="config-delete-btn" class="config-btn config-btn-danger">Delete</button>
-                    </div>
-                    <div class="config-row">
-                        <input type="text" id="config-name" class="config-name-input" placeholder="Configuration name…" maxlength="40">
-                        <button id="config-save-btn" class="config-btn">Save</button>
-                    </div>
                 </div>
                 <div class="setup-grid">
                     <!-- Player Settings Section -->
@@ -148,102 +156,6 @@
                             <input type="range" id="circles-ratio" min="10" max="90" value="70" step="10">
                             <div class="value-display" id="circles-ratio-display">70% Circles · 30% Squares</div>
                         </div>
-                        <div class="setup-option streets-only">
-                            <label>Max Bonus Patterns Per Game <span class="label-hint">(0 = unlimited)</span></label>
-                            <div class="tile-weights-grid">
-                                <div class="tile-weight-item">
-                                    <label for="tm-circles">○ Circles max</label>
-                                    <input type="number" id="tm-circles" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tm-squares">□ Squares max</label>
-                                    <input type="number" id="tm-squares" min="0" max="99" value="0">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="setup-option streets-only">
-                            <label>Tile Type Weights <span class="label-hint">(0 = disabled)</span></label>
-                            <div class="tile-weights-grid">
-                                <div class="tile-weight-item">
-                                    <label for="tw-cross">╬ Cross</label>
-                                    <input type="number" id="tw-cross" min="0" max="99" value="5">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tw-t">┬ T-Junction</label>
-                                    <input type="number" id="tw-t" min="0" max="99" value="15">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tw-straight">│ Straight</label>
-                                    <input type="number" id="tw-straight" min="0" max="99" value="10">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tw-corner">┘ Corner</label>
-                                    <input type="number" id="tw-corner" min="0" max="99" value="15">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tw-dead">╵ Dead End</label>
-                                    <input type="number" id="tw-dead" min="0" max="99" value="10">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tw-blank">□ Blank</label>
-                                    <input type="number" id="tw-blank" min="0" max="99" value="5">
-                                </div>
-                                <div class="tile-weight-item tile-weight-special">
-                                    <label for="tw-tunnel">⊕ Tunnel</label>
-                                    <input type="number" id="tw-tunnel" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item tile-weight-special">
-                                    <label for="tw-roadblock">✕ Roadblock</label>
-                                    <input type="number" id="tw-roadblock" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item tile-weight-special">
-                                    <label for="tw-private">🔒 Private</label>
-                                    <input type="number" id="tw-private" min="0" max="99" value="0">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="setup-option streets-only">
-                            <label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label>
-                            <div class="tile-weights-grid">
-                                <div class="tile-weight-item">
-                                    <label for="tm-cross">╬ Cross max</label>
-                                    <input type="number" id="tm-cross" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tm-t">┬ T-Junction max</label>
-                                    <input type="number" id="tm-t" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tm-straight">│ Straight max</label>
-                                    <input type="number" id="tm-straight" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tm-corner">┘ Corner max</label>
-                                    <input type="number" id="tm-corner" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tm-dead">╵ Dead End max</label>
-                                    <input type="number" id="tm-dead" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item">
-                                    <label for="tm-blank">□ Blank max</label>
-                                    <input type="number" id="tm-blank" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item tile-weight-special">
-                                    <label for="tm-tunnel">⊕ Tunnel max</label>
-                                    <input type="number" id="tm-tunnel" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item tile-weight-special">
-                                    <label for="tm-roadblock">✕ Roadblock max</label>
-                                    <input type="number" id="tm-roadblock" min="0" max="99" value="0">
-                                </div>
-                                <div class="tile-weight-item tile-weight-special">
-                                    <label for="tm-private">🔒 Private max</label>
-                                    <input type="number" id="tm-private" min="0" max="99" value="0">
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Shapes-only options -->
                         <div class="setup-option shapes-only">
                             <label for="shape-count">Number of Shapes:</label>
@@ -415,6 +327,8 @@
                     <button id="setup-button" class="button">Setup</button>
                     <button id="rules-button" class="button">Rules</button>
                     <button id="scoring-button" class="button">Scoring</button>
+                    <button id="config-button" class="button">Config</button>
+                    <button id="weights-button" class="button">Weights</button>
                     <button id="leaderboard-button" class="button" style="display:none;">🏆 Leaderboard</button>
                     <span id="version-display" class="version-badge"></span>
                 </div>
@@ -609,10 +523,138 @@
                 </div>
             </div>
         </div>
+
+        <!-- Config Modal -->
+        <div id="config-modal" class="modal" style="display: none;">
+          <div class="modal-content">
+            <button id="close-config-x" class="modal-close" aria-label="Close">&times;</button>
+            <h2>Game Configurations</h2>
+            <div class="config-row">
+              <select id="config-select" class="config-select">
+                <option value="">— Saved configs —</option>
+              </select>
+              <button id="config-load-btn" class="config-btn">Load</button>
+              <button id="config-delete-btn" class="config-btn config-btn-danger">Delete</button>
+            </div>
+            <div class="config-row">
+              <input type="text" id="config-name" class="config-name-input" placeholder="Configuration name…" maxlength="40">
+              <button id="config-save-btn" class="config-btn">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weights Modal -->
+        <div id="weights-modal" class="modal" style="display: none;">
+          <div class="modal-content modal-content-wide">
+            <button id="close-weights-x" class="modal-close" aria-label="Close">&times;</button>
+            <h2>Tile Weights &amp; Limits</h2>
+            <div class="streets-only">
+              <!-- Max Bonus Patterns Per Game -->
+              <div class="setup-option">
+                <label>Max Bonus Patterns Per Game <span class="label-hint">(0 = unlimited)</span></label>
+                <div class="tile-weights-grid">
+                  <div class="tile-weight-item">
+                    <label for="tm-circles">○ Circles max</label>
+                    <input type="number" id="tm-circles" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tm-squares">□ Squares max</label>
+                    <input type="number" id="tm-squares" min="0" max="99" value="0">
+                  </div>
+                </div>
+              </div>
+              <!-- Tile Type Weights -->
+              <div class="setup-option">
+                <label>Tile Type Weights <span class="label-hint">(0 = disabled)</span></label>
+                <div class="tile-weights-grid">
+                  <div class="tile-weight-item">
+                    <label for="tw-cross">╬ Cross</label>
+                    <input type="number" id="tw-cross" min="0" max="99" value="5">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tw-t">┬ T-Junction</label>
+                    <input type="number" id="tw-t" min="0" max="99" value="15">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tw-straight">│ Straight</label>
+                    <input type="number" id="tw-straight" min="0" max="99" value="10">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tw-corner">┘ Corner</label>
+                    <input type="number" id="tw-corner" min="0" max="99" value="15">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tw-dead">╵ Dead End</label>
+                    <input type="number" id="tw-dead" min="0" max="99" value="10">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tw-blank">□ Blank</label>
+                    <input type="number" id="tw-blank" min="0" max="99" value="5">
+                  </div>
+                  <div class="tile-weight-item tile-weight-special">
+                    <label for="tw-tunnel">⊕ Tunnel</label>
+                    <input type="number" id="tw-tunnel" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item tile-weight-special">
+                    <label for="tw-roadblock">✕ Roadblock</label>
+                    <input type="number" id="tw-roadblock" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item tile-weight-special">
+                    <label for="tw-private">🔒 Private</label>
+                    <input type="number" id="tw-private" min="0" max="99" value="0">
+                  </div>
+                </div>
+              </div>
+              <!-- Max Per Game -->
+              <div class="setup-option">
+                <label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label>
+                <div class="tile-weights-grid">
+                  <div class="tile-weight-item">
+                    <label for="tm-cross">╬ Cross max</label>
+                    <input type="number" id="tm-cross" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tm-t">┬ T-Junction max</label>
+                    <input type="number" id="tm-t" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tm-straight">│ Straight max</label>
+                    <input type="number" id="tm-straight" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tm-corner">┘ Corner max</label>
+                    <input type="number" id="tm-corner" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tm-dead">╵ Dead End max</label>
+                    <input type="number" id="tm-dead" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item">
+                    <label for="tm-blank">□ Blank max</label>
+                    <input type="number" id="tm-blank" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item tile-weight-special">
+                    <label for="tm-tunnel">⊕ Tunnel max</label>
+                    <input type="number" id="tm-tunnel" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item tile-weight-special">
+                    <label for="tm-roadblock">✕ Roadblock max</label>
+                    <input type="number" id="tm-roadblock" min="0" max="99" value="0">
+                  </div>
+                  <div class="tile-weight-item tile-weight-special">
+                    <label for="tm-private">🔒 Private max</label>
+                    <input type="number" id="tm-private" min="0" max="99" value="0">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="modal-note streets-hidden">Tile weights and limits apply to the Streets tile set.</p>
+          </div>
+        </div>
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=1.9c"></script>
+    <script type="module" src="assets/js/main.js?v=2.0"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

@@ -3,14 +3,14 @@ const VERSION = '1.8';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js';
-import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=1.9c';
+import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=2.0';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js';
 import { StandardScoring } from './scoring/standard-scoring.js';
-import { StreetScoring } from './scoring/street-scoring.js?v=1.9c';
+import { StreetScoring } from './scoring/street-scoring.js?v=2.0';
 import { BoardManager } from './ui/board-manager.js';
 import { RackManager } from './ui/rack-manager.js';
-import { SetupManager } from './ui/setup-manager.js?v=1.9c';
+import { SetupManager } from './ui/setup-manager.js?v=2.0';
 import { PlayerUIManager } from './ui/player-ui.js';
 import { TournamentManager } from './core/tournament.js';
 
@@ -101,6 +101,20 @@ class Game {
     const scoringModal = document.getElementById('scoring-modal');
     scoringModal?.addEventListener('click', (e) => { if (e.target === scoringModal) this.hideScoring(); });
 
+    // Config modal
+    document.getElementById('config-button')?.addEventListener('click', () => this.showConfig());
+    document.getElementById('close-config-x')?.addEventListener('click', () => this.hideConfig());
+    document.getElementById('setup-config-btn')?.addEventListener('click', () => this.showConfig());
+    const configModal = document.getElementById('config-modal');
+    configModal?.addEventListener('click', (e) => { if (e.target === configModal) this.hideConfig(); });
+
+    // Weights modal
+    document.getElementById('weights-button')?.addEventListener('click', () => this.showWeights());
+    document.getElementById('close-weights-x')?.addEventListener('click', () => this.hideWeights());
+    document.getElementById('setup-weights-btn')?.addEventListener('click', () => this.showWeights());
+    const weightsModal = document.getElementById('weights-modal');
+    weightsModal?.addEventListener('click', (e) => { if (e.target === weightsModal) this.hideWeights(); });
+
     // Tournament modal
     document.getElementById('tournament-next')?.addEventListener('click', () => {
       document.getElementById('tournament-modal').style.display = 'none';
@@ -126,7 +140,7 @@ class Game {
     leaderboardModal?.addEventListener('click', (e) => { if (e.target === leaderboardModal) this.hideLeaderboard(); });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { this.hideRules(); this.hideScoring(); this.hideLeaderboard(); }
+      if (e.key === 'Escape') { this.hideRules(); this.hideScoring(); this.hideLeaderboard(); this.hideConfig(); this.hideWeights(); }
     });
 
     document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
@@ -497,6 +511,27 @@ class Game {
   hideRules() {
     const rulesModal = document.getElementById('rules-modal');
     if (rulesModal) rulesModal.style.display = 'none';
+  }
+
+  showConfig() {
+    this.setupManager?.populateConfigSelect();
+    const m = document.getElementById('config-modal');
+    if (m) m.style.display = 'flex';
+  }
+
+  hideConfig() {
+    const m = document.getElementById('config-modal');
+    if (m) m.style.display = 'none';
+  }
+
+  showWeights() {
+    const m = document.getElementById('weights-modal');
+    if (m) m.style.display = 'flex';
+  }
+
+  hideWeights() {
+    const m = document.getElementById('weights-modal');
+    if (m) m.style.display = 'none';
   }
 
   updateRulesText() {

@@ -133,6 +133,11 @@ export class SetupManager {
         document.getElementById('config-save-btn')?.addEventListener('click', () => this.saveCurrentConfig());
         document.getElementById('config-load-btn')?.addEventListener('click', () => this.loadSelectedConfig());
         document.getElementById('config-delete-btn')?.addEventListener('click', () => this.deleteSelectedConfig());
+
+        document.getElementById('qs-load-play-btn')?.addEventListener('click', () => this.quickLoadAndPlay());
+        document.getElementById('qs-full-setup-btn')?.addEventListener('click', () => this.showSetup());
+        document.getElementById('qs-default-play-btn')?.addEventListener('click', () => this.startGame());
+        document.getElementById('setup-back-btn')?.addEventListener('click', () => this.showQuickStart());
     }
 
     toggleInitialTileOptions(layoutType) {
@@ -302,8 +307,9 @@ export class SetupManager {
 
         console.log("Game config:", config);
 
-        // Hide setup screen, show game screen
+        // Hide setup/quick-start screens, show game screen
         if (this.setupScreen) this.setupScreen.style.display = 'none';
+        const qs = document.getElementById('quick-start-screen'); if (qs) qs.style.display = 'none';
         if (this.gameScreen) this.gameScreen.style.display = 'flex';
 
         // Call onGameStart callback with config
@@ -357,11 +363,13 @@ export class SetupManager {
     }
 
     populateConfigSelect() {
-        const sel = document.getElementById('config-select');
-        if (!sel) return;
         const list = SetupManager._storedConfigs();
-        sel.innerHTML = '<option value="">— Saved configs —</option>' +
+        const opts = '<option value="">— Saved configs —</option>' +
             list.map((c, i) => `<option value="${i}">${c.name}</option>`).join('');
+        const el1 = document.getElementById('config-select');
+        if (el1) el1.innerHTML = opts;
+        const el2 = document.getElementById('qs-config-select');
+        if (el2) el2.innerHTML = opts.replace('Saved configs', 'Load saved config');
     }
 
     saveCurrentConfig() {
@@ -383,11 +391,7 @@ export class SetupManager {
         this.populateConfigSelect();
     }
 
-    loadSelectedConfig() {
-        const sel = document.getElementById('config-select');
-        const idx = parseInt(sel?.value);
-        if (isNaN(idx) || idx < 0) return;
-        const config = SetupManager._storedConfigs()[idx];
+    _applyConfigValues(config) {
         if (!config) return;
         for (const [id, value] of Object.entries(config.values)) {
             const el = document.getElementById(id);
@@ -402,6 +406,22 @@ export class SetupManager {
         this.toggleTileSetOptions(this.tileSetSelect?.value || 'streets');
     }
 
+    loadSelectedConfig() {
+        const sel = document.getElementById('config-select');
+        const idx = parseInt(sel?.value);
+        if (isNaN(idx) || idx < 0) return;
+        this._applyConfigValues(SetupManager._storedConfigs()[idx]);
+    }
+
+    quickLoadAndPlay() {
+        const sel = document.getElementById('qs-config-select');
+        const idx = parseInt(sel?.value);
+        if (!isNaN(idx) && idx >= 0) {
+            this._applyConfigValues(SetupManager._storedConfigs()[idx]);
+        }
+        this.startGame();
+    }
+
     deleteSelectedConfig() {
         const sel = document.getElementById('config-select');
         const idx = parseInt(sel?.value);
@@ -412,7 +432,15 @@ export class SetupManager {
         this.populateConfigSelect();
     }
 
+    showQuickStart() {
+        document.getElementById('quick-start-screen').style.display = 'flex';
+        document.getElementById('setup-screen').style.display = 'none';
+        if (this.gameScreen) this.gameScreen.style.display = 'none';
+        this.populateConfigSelect();
+    }
+
     showSetup() {
+        document.getElementById('quick-start-screen').style.display = 'none';
         if (this.gameScreen) this.gameScreen.style.display = 'none';
         if (this.setupScreen) this.setupScreen.style.display = 'flex';
     }
@@ -428,11 +456,10 @@ export class SetupManager {
             this.toggleInitialTileOptions(this.initialTileLayout.value);
         }
 
-        // Ensure setup screen is visible initially
-        if (this.setupScreen && this.gameScreen) {
-            this.setupScreen.style.display = 'flex';
-            this.gameScreen.style.display = 'none';
-        }
+        // Ensure quick-start screen is visible initially
+        document.getElementById('quick-start-screen').style.display = 'flex';
+        if (this.setupScreen) this.setupScreen.style.display = 'none';
+        if (this.gameScreen) this.gameScreen.style.display = 'none';
 
         // Initialize player names based on default player count
         this.updatePlayerNameInputs();
