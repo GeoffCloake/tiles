@@ -235,6 +235,39 @@
     color: var(--accent-blue);
 }
 
+/* Game configuration section */
+.config-section {
+    margin-bottom: 1.5rem;
+}
+
+.config-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+    align-items: center;
+}
+
+.config-select,
+.config-name-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.config-btn {
+    white-space: nowrap;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    background: var(--bg-tertiary, #333);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.config-btn:hover { background: var(--accent-blue); }
+.config-btn-danger:hover { background: #cc2200; }
+
 .button-group {
     display: flex;
     gap: 1rem;

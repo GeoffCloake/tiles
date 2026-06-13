@@ -16,6 +16,8 @@ class StreetsTileSet extends TileSet {
       },
     });
 
+    this._tileCounts = {};
+
     this.patterns = {
       street: {
         background: '#000000',
@@ -82,9 +84,18 @@ class StreetsTileSet extends TileSet {
     return weights[weights.length - 1];
   }
 
+  onNewGame() {
+    this._tileCounts = {};
+  }
+
   generateTile(playerIndex = null, playerCount = 1) {
-    const weights = this.options.tileWeights || this._defaultWeights();
-    const valid = weights.filter(w => w.weight > 0);
+    const weights   = this.options.tileWeights || this._defaultWeights();
+    const maxCounts = this.options.tileMaxCounts || {};
+    const valid = weights.filter(w => {
+      if (w.weight <= 0) return false;
+      const max = maxCounts[w.key];
+      return !(max > 0 && (this._tileCounts[w.key] || 0) >= max);
+    });
 
     let shape;
     if (valid.length) {
@@ -109,6 +120,11 @@ class StreetsTileSet extends TileSet {
     const maxRot   = allSame ? 1 : twoFold ? 2 : 4;
     const rot      = Math.floor(Math.random() * maxRot);
     for (let i = 0; i < rot; i++) tile.sides.unshift(tile.sides.pop());
+
+    // Track per-game count for non-normal special tiles
+    if (shape.key && tile.type !== 'normal') {
+      this._tileCounts[shape.key] = (this._tileCounts[shape.key] || 0) + 1;
+    }
 
     // Centre pattern (normal tiles only)
     if (
@@ -213,12 +229,12 @@ class StreetsTileSet extends TileSet {
 
     // Safety railing bars at the top and bottom edges of the bridge crossing
     const railH = Math.max(3, size * 0.055);
-    ctx.fillStyle = '#e87800';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(cx - roadW * 0.5, cy - roadW * 0.5 - railH, roadW, railH);
     ctx.fillRect(cx - roadW * 0.5, cy + roadW * 0.5,          roadW, railH);
 
     // Railing posts (vertical stubs)
-    ctx.fillStyle = '#cc5500';
+    ctx.fillStyle = '#cccccc';
     const postW   = Math.max(1, size * 0.03);
     const postH   = railH * 2.2;
     const nPosts  = 3;

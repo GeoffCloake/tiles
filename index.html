@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Multiplayer Tile Board Game</title>
-    <link rel="stylesheet" href="assets/css/styles.css?v=1.8c">
+    <link rel="stylesheet" href="assets/css/styles.css?v=1.9">
     <style>
         #game-container {
             position: relative;
@@ -48,6 +48,21 @@
                 <div class="setup-header">
                     <h1>Game Setup</h1>
                     <p>Customize your game experience</p>
+                </div>
+                <!-- Game Configurations (full-width, above grid) -->
+                <div class="setup-section config-section">
+                    <h2>Game Configurations</h2>
+                    <div class="config-row">
+                        <select id="config-select" class="config-select">
+                            <option value="">— Saved configs —</option>
+                        </select>
+                        <button id="config-load-btn" class="config-btn">Load</button>
+                        <button id="config-delete-btn" class="config-btn config-btn-danger">Delete</button>
+                    </div>
+                    <div class="config-row">
+                        <input type="text" id="config-name" class="config-name-input" placeholder="Configuration name…" maxlength="40">
+                        <button id="config-save-btn" class="config-btn">Save</button>
+                    </div>
                 </div>
                 <div class="setup-grid">
                     <!-- Player Settings Section -->
@@ -171,6 +186,23 @@
                                 <div class="tile-weight-item tile-weight-special">
                                     <label for="tw-private">🔒 Private</label>
                                     <input type="number" id="tw-private" min="0" max="99" value="0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setup-option streets-only">
+                            <label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label>
+                            <div class="tile-weights-grid">
+                                <div class="tile-weight-item tile-weight-special">
+                                    <label for="tm-tunnel">⊕ Tunnel max</label>
+                                    <input type="number" id="tm-tunnel" min="0" max="99" value="0">
+                                </div>
+                                <div class="tile-weight-item tile-weight-special">
+                                    <label for="tm-roadblock">✕ Roadblock max</label>
+                                    <input type="number" id="tm-roadblock" min="0" max="99" value="0">
+                                </div>
+                                <div class="tile-weight-item tile-weight-special">
+                                    <label for="tm-private">🔒 Private max</label>
+                                    <input type="number" id="tm-private" min="0" max="99" value="0">
                                 </div>
                             </div>
                         </div>
@@ -543,7 +575,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=1.8c"></script>
+    <script type="module" src="assets/js/main.js?v=1.9"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

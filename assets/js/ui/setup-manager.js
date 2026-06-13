@@ -128,6 +128,11 @@ export class SetupManager {
                 if (opt) opt.style.display = this.enableTournamentCheckbox.checked ? 'block' : 'none';
             });
         }
+
+        // Config save / load / delete
+        document.getElementById('config-save-btn')?.addEventListener('click', () => this.saveCurrentConfig());
+        document.getElementById('config-load-btn')?.addEventListener('click', () => this.loadSelectedConfig());
+        document.getElementById('config-delete-btn')?.addEventListener('click', () => this.deleteSelectedConfig());
     }
 
     toggleInitialTileOptions(layoutType) {
@@ -224,10 +229,16 @@ export class SetupManager {
             return {
                 centerPatternFrequency: freq,
                 patternWeights: { circles: circlesPct, squares: 1 - circlesPct },
-                tileWeights: this._getTileWeights()
+                tileWeights: this._getTileWeights(),
+                tileMaxCounts: this._getTileMaxCounts()
             };
         }
         return {};
+    }
+
+    _getTileMaxCounts() {
+        const m = id => Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10));
+        return { tunnel: m('tm-tunnel'), roadblock: m('tm-roadblock'), private: m('tm-private') };
     }
 
     // Global scoring options plus the active tile set's extras
@@ -311,6 +322,89 @@ export class SetupManager {
         ];
     }
 
+    // ---- Game Configuration save / load ----
+
+    static get _CONFIG_FIELDS() {
+        return [
+            'board-size','rack-size','tile-set','player-count',
+            'initial-tile-layout','initial-tiles','layout-tiles',
+            'enable-timer','time-limit',
+            'center-pattern-freq','circles-ratio',
+            'tw-cross','tw-t','tw-straight','tw-corner','tw-dead','tw-blank',
+            'tw-tunnel','tw-roadblock','tw-private',
+            'tm-tunnel','tm-roadblock','tm-private',
+            'enable-blank-sides','shape-count',
+            'enable-free-play','enable-border-rule',
+            'starter-multiplier','circle-score','square-score',
+            'intersection-bonus','center-bonus','path-points','completion-bonus',
+            'score-mode-endgame','enable-tournament','tournament-rounds',
+        ];
+    }
+
+    static _storedConfigs() {
+        try { return JSON.parse(localStorage.getItem('tiles_game_configs_v1') || '[]'); }
+        catch { return []; }
+    }
+    static _saveConfigs(list) {
+        localStorage.setItem('tiles_game_configs_v1', JSON.stringify(list));
+    }
+
+    populateConfigSelect() {
+        const sel = document.getElementById('config-select');
+        if (!sel) return;
+        const list = SetupManager._storedConfigs();
+        sel.innerHTML = '<option value="">— Saved configs —</option>' +
+            list.map((c, i) => `<option value="${i}">${c.name}</option>`).join('');
+    }
+
+    saveCurrentConfig() {
+        const nameEl = document.getElementById('config-name');
+        const name = nameEl?.value?.trim();
+        if (!name) return;
+        const values = {};
+        for (const id of SetupManager._CONFIG_FIELDS) {
+            const el = document.getElementById(id);
+            if (!el) continue;
+            values[id] = (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value;
+        }
+        const list = SetupManager._storedConfigs();
+        const idx = list.findIndex(c => c.name === name);
+        if (idx >= 0) list[idx] = { name, values };
+        else list.push({ name, values });
+        SetupManager._saveConfigs(list);
+        if (nameEl) nameEl.value = '';
+        this.populateConfigSelect();
+    }
+
+    loadSelectedConfig() {
+        const sel = document.getElementById('config-select');
+        const idx = parseInt(sel?.value);
+        if (isNaN(idx) || idx < 0) return;
+        const config = SetupManager._storedConfigs()[idx];
+        if (!config) return;
+        for (const [id, value] of Object.entries(config.values)) {
+            const el = document.getElementById(id);
+            if (!el) continue;
+            if (el.type === 'checkbox' || el.type === 'radio') el.checked = value;
+            else el.value = value;
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            el.dispatchEvent(new Event('input',  { bubbles: true }));
+        }
+        this.updatePlayerNameInputs();
+        this.toggleTimeLimitInput();
+        this.toggleTileSetOptions(this.tileSetSelect?.value || 'streets');
+    }
+
+    deleteSelectedConfig() {
+        const sel = document.getElementById('config-select');
+        const idx = parseInt(sel?.value);
+        if (isNaN(idx) || idx < 0) return;
+        const list = SetupManager._storedConfigs();
+        list.splice(idx, 1);
+        SetupManager._saveConfigs(list);
+        this.populateConfigSelect();
+    }
+
     showSetup() {
         if (this.gameScreen) this.gameScreen.style.display = 'none';
         if (this.setupScreen) this.setupScreen.style.display = 'flex';
@@ -335,5 +429,8 @@ export class SetupManager {
 
         // Initialize player names based on default player count
         this.updatePlayerNameInputs();
+
+        // Populate saved configs dropdown
+        this.populateConfigSelect();
     }
 }
