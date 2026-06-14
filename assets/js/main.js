@@ -1,10 +1,10 @@
 // assets/js/main.js
-const VERSION = '3.4';
+const VERSION = '3.5';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=3.2';
 import { Player } from './core/player-state.js';
-import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=3.4b';
+import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=3.5';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js';
 import { StandardScoring } from './scoring/standard-scoring.js';
