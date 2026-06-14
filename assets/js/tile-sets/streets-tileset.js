@@ -356,11 +356,13 @@ class StreetsTileSet extends TileSet {
     const lk = Math.max(2, size * 0.03);
     ctx.fillStyle = '#ffffff';
     if (ewUp) {
-      ctx.fillRect(cx - r - lk, cy - r, lk, roadW);  // W edge
-      ctx.fillRect(cx + r,       cy - r, lk, roadW);  // E edge
-    } else {
+      // E-W flyover: horizontal lines at N and S of crossing
       ctx.fillRect(cx - r, cy - r - lk, roadW, lk);  // N edge
       ctx.fillRect(cx - r, cy + r,       roadW, lk);  // S edge
+    } else {
+      // N-S flyover: vertical lines at W and E of crossing
+      ctx.fillRect(cx - r - lk, cy - r, lk, roadW);  // W edge
+      ctx.fillRect(cx + r,       cy - r, lk, roadW);  // E edge
     }
   }
 
