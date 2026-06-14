@@ -221,7 +221,7 @@ class StreetsTileSet extends TileSet {
     if (tile.centerPattern) renderPattern(ctx, size, this.centerPatterns[tile.centerPattern], 0);
 
     // Special overlays on top of road graphics
-    if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size);
+    if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size, rotation || tile.rotation || 0);
     if (tile.type === 'private') this._drawPrivateIndicator(ctx, size, tile, rotatedSides);
 
     if (tile.isStarterTile) {
@@ -318,9 +318,17 @@ class StreetsTileSet extends TileSet {
     ctx.strokeRect(size * 0.06, size * 0.06, size * 0.88, size * 0.88);
   }
 
-  // Flyover tile: N-S road elevated over E-W tunnel road.
-  // N-S appears on top (black with white dashes); E-W appears muted underneath.
-  _drawTunnelOverlay(ctx, size) {
+  // Flyover tile: one road elevated over the other at the centre crossing.
+  // rotation % 2 === 0 → N-S is the flyover; rotation % 2 === 1 → E-W is the flyover.
+  _drawTunnelOverlay(ctx, size, rotation = 0) {
+    // Rotate canvas 90° for odd rotations so drawing code always treats N-S as the flyover
+    if (rotation % 2 === 1) {
+      ctx.save();
+      ctx.translate(size / 2, size / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.translate(-size / 2, -size / 2);
+    }
+
     const cx = size / 2;
     const cy = size / 2;
     const roadW = size * 0.34;
@@ -375,6 +383,8 @@ class StreetsTileSet extends TileSet {
     ctx.fillStyle = 'rgba(0,0,0,0.65)';
     ctx.fillRect(cx - halfRoad - shadowW, cy - halfRoad, shadowW, roadW);
     ctx.fillRect(cx + halfRoad, cy - halfRoad, shadowW, roadW);
+
+    if (rotation % 2 === 1) ctx.restore();
   }
 
   // Player-owned private lane: coloured road surface + shoulder bollards, no centre line.
