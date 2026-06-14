@@ -441,6 +441,7 @@ export class SetupManager {
                     'tw-cross': 5, 'tw-t': 12, 'tw-straight': 10, 'tw-corner': 12, 'tw-dead': 8, 'tw-blank': 4,
                     'tw-tunnel': 6, 'tw-roadblock': 5, 'tw-private': 6,
                     'tm-tunnel': 3, 'tm-roadblock': 2, 'tm-private': 4, 'tm-circles': 6, 'tm-squares': 4,
+                    'penalty-freq': 10, 'tm-speedcam': 3,
                 }),
             },
         };
