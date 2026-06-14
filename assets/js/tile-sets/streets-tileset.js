@@ -318,9 +318,8 @@ class StreetsTileSet extends TileSet {
     ctx.strokeRect(size * 0.06, size * 0.06, size * 0.88, size * 0.88);
   }
 
-  // 4-way cross with bridge: N-S road goes over E-W road at the centre.
-  // Rotation 1 or 3 means the elevated road runs E-W; rotate canvas 90° so
-  // all drawing code can always assume N-S elevation.
+  // 4-way cross with bridge: E-W road goes over N-S road at the centre (rotation=0).
+  // Odd tile rotations (1,3) swap to N-S elevated via a 90° canvas rotation.
   _drawTunnelOverlay(ctx, size, rotation = 0) {
     const cx = size / 2;
     const cy = size / 2;
@@ -333,50 +332,44 @@ class StreetsTileSet extends TileSet {
       ctx.translate(-cx, -cy);
     }
 
-    // Deep shadow over the E-W underground crossing
-    ctx.fillStyle = 'rgba(0,0,0,0.78)';
-    ctx.fillRect(0, cy - roadW * 0.5, size, roadW);
-
-    // Tunnel portal mouths — dark concrete blocks at E and W openings
-    ctx.fillStyle = '#1e1e1e';
-    const portalW = roadW * 0.45;
-    ctx.fillRect(0,            cy - roadW * 0.5, portalW, roadW);
-    ctx.fillRect(size - portalW, cy - roadW * 0.5, portalW, roadW);
-
-    // Bridge deck (N-S elevated road) — concrete grey
-    ctx.fillStyle = '#4a4a4a';
+    // Fully opaque dark fill for the N-S underground crossing (hides base road markings)
+    ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(cx - roadW * 0.5, 0, roadW, size);
 
-    // Redraw N-S road markings over the bridge deck
-    renderPattern(ctx, size, this.patterns['street'], 0);
-    renderPattern(ctx, size, this.patterns['street'], 2);
+    // Tunnel portal mouths — dark concrete blocks at N and S openings
+    ctx.fillStyle = '#1e1e1e';
+    const portalH = roadW * 0.45;
+    ctx.fillRect(cx - roadW * 0.5, 0,             roadW, portalH);
+    ctx.fillRect(cx - roadW * 0.5, size - portalH, roadW, portalH);
 
-    // Enforce minimum-width centre dashes — the pattern dashes are sub-pixel at small tile sizes
-    {
-      const dashW = Math.max(2, size * 0.015);
-      const dashH = Math.max(4, size * 0.13);
-      const step  = dashH * 1.8;
-      ctx.fillStyle = '#ffffff';
-      for (let y = size * 0.07; y + dashH < size * 0.93; y += step) {
-        ctx.fillRect(cx - dashW / 2, y, dashW, dashH);
-      }
+    // Bridge deck (E-W elevated road) — concrete grey
+    ctx.fillStyle = '#4a4a4a';
+    ctx.fillRect(0, cy - roadW * 0.5, size, roadW);
+
+    // Centre dashes on bridge deck — drawn directly so they're always visible
+    const dashH = Math.max(2, size * 0.015);
+    const dashW = Math.max(4, size * 0.13);
+    const step  = dashW * 1.8;
+    ctx.fillStyle = '#ffffff';
+    for (let x = size * 0.07; x + dashW < size * 0.93; x += step) {
+      ctx.fillRect(x, cy - dashH / 2, dashW, dashH);
     }
 
-    // Safety railing bars at the top and bottom edges of the bridge crossing
-    const railH = Math.max(3, size * 0.055);
+    // Safety railing bars at the left and right edges of the bridge crossing
+    const railW = Math.max(3, size * 0.055);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(cx - roadW * 0.5, cy - roadW * 0.5 - railH, roadW, railH);
-    ctx.fillRect(cx - roadW * 0.5, cy + roadW * 0.5,          roadW, railH);
+    ctx.fillRect(cx - roadW * 0.5 - railW, cy - roadW * 0.5, railW, roadW);
+    ctx.fillRect(cx + roadW * 0.5,           cy - roadW * 0.5, railW, roadW);
 
-    // Railing posts (vertical stubs)
+    // Railing posts (horizontal stubs into the crossing zone)
     ctx.fillStyle = '#cccccc';
-    const postW   = Math.max(1, size * 0.03);
-    const postH   = railH * 2.2;
-    const nPosts  = 3;
+    const postH  = Math.max(1, size * 0.03);
+    const postW2 = railW * 2.2;
+    const nPosts = 3;
     for (let i = 0; i < nPosts; i++) {
-      const px = cx - roadW * 0.4 + i * (roadW * 0.4);
-      ctx.fillRect(px - postW / 2, cy - roadW * 0.5 - postH, postW, postH);
-      ctx.fillRect(px - postW / 2, cy + roadW * 0.5,          postW, postH);
+      const py = cy - roadW * 0.4 + i * (roadW * 0.4);
+      ctx.fillRect(cx - roadW * 0.5 - postW2, py - postH / 2, postW2, postH);
+      ctx.fillRect(cx + roadW * 0.5,           py - postH / 2, postW2, postH);
     }
 
     ctx.restore();
