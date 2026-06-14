@@ -1,10 +1,10 @@
 // assets/js/main.js
-const VERSION = '4.02';
+const VERSION = '4.03';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=3.2';
 import { Player } from './core/player-state.js';
-import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.02';
+import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.03';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js';
 import { StandardScoring } from './scoring/standard-scoring.js';
@@ -345,7 +345,7 @@ class Game {
   setupGameStateListeners() {
     this.gameState.on('tilePlaced', ({ position, tile, score, bonus, claimed }) => {
       this.boardManager.renderTile(position, tile);
-      if (score > 0) this.boardManager.showScorePopup(position, score, bonus);
+      if (score !== 0) this.boardManager.showScorePopup(position, score, bonus);
       // Re-render any border-bonus tiles that were just claimed
       for (const c of (claimed ?? [])) {
         this.boardManager.renderTile({ x: c.x, y: c.y }, c.tile);

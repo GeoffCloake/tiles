@@ -240,9 +240,11 @@ export class SetupManager {
             for (let i = 0; i < playerCount; i++) {
                 const freq = parseInt(document.getElementById(`center-pattern-freq-p${i}`)?.value || '20') / 100;
                 const circlesPct = parseInt(document.getElementById(`circles-ratio-p${i}`)?.value || '70') / 100;
+                const penaltyFreq = parseInt(document.getElementById(`penalty-freq-p${i}`)?.value || '0') / 100;
                 perPlayerOptions[i] = {
                     centerPatternFrequency: freq,
                     patternWeights: { circles: circlesPct, squares: 1 - circlesPct },
+                    penaltyFrequency: penaltyFreq,
                     tileWeights: this._getTileWeights(i),
                     tileMaxCounts: this._getTileMaxCounts(i),
                 };
@@ -260,6 +262,7 @@ export class SetupManager {
             corner: m('tm-corner'), deadEnd: m('tm-dead'), blank: m('tm-blank'),
             tunnel: m('tm-tunnel'), roadblock: m('tm-roadblock'), private: m('tm-private'),
             centerCircles: m('tm-circles'), centerSquares: m('tm-squares'),
+            speedCamera: m('tm-speedcam'),
         };
     }
 
@@ -279,7 +282,10 @@ export class SetupManager {
                 centerBonus: parseInt(this.centerBonusInput?.value || '5'),
                 pathPoints: parseInt(this.pathPointsInput?.value || '3'),
                 completionBonus: parseInt(this.completionBonusInput?.value || '20'),
-                enableEndGameBonus: this.endGameScoreModeRadio?.checked || false
+                enableEndGameBonus: this.endGameScoreModeRadio?.checked || false,
+                penaltyScores: {
+                    roadblock: parseInt(document.getElementById('roadblock-penalty')?.value || '10'),
+                }
             });
         }
 
@@ -372,6 +378,7 @@ export class SetupManager {
             'tw-cross', 'tw-t', 'tw-straight', 'tw-corner', 'tw-dead', 'tw-blank',
             'tw-tunnel', 'tw-roadblock', 'tw-private',
             'tm-circles', 'tm-squares',
+            'penalty-freq', 'tm-speedcam',
             'tm-cross', 'tm-t', 'tm-straight', 'tm-corner', 'tm-dead', 'tm-blank',
             'tm-tunnel', 'tm-roadblock', 'tm-private',
         ];
@@ -386,6 +393,7 @@ export class SetupManager {
             'tw-cross': 0, 'tw-t': 0, 'tw-straight': 0, 'tw-corner': 0, 'tw-dead': 0, 'tw-blank': 0,
             'tw-tunnel': 0, 'tw-roadblock': 0, 'tw-private': 0,
             'tm-circles': 0, 'tm-squares': 0,
+            'penalty-freq': 0, 'tm-speedcam': 0,
             'tm-cross': 0, 'tm-t': 0, 'tm-straight': 0, 'tm-corner': 0, 'tm-dead': 0, 'tm-blank': 0,
             'tm-tunnel': 0, 'tm-roadblock': 0, 'tm-private': 0,
             ...overrides,
@@ -401,6 +409,7 @@ export class SetupManager {
                     'circles-ratio': 60,
                     'tw-cross': 5, 'tw-t': 12, 'tw-straight': 10, 'tw-corner': 12, 'tw-dead': 8, 'tw-blank': 4,
                     'tw-tunnel': 8, 'tw-roadblock': 6, 'tw-private': 8,
+                    'penalty-freq': 10, 'tm-speedcam': 0,
                 }),
             },
             'highways': {
@@ -477,6 +486,7 @@ export class SetupManager {
             `tw-dead-p${i}`, `tw-blank-p${i}`, `tw-tunnel-p${i}`, `tw-roadblock-p${i}`, `tw-private-p${i}`,
             `tm-cross-p${i}`, `tm-t-p${i}`, `tm-straight-p${i}`, `tm-corner-p${i}`,
             `tm-dead-p${i}`, `tm-blank-p${i}`, `tm-tunnel-p${i}`, `tm-roadblock-p${i}`, `tm-private-p${i}`,
+            `penalty-freq-p${i}`, `tm-speedcam-p${i}`,
         ]).flat();
         return [
             'board-size','rack-size','tile-set','player-count',
@@ -487,6 +497,7 @@ export class SetupManager {
             'enable-free-play','enable-border-rule',
             'starter-multiplier','circle-score','square-score',
             'intersection-bonus','center-bonus','path-points','completion-bonus',
+            'roadblock-penalty',
             'score-mode-endgame','enable-tournament','tournament-rounds',
         ];
     }

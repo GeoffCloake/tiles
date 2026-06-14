@@ -179,6 +179,16 @@ class StreetsTileSet extends TileSet {
       }
     }
 
+    // Penalty patterns (speed camera overlay on normal tiles)
+    const penaltyFreq = pp.penaltyFrequency ?? this.options.penaltyFrequency ?? 0;
+    const maxSC   = maxCounts.speedCamera || 0;
+    const usedSC  = counts.speedCamera   || 0;
+    const canSC   = !(maxSC > 0 && usedSC >= maxSC);
+    if (canSC && penaltyFreq > 0 && Math.random() < penaltyFreq && tile.type === 'normal' && !tile.centerPattern) {
+      tile.centerPattern = 'speedCamera';
+      counts.speedCamera = usedSC + 1;
+    }
+
     // Player colour
     if (playerIndex !== null) {
       tile.backgroundColor = playerCount === 1
@@ -212,7 +222,11 @@ class StreetsTileSet extends TileSet {
 
     rotatedSides.forEach((side, index) => renderPattern(ctx, size, this.patterns[side], index));
 
-    if (tile.centerPattern) renderPattern(ctx, size, this.centerPatterns[tile.centerPattern], 0);
+    if (tile.centerPattern === 'speedCamera') {
+      this._drawSpeedCameraOverlay(ctx, size);
+    } else if (tile.centerPattern) {
+      renderPattern(ctx, size, this.centerPatterns[tile.centerPattern], 0);
+    }
 
     // Special overlays on top of road graphics
     if (tile.type === 'tunnel')     this._drawTunnelOverlay(ctx, size, rotation || tile.rotation || 0, tile.backgroundColor || '#ffffff');
@@ -267,6 +281,35 @@ class StreetsTileSet extends TileSet {
     ctx.globalAlpha = 0.9;
     drawSegments();
 
+    ctx.restore();
+  }
+
+  // Amber circle + black camera icon: penalty tile that halves the placement score
+  _drawSpeedCameraOverlay(ctx, size) {
+    const cx = size / 2;
+    const cy = size / 2;
+    const cr = size * 0.22;
+
+    ctx.save();
+    ctx.fillStyle = '#FF8C00';
+    ctx.beginPath();
+    ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+    ctx.fill();
+
+    const bw = cr * 1.1, bh = cr * 0.72;
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(cx - bw / 2, cy - bh / 2, bw, bh);
+    ctx.fillRect(cx - bw * 0.22, cy - bh / 2 - bh * 0.32, bw * 0.44, bh * 0.32);
+
+    const lr = cr * 0.28;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, lr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(cx, cy, lr * 0.55, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
 

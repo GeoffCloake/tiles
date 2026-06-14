@@ -20,6 +20,7 @@ export class StreetScoring extends AdjacencyScoring {
                 pathPoints: 3,
                 completionBonus: 20,
                 enableEndGameBonus: false,
+                penaltyScores: { roadblock: 10 },
                 ...options
             }
         });
@@ -65,7 +66,25 @@ export class StreetScoring extends AdjacencyScoring {
             entries.push(...this.pathProgressEntries(gameState, position, tile));
         }
 
+        if (tile.type === 'roadblock') {
+            const penalty = this.options.penaltyScores?.roadblock || 0;
+            if (penalty) entries.push({ key: 'roadblockPenalty', label: 'Road Block Penalty', points: -penalty });
+        }
+
         return entries;
+    }
+
+    calculateScore(gameState, position, tile) {
+        const result = super.calculateScore(gameState, position, tile);
+        if (tile.centerPattern === 'speedCamera' && result.total !== 0) {
+            const penalty = -Math.floor(Math.abs(result.total) / 2);
+            if (penalty !== 0) {
+                result.breakdown.push({ key: 'speedCamera', label: 'Speed Camera', points: penalty });
+                result.total += penalty;
+                result.bonus += penalty;
+            }
+        }
+        return result;
     }
 
     pathProgressEntries(gameState, position, tile) {
