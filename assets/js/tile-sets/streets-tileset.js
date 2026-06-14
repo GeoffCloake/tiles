@@ -364,6 +364,13 @@ class StreetsTileSet extends TileSet {
       ctx.fillRect(cx - r - lk, cy - r, lk, roadW);  // W edge
       ctx.fillRect(cx + r,       cy - r, lk, roadW);  // E edge
     }
+
+    // Abutment corner blocks at the 4 outer corners of the crossing zone
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(cx - r - lk, cy - r - lk, lk, lk);  // NW
+    ctx.fillRect(cx + r,       cy - r - lk, lk, lk);  // NE
+    ctx.fillRect(cx - r - lk, cy + r,       lk, lk);  // SW
+    ctx.fillRect(cx + r,       cy + r,       lk, lk);  // SE
   }
 
   // Player-owned private lane: coloured road surface + shoulder bollards, no centre line.
