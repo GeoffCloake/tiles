@@ -91,6 +91,18 @@
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
+/* Path player selection */
+#player-container.paths-active .player-info {
+    cursor: pointer;
+}
+#player-container.paths-active .player-info:hover {
+    background-color: #3a3a3a;
+}
+.player-info.path-viewing {
+    outline: 2px dashed rgba(255, 255, 255, 0.45);
+    outline-offset: 2px;
+}
+
 /* Score breakdown tally — always visible */
 .player-tally {
     display: block;

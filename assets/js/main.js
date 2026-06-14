@@ -104,6 +104,17 @@ class Game {
     });
     document.getElementById('show-paths')?.addEventListener('click', () => this.togglePathHighlights());
 
+    // Click a player card while paths are on to pin that player's path; click again to unpin
+    document.getElementById('player-container')?.addEventListener('click', (e) => {
+      if (!this.showingPaths) return;
+      const card = e.target.closest('.player-info[id^="player-"]');
+      if (!card) return;
+      const playerId = card.id.replace('player-', '');
+      this.selectedPathPlayerId = (this.selectedPathPlayerId === playerId) ? null : playerId;
+      this._updatePathPlayerIndicators();
+      this.refreshPathHighlights();
+    });
+
     // Rules modal
     document.getElementById('rules-button')?.addEventListener('click', () => this.showRules());
     document.getElementById('close-rules')?.addEventListener('click', () => this.hideRules());
@@ -246,6 +257,8 @@ class Game {
     this.boardManager.initialize(this.gameState);
     this.rackManager.initialize(this.gameState);
     this.playerUIManager.initialize(this.gameState);
+    this.selectedPathPlayerId = null;
+    this._updatePathPlayerIndicators();
 
     // No extra initializeBoard() call here � constructor already placed starters
     // when initialTilesArg is provided (random or arrangement).
@@ -497,6 +510,7 @@ class Game {
   _refreshOnlineView() {
     this.playerUIManager.updatePlayerList();
     this.updateUIForCurrentPlayer();
+    this._updatePathPlayerIndicators();
     this.refreshPathHighlights();
   }
 
@@ -509,10 +523,12 @@ class Game {
   togglePathHighlights() {
     this.showingPaths = !this.showingPaths;
     document.getElementById('show-paths')?.classList.toggle('active', this.showingPaths);
+    if (!this.showingPaths) this.selectedPathPlayerId = null;
+    this._updatePathPlayerIndicators();
     this.refreshPathHighlights();
   }
 
-  // Highlight each player's current best centre-to-bonus path in their colour
+  // Show only one player's path: the pinned player, or the current player by default
   refreshPathHighlights() {
     if (!this.boardManager || !this.gameState) return;
     this.boardManager.clearPathHighlights();
@@ -521,9 +537,23 @@ class Game {
     const pathScoring = this.gameState.scoringSystem?.pathScoring;
     if (!pathScoring) return;
 
-    this.gameState.playerManager.players.forEach(player => {
-      const path = pathScoring.findLongestPathForPlayer(this.gameState, player.id);
-      if (path) this.boardManager.highlightPath(path, player.color);
+    const target = this.selectedPathPlayerId
+      ? this.gameState.playerManager.getPlayerById(this.selectedPathPlayerId)
+      : this.gameState.getCurrentPlayer();
+    if (!target) return;
+
+    const path = pathScoring.findLongestPathForPlayer(this.gameState, target.id);
+    if (path) this.boardManager.highlightPath(path, target.color);
+  }
+
+  // Mark the pinned player's card with a visible indicator; add pointer cursor when paths are on
+  _updatePathPlayerIndicators() {
+    const container = document.getElementById('player-container');
+    if (!container) return;
+    container.classList.toggle('paths-active', !!this.showingPaths);
+    container.querySelectorAll('.player-info').forEach(div => {
+      const id = div.id.replace('player-', '');
+      div.classList.toggle('path-viewing', !!this.showingPaths && id === this.selectedPathPlayerId);
     });
   }
 
