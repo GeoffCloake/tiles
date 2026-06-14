@@ -338,12 +338,12 @@ class StreetsTileSet extends TileSet {
     renderPattern(ctx, size, this.patterns['street'], 0);
     renderPattern(ctx, size, this.patterns['street'], 2);
 
-    // White centre dashes on N-S flyover — clearly visible
+    // White centre dashes on N-S flyover — original road dash proportions
     ctx.save();
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = Math.max(2, size * 0.04);
+    ctx.lineWidth = Math.max(2, size * 0.02);
     ctx.lineCap = 'butt';
-    ctx.setLineDash([Math.max(6, size * 0.13), Math.max(3, size * 0.07)]);
+    ctx.setLineDash([Math.max(5, size * 0.13), Math.max(3, size * 0.053)]);
     ctx.beginPath();
     ctx.moveTo(cx, 0);
     ctx.lineTo(cx, size);
@@ -353,9 +353,9 @@ class StreetsTileSet extends TileSet {
     // Muted grey dashes on the visible E-W tunnel sections (W and E of the bridge)
     ctx.save();
     ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-    ctx.lineWidth = Math.max(1, size * 0.03);
+    ctx.lineWidth = Math.max(1, size * 0.02);
     ctx.lineCap = 'butt';
-    ctx.setLineDash([Math.max(4, size * 0.1), Math.max(3, size * 0.07)]);
+    ctx.setLineDash([Math.max(5, size * 0.13), Math.max(3, size * 0.053)]);
     ctx.beginPath();
     ctx.moveTo(0, cy);
     ctx.lineTo(cx - halfRoad, cy);
@@ -363,6 +363,12 @@ class StreetsTileSet extends TileSet {
     ctx.lineTo(size, cy);
     ctx.stroke();
     ctx.restore();
+
+    // White lines at N and S edges of the bridge crossing to emphasise the bridge structure
+    const lineH = Math.max(2, size * 0.03);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(cx - halfRoad, cy - halfRoad - lineH, roadW, lineH);
+    ctx.fillRect(cx - halfRoad, cy + halfRoad,          roadW, lineH);
 
     // Drop shadow at left and right edges of the elevated road (depth cue)
     const shadowW = Math.max(2, size * 0.025);
