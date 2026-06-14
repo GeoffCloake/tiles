@@ -318,8 +318,9 @@ class StreetsTileSet extends TileSet {
     ctx.strokeRect(size * 0.06, size * 0.06, size * 0.88, size * 0.88);
   }
 
-  // Flyover tile drawn from scratch. Both roads black. Both centre lines white.
-  // Tunnel centre line stops at the crossing (hidden under the flyover).
+  // Flyover tile drawn from scratch.
+  // Uses the same renderPattern as every other tile for identical dash proportions.
+  // Tunnel dashes are hidden at the crossing; bridge edges marked with white lines.
   _drawTunnelOverlay(ctx, size, rotation = 0, bgColor = '#ffffff') {
     const cx    = size / 2;
     const cy    = size / 2;
@@ -327,44 +328,40 @@ class StreetsTileSet extends TileSet {
     const r     = roadW / 2;
     const ewUp  = (rotation % 2 === 1);
 
+    // Flyover arms / tunnel arms (indices into renderPattern rotation)
+    const [fa, fb, ta, tb] = ewUp ? [1, 3, 0, 2] : [0, 2, 1, 3];
+
     // Start fresh
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, size, size);
 
-    // Both roads: solid black
+    // Both roads solid black
     ctx.fillStyle = '#000000';
-    ctx.fillRect(cx - r, 0, roadW, size);  // N-S
-    ctx.fillRect(0, cy - r, size, roadW);  // E-W
+    ctx.fillRect(cx - r, 0, roadW, size);
+    ctx.fillRect(0, cy - r, size, roadW);
 
-    // Dash dimensions matching the original street pattern proportions
-    const dashLen = size * (38.5 / 300);
-    const dashGap = size * (11.7 / 300);
-    const lw      = Math.max(2, size * (4.49 / 300));
+    // Draw tunnel road dashes at original proportions (same renderPattern as all tiles)
+    renderPattern(ctx, size, this.patterns['street'], ta);
+    renderPattern(ctx, size, this.patterns['street'], tb);
 
-    ctx.save();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth   = lw;
-    ctx.lineCap     = 'butt';
-    ctx.setLineDash([dashLen, dashGap]);
+    // Cover crossing centre with black — hides tunnel dashes under the flyover
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(cx - r, cy - r, roadW, roadW);
 
-    // Flyover road: white dashes full length (continuous through crossing)
-    ctx.beginPath();
-    if (ewUp) { ctx.moveTo(0, cy);  ctx.lineTo(size, cy); }
-    else      { ctx.moveTo(cx, 0);  ctx.lineTo(cx, size); }
-    ctx.stroke();
+    // Draw flyover road dashes over the full road length
+    renderPattern(ctx, size, this.patterns['street'], fa);
+    renderPattern(ctx, size, this.patterns['street'], fb);
 
-    // Tunnel road: same white dashes but only outside the crossing
-    ctx.beginPath();
+    // White lines at the bridge crossing edges to emphasise the bridge
+    const lk = Math.max(2, size * 0.03);
+    ctx.fillStyle = '#ffffff';
     if (ewUp) {
-      ctx.moveTo(cx, 0);      ctx.lineTo(cx, cy - r);
-      ctx.moveTo(cx, cy + r); ctx.lineTo(cx, size);
+      ctx.fillRect(cx - r - lk, cy - r, lk, roadW);  // W edge
+      ctx.fillRect(cx + r,       cy - r, lk, roadW);  // E edge
     } else {
-      ctx.moveTo(0, cy);      ctx.lineTo(cx - r, cy);
-      ctx.moveTo(cx + r, cy); ctx.lineTo(size, cy);
+      ctx.fillRect(cx - r, cy - r - lk, roadW, lk);  // N edge
+      ctx.fillRect(cx - r, cy + r,       roadW, lk);  // S edge
     }
-    ctx.stroke();
-
-    ctx.restore();
   }
 
   // Player-owned private lane: coloured road surface + shoulder bollards, no centre line.
