@@ -221,7 +221,7 @@ class StreetsTileSet extends TileSet {
     if (tile.centerPattern) renderPattern(ctx, size, this.centerPatterns[tile.centerPattern], 0);
 
     // Special overlays on top of road graphics
-    if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size, rotation || tile.rotation || 0);
+    if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size, rotation || tile.rotation || 0, tile.backgroundColor || '#ffffff');
     if (tile.type === 'private') this._drawPrivateIndicator(ctx, size, tile, rotatedSides);
 
     if (tile.isStarterTile) {
@@ -318,44 +318,42 @@ class StreetsTileSet extends TileSet {
     ctx.strokeRect(size * 0.06, size * 0.06, size * 0.88, size * 0.88);
   }
 
-  // Flyover tile: even rotation → N-S elevated; odd → E-W elevated.
-  // Visually distinct from a regular intersection: tunnel road appears grey,
-  // flyover road is solid black with bright white dashes.
-  _drawTunnelOverlay(ctx, size, rotation = 0) {
-    const cx   = size / 2;
-    const cy   = size / 2;
+  // Flyover tile drawn from scratch. Both roads black. Both centre lines white.
+  // Tunnel centre line stops at the crossing (hidden under the flyover).
+  _drawTunnelOverlay(ctx, size, rotation = 0, bgColor = '#ffffff') {
+    const cx    = size / 2;
+    const cy    = size / 2;
     const roadW = size * 0.34;
-    const r    = roadW / 2;
-    const ewUp = (rotation % 2 === 1);
+    const r     = roadW / 2;
+    const ewUp  = (rotation % 2 === 1);
 
-    // Lighten the tunnel road to grey so it reads as underground
-    ctx.fillStyle = 'rgba(255,255,255,0.32)';
-    if (ewUp) ctx.fillRect(cx - r, 0, roadW, size);  // N-S is the tunnel
-    else      ctx.fillRect(0, cy - r, size, roadW);  // E-W is the tunnel
+    // Start fresh
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, size, size);
 
-    // Paint the flyover road solid black on top (elevated, dominant)
+    // Both roads: solid black
     ctx.fillStyle = '#000000';
-    if (ewUp) ctx.fillRect(0, cy - r, size, roadW);  // E-W flyover
-    else      ctx.fillRect(cx - r, 0, roadW, size);  // N-S flyover
+    ctx.fillRect(cx - r, 0, roadW, size);  // N-S
+    ctx.fillRect(0, cy - r, size, roadW);  // E-W
 
-    // Bright white dashes on flyover road — full length
+    // Dash dimensions matching the original street pattern proportions
+    const dashLen = size * (38.5 / 300);
+    const dashGap = size * (11.7 / 300);
+    const lw      = Math.max(2, size * (4.49 / 300));
+
     ctx.save();
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth   = Math.max(3, size * 0.025);
+    ctx.lineWidth   = lw;
     ctx.lineCap     = 'butt';
-    ctx.setLineDash([Math.max(6, size * 0.13), Math.max(4, size * 0.053)]);
+    ctx.setLineDash([dashLen, dashGap]);
+
+    // Flyover road: white dashes full length (continuous through crossing)
     ctx.beginPath();
     if (ewUp) { ctx.moveTo(0, cy);  ctx.lineTo(size, cy); }
     else      { ctx.moveTo(cx, 0);  ctx.lineTo(cx, size); }
     ctx.stroke();
-    ctx.restore();
 
-    // Grey dashes on tunnel sections outside the crossing (hidden under flyover at centre)
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-    ctx.lineWidth   = Math.max(2, size * 0.02);
-    ctx.lineCap     = 'butt';
-    ctx.setLineDash([Math.max(6, size * 0.13), Math.max(4, size * 0.053)]);
+    // Tunnel road: same white dashes but only outside the crossing
     ctx.beginPath();
     if (ewUp) {
       ctx.moveTo(cx, 0);      ctx.lineTo(cx, cy - r);
@@ -365,6 +363,7 @@ class StreetsTileSet extends TileSet {
       ctx.moveTo(cx + r, cy); ctx.lineTo(size, cy);
     }
     ctx.stroke();
+
     ctx.restore();
   }
 
