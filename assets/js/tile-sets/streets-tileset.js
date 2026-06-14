@@ -365,22 +365,13 @@ class StreetsTileSet extends TileSet {
       ctx.fillRect(cx + r,       cy - r, lk, roadW);  // E edge
     }
 
-    // Abutment blocks: extend the edge lines outward into the tile background
-    const ak = Math.max(4, size * 0.08);
+    // Abutment blocks — square white blocks at the 4 outer corners of the crossing zone
+    const ak = Math.max(8, size * 0.12);
     ctx.fillStyle = '#ffffff';
-    if (ewUp) {
-      // E-W flyover: edge lines are horizontal — abutments extend them left/right
-      ctx.fillRect(cx - r - ak, cy - r - lk, ak, lk);  // NW
-      ctx.fillRect(cx + r,       cy - r - lk, ak, lk);  // NE
-      ctx.fillRect(cx - r - ak, cy + r,       ak, lk);  // SW
-      ctx.fillRect(cx + r,       cy + r,       ak, lk);  // SE
-    } else {
-      // N-S flyover: edge lines are vertical — abutments extend them up/down
-      ctx.fillRect(cx - r - lk, cy - r - ak, lk, ak);  // NW
-      ctx.fillRect(cx + r,       cy - r - ak, lk, ak);  // NE
-      ctx.fillRect(cx - r - lk, cy + r,       lk, ak);  // SW
-      ctx.fillRect(cx + r,       cy + r,       lk, ak);  // SE
-    }
+    ctx.fillRect(cx - r - ak, cy - r - ak, ak, ak);  // NW
+    ctx.fillRect(cx + r,       cy - r - ak, ak, ak);  // NE
+    ctx.fillRect(cx - r - ak, cy + r,       ak, ak);  // SW
+    ctx.fillRect(cx + r,       cy + r,       ak, ak);  // SE
   }
 
   // Player-owned private lane: coloured road surface + shoulder bollards, no centre line.
