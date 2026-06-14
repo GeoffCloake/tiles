@@ -43,6 +43,14 @@
     gap: 1rem;
 }
 
+/* Round indicator (tournament mode) */
+.round-indicator {
+    font-size: 0.75rem;
+    color: var(--accent-blue);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
 /* Turn Indicator */
 .turn-indicator {
     background: var(--bg-tertiary);
@@ -83,6 +91,44 @@
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
+/* Path player selection */
+#player-container.paths-active .player-info {
+    cursor: pointer;
+}
+#player-container.paths-active .player-info:hover {
+    background-color: #3a3a3a;
+}
+.player-info.path-viewing {
+    outline: 2px dashed rgba(255, 255, 255, 0.45);
+    outline-offset: 2px;
+}
+
+/* Score breakdown tally — always visible */
+.player-tally {
+    display: block;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.tally-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    line-height: 1.5;
+}
+
+.tally-row span:last-child {
+    color: var(--accent-green);
+}
+
+.tally-empty {
+    font-style: italic;
+    color: var(--text-tertiary);
+}
+
 /* Make sure sidebar footer buttons don't get hidden */
 .sidebar-footer {
     margin-top: auto;
@@ -92,6 +138,14 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+.version-badge {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-tertiary, #555);
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
 }
 
 /* Setup Page Styles */
@@ -156,6 +210,237 @@
     display: block;
     color: var(--text-secondary);
     margin-bottom: 0.5rem;
+}
+
+.label-hint {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-weight: normal;
+}
+
+.tile-weights-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.tile-weight-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.tile-weight-item label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0;
+}
+
+.tile-weight-item input {
+    width: 100%;
+    padding: 0.3rem 0.4rem;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+}
+
+.tile-weight-special label {
+    color: var(--accent-blue);
+}
+
+/* Game configuration section */
+.config-section {
+    margin-bottom: 1.5rem;
+}
+
+.config-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+    align-items: center;
+}
+
+.config-select,
+.config-name-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.config-btn {
+    white-space: nowrap;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    background: var(--bg-tertiary, #333);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.config-btn:hover { background: var(--accent-blue); }
+.config-btn-danger:hover { background: #cc2200; }
+
+.setup-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.setup-top-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+.modal-content-wide {
+    max-width: 600px;
+}
+
+.weights-preset-bar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+.weights-preset-bar select { flex: 1; min-width: 0; }
+
+.weights-tab-bar {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+.weights-tab {
+    padding: 0.35rem 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px 4px 0 0;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.weights-tab.active {
+    background: var(--accent-blue);
+    color: #fff;
+    border-color: var(--accent-blue);
+}
+.weights-panel { display: none; }
+.weights-panel.active { display: block; }
+.copy-weights-btn {
+    margin-bottom: 0.75rem;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.8rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    cursor: pointer;
+}
+.copy-weights-btn:hover { background: var(--border-color); color: #fff; }
+
+/* ---- Computer (AI) players ---- */
+.player-ai-select {
+    width: 100%;
+    margin-top: 0.4rem;
+    box-sizing: border-box;
+}
+.ai-badge {
+    font-size: 0.85em;
+    vertical-align: middle;
+}
+
+/* ---- Online multiplayer ---- */
+.online-choose-grid {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+.online-card {
+    flex: 1;
+    min-width: 200px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+.online-card h3 { margin: 0 0 0.4rem; color: var(--accent-blue); }
+.online-card .button { margin-top: 0.6rem; width: 100%; }
+.online-code-input {
+    width: 100%;
+    box-sizing: border-box;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 0.4rem;
+}
+.online-room-code {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-align: center;
+    color: var(--accent-green);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.6rem;
+    border-radius: 10px;
+    margin: 0 0 1rem;
+    user-select: all;
+}
+.online-roster { list-style: none; padding: 0; margin: 0 0 1rem; }
+.online-roster li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 0.4rem;
+}
+.online-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: #666;
+    flex-shrink: 0;
+}
+.online-dot.on { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+.online-badge {
+    margin-left: 0.25rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary, #888);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.05rem 0.35rem;
+}
+.online-roster li .online-badge:last-child { margin-left: auto; }
+.online-error { color: #ff6b5e; min-height: 1.2em; font-size: 0.85rem; margin: 0.6rem 0 0; }
+
+/* In-game turn banner */
+.online-banner {
+    font-weight: 600;
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.95rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+.online-banner.my-turn { background: var(--accent-green); color: #06210e; }
+.online-banner.waiting { background: var(--bg-tertiary); color: var(--text-secondary); }
+.online-banner .code {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    opacity: 0.85;
+    margin-top: 0.15rem;
+    font-weight: 500;
+}
+
+/* Locked rack while it isn't this device's turn */
+.rack.rack-locked {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(0.35);
 }
 
 .button-group {

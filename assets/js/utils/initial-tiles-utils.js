@@ -14,6 +14,8 @@ export function placeInitialTiles(gameState, config) {
             return generateBorderTiles(gameState);
         } else if (config.style === 'centre') {
             return generateCenterTile(gameState);
+        } else if (config.style === 'border-bonus') {
+            return generateBorderBonusTiles(gameState);
         }
     }
     return [];
@@ -179,6 +181,62 @@ function generateValidTile(gameState, position, placedTiles = new Map(), isBorde
     }
 
     return null;
+}
+
+/**
+ * Generates border bonus tiles for Streets games.
+ * Every non-corner border cell gets a dead-end tile whose single street edge
+ * points inward toward the board centre. Tiles carry a bonus-circles pattern
+ * and can be claimed by the first player to build a path from their centre
+ * square to the tile.
+ */
+function generateBorderBonusTiles(gameState) {
+    const N = gameState.boardSize;
+    // Base dead-end: street on north edge, then rotation points it inward.
+    const baseSides = ['street', 'non-street', 'non-street', 'non-street'];
+
+    const make = (x, y, rotation) => ({
+        position: { x, y },
+        tile: {
+            id: `bb-${x}-${y}`,
+            sides: [...baseSides],
+            type: 'normal',
+            rotation,
+            centerPattern: 'circles',
+            isStarterTile: true,
+            isBorderBonus: true,
+            claimed: false,
+        },
+    });
+
+    const makeCorner = (x, y) => ({
+        position: { x, y },
+        tile: {
+            id: `blocker-${x}-${y}`,
+            sides: ['non-street', 'non-street', 'non-street', 'non-street'],
+            type: 'blocker',
+            rotation: 0,
+            isStarterTile: true, // keeps isFirstMove() working; no centerPattern so no path effect
+        },
+    });
+
+    const results = [];
+    // Corners (sealed — no player placement)
+    results.push(makeCorner(0,     0    ));
+    results.push(makeCorner(N - 1, 0    ));
+    results.push(makeCorner(0,     N - 1));
+    results.push(makeCorner(N - 1, N - 1));
+
+    // Top row (y=0): street faces south (into board) → rotation 2
+    for (let x = 1; x < N - 1; x++) results.push(make(x, 0, 2));
+    // Bottom row (y=N-1): street faces north → rotation 0
+    for (let x = 1; x < N - 1; x++) results.push(make(x, N - 1, 0));
+    // Left col (x=0): street faces east → rotation 1
+    for (let y = 1; y < N - 1; y++) results.push(make(0, y, 1));
+    // Right col (x=N-1): street faces west → rotation 3
+    for (let y = 1; y < N - 1; y++) results.push(make(N - 1, y, 3));
+
+    return results;
 }
 
 /**

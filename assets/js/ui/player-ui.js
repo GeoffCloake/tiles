@@ -80,10 +80,13 @@ export class PlayerUIManager {
       }
 
       const bonusText = player.bonusScore > 0 ? ` <small style="color:var(--accent-green)">(${player.bonusScore} Bonus)</small>` : '';
-      div.innerHTML = `<h3>${player.name}</h3>
-                       <p>Score: <span id="score-${player.id}">${player.score}${bonusText}</span></p>`;
+      const aiBadge = player.aiLevel ? ` <span class="ai-badge" title="Computer (${player.aiLevel})">🤖</span>` : '';
+      div.innerHTML = `<h3>${player.name}${aiBadge}</h3>
+                       <p>Score: <span id="score-${player.id}">${player.score}${bonusText}</span></p>
+                       <div class="player-tally" id="tally-${player.id}"></div>`;
 
       this.playerContainer.appendChild(div);
+      this.updatePlayerTally(player);
     });
   }
 
@@ -94,6 +97,22 @@ export class PlayerUIManager {
       const bonusText = player.bonusScore > 0 ? ` <small style="color:#4ade80">(${player.bonusScore} Bonus)</small>` : '';
       el.innerHTML = `${player.score}${bonusText}`;
     }
+    this.updatePlayerTally(player);
+  }
+
+  updatePlayerTally(player) {
+    const tallyDiv = document.getElementById(`tally-${player.id}`);
+    if (!tallyDiv) return;
+
+    const entries = Object.values(player.tally || {}).filter(t => t.points);
+    if (!entries.length) {
+      tallyDiv.innerHTML = '<div class="tally-empty">No points scored yet</div>';
+      return;
+    }
+
+    tallyDiv.innerHTML = entries
+      .map(t => `<div class="tally-row"><span>${t.label}</span><span>+${t.points}</span></div>`)
+      .join('');
   }
 
   updatePlayerHighlight(player) {
@@ -132,6 +151,12 @@ export class PlayerUIManager {
       g.innerHTML = `
         <label for="player-${i}-name">Player ${i} Name:</label>
         <input type="text" id="player-${i}-name" name="player-${i}-name" placeholder="Enter name" value="Player ${i}">
+        <select id="player-${i}-ai" class="player-ai-select" title="Who controls this player">
+          <option value="">🧑 Human</option>
+          <option value="easy">🤖 Computer · Easy</option>
+          <option value="normal">🤖 Computer · Normal</option>
+          <option value="hard">🤖 Computer · Hard</option>
+        </select>
       `;
       this.playerNamesContainer.appendChild(g);
     }

@@ -7,8 +7,11 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Multiplayer Tile Board Game</title>
-    <link rel="stylesheet" href="assets/css/styles.css?v=1.1">
+    <link rel="stylesheet" href="assets/css/styles.css?v=3.3">
     <style>
         #game-container {
             position: relative;
@@ -42,9 +45,37 @@
             </svg>
         </button>
 
+        <!-- Quick Start Screen -->
+        <div id="quick-start-screen" style="display: none; position: fixed; inset: 0; background: var(--bg-primary); z-index: 10; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem;">
+          <h1 style="color: var(--accent-blue); font-size: 2.5rem; margin: 0;">Tiles</h1>
+          <p style="color: var(--text-secondary); margin: 0;">City Roads</p>
+          <div style="display: flex; gap: 0.75rem; width: min(380px, 90vw); flex-direction: column;">
+            <div style="display: flex; gap: 0.5rem;">
+              <select id="qs-config-select" style="flex: 1; min-width: 0;">
+                <option value="">— Load saved config —</option>
+              </select>
+              <button id="qs-load-play-btn" class="button" style="white-space: nowrap;">Load &amp; Play</button>
+            </div>
+            <button id="qs-default-play-btn" class="button">Quick Play</button>
+            <button id="qs-vs-ai-btn" class="button" style="background:var(--accent-blue,#008bda);">🤖 Play vs Computer</button>
+            <button id="qs-online-btn" class="button" style="background:var(--accent-green,#1f9100);">📱 Play Online</button>
+            <div style="display:flex;gap:0.5rem;">
+              <button id="qs-weights-btn" class="button" style="flex:1;background:transparent;border:1px solid var(--border-color);">Weights</button>
+              <button id="qs-full-setup-btn" class="button" style="flex:1;background:transparent;border:1px solid var(--border-color);">Full Setup →</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Setup Screen -->
         <div id="setup-screen" class="setup-screen">
             <div class="setup-container">
+                <div class="setup-top-bar">
+                  <button id="setup-back-btn" class="config-btn">← Back</button>
+                  <div class="setup-top-actions">
+                    <button id="setup-config-btn" class="config-btn">Config</button>
+                    <button id="setup-weights-btn" class="config-btn">Weights</button>
+                  </div>
+                </div>
                 <div class="setup-header">
                     <h1>Game Setup</h1>
                     <p>Customize your game experience</p>
@@ -93,10 +124,11 @@
                             <div class="value-display">0 tiles</div>
                         </div>
                         <div class="setup-option-arrangement">
+                            <label for="layout-tiles">Tile Arrangement:</label>
                             <select id="layout-tiles">
-                                <label for="layout-tiles">Tile Arrangement:</label>
                                 <option value="border">Random Border Tiles</option>
                                 <option value="centre">Centre Tile</option>
+                                <option value="border-bonus">Border Bonus Tiles (Streets)</option>
                             </select>
                         </div>
                     </div>
@@ -122,11 +154,6 @@
                                 <option value="shapes">Shapes</option>
                             </select>
                         </div>
-                        <!-- Streets-specific options -->
-                        <div class="setup-option streets-only">
-                            <!-- Reserved for future Streets-specific options -->
-                        </div>
-
                         <!-- Shapes-only options -->
                         <div class="setup-option shapes-only">
                             <label for="shape-count">Number of Shapes:</label>
@@ -158,6 +185,14 @@
 
                         <!-- Street-Specific Scoring Options -->
                         <div class="streets-only">
+                            <div class="setup-option">
+                                <label for="circle-score">Bonus Circle Score:</label>
+                                <input type="number" id="circle-score" min="0" max="50" value="10" step="5">
+                            </div>
+                            <div class="setup-option">
+                                <label for="square-score">Centre Square Score:</label>
+                                <input type="number" id="square-score" min="0" max="50" value="20" step="5">
+                            </div>
                             <div class="setup-option">
                                 <label for="intersection-bonus">Intersection Bonus:</label>
                                 <input type="number" id="intersection-bonus" min="0" max="50" value="5" step="5">
@@ -193,6 +228,29 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Tournament Mode Section -->
+                    <div class="setup-section">
+                        <h2>Tournament</h2>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="enable-tournament">
+                            <label for="enable-tournament">Enable Tournament Mode</label>
+                        </div>
+                        <div class="setup-option" id="tournament-rounds-option" style="display: none;">
+                            <label for="tournament-rounds">Number of Rounds:</label>
+                            <select id="tournament-rounds">
+                                <option value="2">2 Rounds</option>
+                                <option value="3" selected>3 Rounds</option>
+                                <option value="5">5 Rounds</option>
+                                <option value="7">7 Rounds</option>
+                                <option value="10">10 Rounds</option>
+                            </select>
+                        </div>
+                        <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.5rem;">
+                            Plays a series of games with the same settings. Scores accumulate across rounds.
+                            Results are saved to the all-time leaderboard.
+                        </p>
                     </div>
 
                     <!-- Game Rules Section -->
@@ -244,6 +302,10 @@
                             <button id="show-valid-moves" class="button">
                                 Show Valid Moves
                             </button>
+                            <button id="show-paths" class="button" style="display: none;"
+                                title="Highlight each player's best centre-to-bonus path">
+                                Show Paths
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -252,7 +314,9 @@
             <!-- Sidebar -->
             <div class="game-sidebar">
                 <div class="turn-indicator">
+                    <div id="online-banner" class="online-banner" style="display:none;"></div>
                     <span id="current-player-display"></span>
+                    <span id="round-indicator" class="round-indicator"></span>
                     <span id="turn-timer"></span>
                     <button id="skip-turn" class="button">Miss Turn</button>
                 </div>
@@ -261,6 +325,11 @@
                     <button id="new-game-button" class="button">New Game</button>
                     <button id="setup-button" class="button">Setup</button>
                     <button id="rules-button" class="button">Rules</button>
+                    <button id="scoring-button" class="button">Scoring</button>
+                    <button id="config-button" class="button">Config</button>
+                    <button id="weights-button" class="button">Weights</button>
+                    <button id="leaderboard-button" class="button" style="display:none;">🏆 Leaderboard</button>
+                    <span id="version-display" class="version-badge"></span>
                 </div>
             </div>
         </div>
@@ -268,66 +337,89 @@
         <!-- Modals -->
         <div id="rules-modal" class="modal" style="display: none;">
             <div class="modal-content">
+                <button id="close-rules-x" class="modal-close" aria-label="Close rules">&times;</button>
                 <h2>Game Rules</h2>
                 <div class="rules-content">
                     <h3>How to Play</h3>
 
                     <section class="rule-section">
                         <h4>Game Setup</h4>
-                        <p>The game begins with starter tiles randomly placed on the board. These have circular centres.
-                            Each player receives 5 tiles in their rack. Board and rack size, and starter tiles are
-                            adjustable. Number of players is selectable and a timer can be set for turns</p>
+                        <p>The game can begin with starter tiles placed on the board, marked with grey circles.
+                            Each player receives a rack of tiles. Board size, rack size and starter tiles are
+                            adjustable. Number of players is selectable and a timer can be set for turns.</p>
                     </section>
 
                     <section class="rule-section">
                         <h4>Tile Mechanics</h4>
                         <ul>
-                            <li>Each tile has four colored edges that must match adjacent tiles.</li>
-                            <li>You can rotate tiles before placing them using the 'Rotate Tile' button.</li>
-                            <li>Tiles must be placed adjacent to at least one existing tile (except starter tiles).</li>
-                            <li>Colors on touching edges must match exactly.</li>
+                            <li>Each tile has four edges that must match adjacent tiles.</li>
+                            <li>Rotate the selected tile by clicking it again, or with the 'Rotate Tile' button.</li>
+                            <li>Tiles must be placed adjacent to at least one existing tile (unless Free Play mode
+                                is enabled).</li>
+                            <li class="rules-streets-only">Streets on touching edges must line up exactly.</li>
+                            <li class="rules-shapes-only">Colours on touching edges must match exactly.</li>
                         </ul>
                     </section>
 
                     <div class="section">
                         <h3>Basic Scoring</h3>
-                        <p>Points are awarded based on the number of road connections made when placing a tile:</p>
+                        <p class="rules-streets-only">Points are awarded based on the number of road connections made
+                            when placing a tile:</p>
+                        <p class="rules-shapes-only">Points are awarded based on the number of matching edges made
+                            when placing a tile:</p>
                         <ul>
                             <li><strong>1 connection:</strong> 1 point</li>
                             <li><strong>2 connections:</strong> 4 points</li>
                             <li><strong>3 connections:</strong> 9 points</li>
                             <li><strong>4 connections:</strong> 16 points</li>
                         </ul>
+                        <h4>Starter Tile Multiplier</h4>
+                        <ul>
+                            <li>Connecting to a starter tile multiplies the connection score by
+                                <strong>×<span class="rule-val-multiplier">2</span></strong></li>
+                            <li>Only applies to the base connection score, not to bonuses</li>
+                        </ul>
                     </div>
 
-                    <div class="section">
+                    <div class="section rules-shapes-only">
+                        <h3>Blank Sides</h3>
+                        <p>When blank sides are enabled, a blank edge never counts as a match and never scores.</p>
+                    </div>
+
+                    <div class="section rules-streets-only">
                         <h3>Bonus Points</h3>
 
                         <h4>Center Pattern Tiles</h4>
                         <p>Special tiles with patterns in their center provide immediate bonus points:</p>
                         <ul>
-                            <li><strong>Center Square (⬛):</strong> 20 points</li>
-                            <li><strong>Bonus Circle (⭕):</strong> 10 points</li>
+                            <li><strong>Centre Square (⬛):</strong> +<span class="rule-val-square-score">20</span> points</li>
+                            <li><strong>Bonus Circle (⭕):</strong> +<span class="rule-val-circle-score">10</span> points</li>
+                        </ul>
+
+                        <h4>Placement Bonuses</h4>
+                        <ul>
+                            <li><strong>Intersection:</strong> a tile with streets on all four sides earns
+                                +<span class="rule-val-intersection">5</span> points</li>
+                            <li><strong>Board centre:</strong> placing on the centre cell earns
+                                +<span class="rule-val-center">5</span> points</li>
                         </ul>
 
                         <h4>Path Bonuses</h4>
-                        <p>Players can earn additional points by creating continuous road paths:</p>
+                        <p>Players earn additional points by building a continuous road path between their own
+                            Center Square tiles and Bonus Circle tiles. Neutral starter tiles also count as circle
+                            endpoints, and streets belonging to any player can form part of the path.</p>
                         <ul>
-                            <li>Each new tile that extends your longest path earns 3 points per tile in the entire path
-                            </li>
-                            <li>Paths must connect between your Center Square tiles and Bonus Circle tiles</li>
-                            <li>Only improvements to your longest path count for scoring</li>
-                            <li>Path scores are calculated immediately when placing a tile</li>
-                        </ul>
-                        <h4>Starter Tile Multiplier</h4>
-                        <ul>
-                            <li>Connecting to a starter tile (marked with a gray circle) doubles the score for that
-                                placement</li>
-                            <li>Only applies to the base connection score, not to path or pattern bonuses</li>
+                            <li>Completing your first path earns a one-off connection bonus of
+                                +<span class="rule-val-completion">20</span> points</li>
+                            <li>Each tile in the path is worth <span class="rule-val-path-points">3</span> points</li>
+                            <li><strong>Instant (In-Play) mode:</strong> whenever your longest path grows, the
+                                improvement is scored immediately</li>
+                            <li><strong>End of Game mode:</strong> your longest path is scored once, when the game
+                                ends</li>
                         </ul>
                     </div>
 
-                    <div class="section">
+                    <div class="section rules-streets-only">
                         <h3>Strategy Tips</h3>
                         <ol>
                             <li>Look for opportunities to create long paths between your Center Squares and Bonus
@@ -338,16 +430,18 @@
                         </ol>
                     </div>
 
-                    <div class="section">
+                    <div class="section rules-streets-only">
                         <h3>Example Scoring</h3>
                         <p>A tile placement might score as follows:</p>
                         <ol>
                             <li>Base connection score (3 connections = 9 points)</li>
+                            <li>Starter tile multiplier (×<span class="rule-val-multiplier">2</span> on the
+                                connection score, if adjacent to a starter tile)</li>
                             <li>Center pattern bonus (if present, +10 or +20)</li>
-                            <li>Intersection bonus (if applicable, +5)</li>
-                            <li>Center placement bonus (if in center, +5)</li>
-                            <li>Path bonus (3 points × number of tiles in new longest path)</li>
-                            <li>Starter tile multiplier (doubles base connection score if applicable)</li>
+                            <li>Intersection bonus (if applicable, +<span class="rule-val-intersection">5</span>)</li>
+                            <li>Center placement bonus (if in center, +<span class="rule-val-center">5</span>)</li>
+                            <li>Path bonus (<span class="rule-val-path-points">3</span> points × number of tiles in
+                                new longest path)</li>
                         </ol>
                         <p class="note"><em>Note: Only the base connection score is affected by the starter tile
                                 multiplier. Pattern bonuses, path scores, and other special bonuses are added after
@@ -393,10 +487,172 @@
                 </div>
             </div>
         </div>
+
+        <!-- Scoring Settings Modal -->
+        <div id="scoring-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <button id="close-scoring-x" class="modal-close" aria-label="Close">&times;</button>
+                <h2>Scoring Settings</h2>
+                <div id="scoring-display" class="rules-content"></div>
+            </div>
+        </div>
+
+        <!-- Tournament Standings Modal -->
+        <div id="tournament-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2 id="tournament-modal-title">Round Complete</h2>
+                <div id="tournament-standings" class="rules-content"></div>
+                <div class="modal-buttons">
+                    <button id="tournament-next" class="button button--primary">Next Round</button>
+                    <button id="tournament-show-leaderboard" class="button">Leaderboard</button>
+                    <button id="tournament-return-setup" class="button">New Tournament</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- All-Time Leaderboard Modal -->
+        <div id="leaderboard-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <button id="close-leaderboard-x" class="modal-close" aria-label="Close">&times;</button>
+                <h2>🏆 All-Time Leaderboard</h2>
+                <div id="leaderboard-display" class="rules-content"></div>
+                <div class="modal-buttons">
+                    <button id="close-leaderboard" class="button">Close</button>
+                    <button id="clear-leaderboard" class="button" style="color:var(--accent-red,#df0000)">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config Modal -->
+        <div id="config-modal" class="modal" style="display: none;">
+          <div class="modal-content">
+            <button id="close-config-x" class="modal-close" aria-label="Close">&times;</button>
+            <h2>Game Configurations</h2>
+            <div class="config-row">
+              <select id="config-select" class="config-select">
+                <option value="">— Saved configs —</option>
+              </select>
+              <button id="config-load-btn" class="config-btn">Load</button>
+              <button id="config-delete-btn" class="config-btn config-btn-danger">Delete</button>
+            </div>
+            <div class="config-row">
+              <input type="text" id="config-name" class="config-name-input" placeholder="Configuration name…" maxlength="40">
+              <button id="config-save-btn" class="config-btn">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weights Modal -->
+        <div id="weights-modal" class="modal" style="display: none;">
+          <div class="modal-content modal-content-wide">
+            <button id="close-weights-x" class="modal-close" aria-label="Close">&times;</button>
+            <h2>Tile Weights &amp; Limits</h2>
+            <div class="streets-only">
+              <div class="weights-preset-bar">
+                <select id="weights-preset" class="config-select">
+                  <option value="">— Choose preset —</option>
+                </select>
+                <button id="weights-apply-preset" class="config-btn">Apply to all</button>
+                <button id="weights-reset" class="config-btn">Reset</button>
+              </div>
+              <p class="label-hint" style="margin:0 0 0.75rem;">Presets fill every player. Switch tabs or use “Copy P1” for asymmetric games.</p>
+              <div class="weights-tab-bar">
+                <button class="weights-tab active" data-player="0">P1</button>
+                <button class="weights-tab" data-player="1">P2</button>
+                <button class="weights-tab" data-player="2">P3</button>
+                <button class="weights-tab" data-player="3">P4</button>
+              </div>
+
+              <!-- Player 1 panel -->
+              <div id="weights-panel-0" class="weights-panel active" data-player="0">
+                <div class="setup-option"><label>Bonus Pattern Frequency <span class="label-hint">(0 = none)</span></label><input type="range" id="center-pattern-freq-p0" min="0" max="50" value="20" step="5" oninput="this.nextElementSibling.textContent=this.value+'%'"><div class="value-display">20%</div></div>
+                <div class="setup-option"><label>Pattern Mix <span class="label-hint">(circles vs squares)</span></label><input type="range" id="circles-ratio-p0" min="10" max="90" value="70" step="10" oninput="var v=+this.value;this.nextElementSibling.textContent=v+'% Circles · '+(100-v)+'% Squares'"><div class="value-display">70% Circles · 30% Squares</div></div>
+                <div class="setup-option"><label>Max Bonus Patterns <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-circles-p0">○ Circles</label><input type="number" id="tm-circles-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-squares-p0">□ Squares</label><input type="number" id="tm-squares-p0" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Tile Weights <span class="label-hint">(0 = disabled)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tw-cross-p0">╬ Cross</label><input type="number" id="tw-cross-p0" min="0" max="99" value="5"></div><div class="tile-weight-item"><label for="tw-t-p0">┬ T-Junction</label><input type="number" id="tw-t-p0" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-straight-p0">│ Straight</label><input type="number" id="tw-straight-p0" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-corner-p0">┘ Corner</label><input type="number" id="tw-corner-p0" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-dead-p0">╵ Dead End</label><input type="number" id="tw-dead-p0" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-blank-p0">□ Blank</label><input type="number" id="tw-blank-p0" min="0" max="99" value="5"></div><div class="tile-weight-item tile-weight-special"><label for="tw-tunnel-p0">⊕ Tunnel</label><input type="number" id="tw-tunnel-p0" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-roadblock-p0">✕ Roadblock</label><input type="number" id="tw-roadblock-p0" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-private-p0">🔒 Private</label><input type="number" id="tw-private-p0" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-cross-p0">╬ Cross</label><input type="number" id="tm-cross-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-t-p0">┬ T-Junction</label><input type="number" id="tm-t-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-straight-p0">│ Straight</label><input type="number" id="tm-straight-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-corner-p0">┘ Corner</label><input type="number" id="tm-corner-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-dead-p0">╵ Dead End</label><input type="number" id="tm-dead-p0" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-blank-p0">□ Blank</label><input type="number" id="tm-blank-p0" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-tunnel-p0">⊕ Tunnel</label><input type="number" id="tm-tunnel-p0" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-roadblock-p0">✕ Roadblock</label><input type="number" id="tm-roadblock-p0" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-private-p0">🔒 Private</label><input type="number" id="tm-private-p0" min="0" max="99" value="0"></div></div></div>
+              </div>
+
+              <!-- Player 2 panel -->
+              <div id="weights-panel-1" class="weights-panel" data-player="1">
+                <button class="copy-weights-btn" data-from="0">Copy P1 settings</button>
+                <div class="setup-option"><label>Bonus Pattern Frequency <span class="label-hint">(0 = none)</span></label><input type="range" id="center-pattern-freq-p1" min="0" max="50" value="20" step="5" oninput="this.nextElementSibling.textContent=this.value+'%'"><div class="value-display">20%</div></div>
+                <div class="setup-option"><label>Pattern Mix <span class="label-hint">(circles vs squares)</span></label><input type="range" id="circles-ratio-p1" min="10" max="90" value="70" step="10" oninput="var v=+this.value;this.nextElementSibling.textContent=v+'% Circles · '+(100-v)+'% Squares'"><div class="value-display">70% Circles · 30% Squares</div></div>
+                <div class="setup-option"><label>Max Bonus Patterns <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-circles-p1">○ Circles</label><input type="number" id="tm-circles-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-squares-p1">□ Squares</label><input type="number" id="tm-squares-p1" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Tile Weights <span class="label-hint">(0 = disabled)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tw-cross-p1">╬ Cross</label><input type="number" id="tw-cross-p1" min="0" max="99" value="5"></div><div class="tile-weight-item"><label for="tw-t-p1">┬ T-Junction</label><input type="number" id="tw-t-p1" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-straight-p1">│ Straight</label><input type="number" id="tw-straight-p1" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-corner-p1">┘ Corner</label><input type="number" id="tw-corner-p1" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-dead-p1">╵ Dead End</label><input type="number" id="tw-dead-p1" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-blank-p1">□ Blank</label><input type="number" id="tw-blank-p1" min="0" max="99" value="5"></div><div class="tile-weight-item tile-weight-special"><label for="tw-tunnel-p1">⊕ Tunnel</label><input type="number" id="tw-tunnel-p1" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-roadblock-p1">✕ Roadblock</label><input type="number" id="tw-roadblock-p1" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-private-p1">🔒 Private</label><input type="number" id="tw-private-p1" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-cross-p1">╬ Cross</label><input type="number" id="tm-cross-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-t-p1">┬ T-Junction</label><input type="number" id="tm-t-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-straight-p1">│ Straight</label><input type="number" id="tm-straight-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-corner-p1">┘ Corner</label><input type="number" id="tm-corner-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-dead-p1">╵ Dead End</label><input type="number" id="tm-dead-p1" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-blank-p1">□ Blank</label><input type="number" id="tm-blank-p1" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-tunnel-p1">⊕ Tunnel</label><input type="number" id="tm-tunnel-p1" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-roadblock-p1">✕ Roadblock</label><input type="number" id="tm-roadblock-p1" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-private-p1">🔒 Private</label><input type="number" id="tm-private-p1" min="0" max="99" value="0"></div></div></div>
+              </div>
+
+              <!-- Player 3 panel -->
+              <div id="weights-panel-2" class="weights-panel" data-player="2">
+                <button class="copy-weights-btn" data-from="0">Copy P1 settings</button>
+                <div class="setup-option"><label>Bonus Pattern Frequency <span class="label-hint">(0 = none)</span></label><input type="range" id="center-pattern-freq-p2" min="0" max="50" value="20" step="5" oninput="this.nextElementSibling.textContent=this.value+'%'"><div class="value-display">20%</div></div>
+                <div class="setup-option"><label>Pattern Mix <span class="label-hint">(circles vs squares)</span></label><input type="range" id="circles-ratio-p2" min="10" max="90" value="70" step="10" oninput="var v=+this.value;this.nextElementSibling.textContent=v+'% Circles · '+(100-v)+'% Squares'"><div class="value-display">70% Circles · 30% Squares</div></div>
+                <div class="setup-option"><label>Max Bonus Patterns <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-circles-p2">○ Circles</label><input type="number" id="tm-circles-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-squares-p2">□ Squares</label><input type="number" id="tm-squares-p2" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Tile Weights <span class="label-hint">(0 = disabled)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tw-cross-p2">╬ Cross</label><input type="number" id="tw-cross-p2" min="0" max="99" value="5"></div><div class="tile-weight-item"><label for="tw-t-p2">┬ T-Junction</label><input type="number" id="tw-t-p2" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-straight-p2">│ Straight</label><input type="number" id="tw-straight-p2" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-corner-p2">┘ Corner</label><input type="number" id="tw-corner-p2" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-dead-p2">╵ Dead End</label><input type="number" id="tw-dead-p2" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-blank-p2">□ Blank</label><input type="number" id="tw-blank-p2" min="0" max="99" value="5"></div><div class="tile-weight-item tile-weight-special"><label for="tw-tunnel-p2">⊕ Tunnel</label><input type="number" id="tw-tunnel-p2" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-roadblock-p2">✕ Roadblock</label><input type="number" id="tw-roadblock-p2" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-private-p2">🔒 Private</label><input type="number" id="tw-private-p2" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-cross-p2">╬ Cross</label><input type="number" id="tm-cross-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-t-p2">┬ T-Junction</label><input type="number" id="tm-t-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-straight-p2">│ Straight</label><input type="number" id="tm-straight-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-corner-p2">┘ Corner</label><input type="number" id="tm-corner-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-dead-p2">╵ Dead End</label><input type="number" id="tm-dead-p2" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-blank-p2">□ Blank</label><input type="number" id="tm-blank-p2" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-tunnel-p2">⊕ Tunnel</label><input type="number" id="tm-tunnel-p2" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-roadblock-p2">✕ Roadblock</label><input type="number" id="tm-roadblock-p2" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-private-p2">🔒 Private</label><input type="number" id="tm-private-p2" min="0" max="99" value="0"></div></div></div>
+              </div>
+
+              <!-- Player 4 panel -->
+              <div id="weights-panel-3" class="weights-panel" data-player="3">
+                <button class="copy-weights-btn" data-from="0">Copy P1 settings</button>
+                <div class="setup-option"><label>Bonus Pattern Frequency <span class="label-hint">(0 = none)</span></label><input type="range" id="center-pattern-freq-p3" min="0" max="50" value="20" step="5" oninput="this.nextElementSibling.textContent=this.value+'%'"><div class="value-display">20%</div></div>
+                <div class="setup-option"><label>Pattern Mix <span class="label-hint">(circles vs squares)</span></label><input type="range" id="circles-ratio-p3" min="10" max="90" value="70" step="10" oninput="var v=+this.value;this.nextElementSibling.textContent=v+'% Circles · '+(100-v)+'% Squares'"><div class="value-display">70% Circles · 30% Squares</div></div>
+                <div class="setup-option"><label>Max Bonus Patterns <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-circles-p3">○ Circles</label><input type="number" id="tm-circles-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-squares-p3">□ Squares</label><input type="number" id="tm-squares-p3" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Tile Weights <span class="label-hint">(0 = disabled)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tw-cross-p3">╬ Cross</label><input type="number" id="tw-cross-p3" min="0" max="99" value="5"></div><div class="tile-weight-item"><label for="tw-t-p3">┬ T-Junction</label><input type="number" id="tw-t-p3" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-straight-p3">│ Straight</label><input type="number" id="tw-straight-p3" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-corner-p3">┘ Corner</label><input type="number" id="tw-corner-p3" min="0" max="99" value="15"></div><div class="tile-weight-item"><label for="tw-dead-p3">╵ Dead End</label><input type="number" id="tw-dead-p3" min="0" max="99" value="10"></div><div class="tile-weight-item"><label for="tw-blank-p3">□ Blank</label><input type="number" id="tw-blank-p3" min="0" max="99" value="5"></div><div class="tile-weight-item tile-weight-special"><label for="tw-tunnel-p3">⊕ Tunnel</label><input type="number" id="tw-tunnel-p3" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-roadblock-p3">✕ Roadblock</label><input type="number" id="tw-roadblock-p3" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tw-private-p3">🔒 Private</label><input type="number" id="tw-private-p3" min="0" max="99" value="0"></div></div></div>
+                <div class="setup-option"><label>Max Per Game <span class="label-hint">(0 = unlimited)</span></label><div class="tile-weights-grid"><div class="tile-weight-item"><label for="tm-cross-p3">╬ Cross</label><input type="number" id="tm-cross-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-t-p3">┬ T-Junction</label><input type="number" id="tm-t-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-straight-p3">│ Straight</label><input type="number" id="tm-straight-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-corner-p3">┘ Corner</label><input type="number" id="tm-corner-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-dead-p3">╵ Dead End</label><input type="number" id="tm-dead-p3" min="0" max="99" value="0"></div><div class="tile-weight-item"><label for="tm-blank-p3">□ Blank</label><input type="number" id="tm-blank-p3" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-tunnel-p3">⊕ Tunnel</label><input type="number" id="tm-tunnel-p3" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-roadblock-p3">✕ Roadblock</label><input type="number" id="tm-roadblock-p3" min="0" max="99" value="0"></div><div class="tile-weight-item tile-weight-special"><label for="tm-private-p3">🔒 Private</label><input type="number" id="tm-private-p3" min="0" max="99" value="0"></div></div></div>
+              </div>
+            </div>
+            <p class="modal-note streets-hidden">Tile weights and limits apply to the Streets tile set.</p>
+          </div>
+        </div>
+
+        <!-- Online Play Modal -->
+        <div id="online-modal" class="modal" style="display: none;">
+          <div class="modal-content">
+            <button id="online-close-x" class="modal-close" aria-label="Close">&times;</button>
+            <h2>Play Online</h2>
+
+            <!-- Choose: host or join -->
+            <div id="online-pane-choose">
+              <div class="setup-option">
+                <label for="online-name">Your name</label>
+                <input type="text" id="online-name" placeholder="Your name" maxlength="20">
+              </div>
+              <div class="online-choose-grid">
+                <div class="online-card">
+                  <h3>Host a game</h3>
+                  <p class="label-hint">Creates a room using your current game settings (board, tiles, scoring, per-player weights). Share the code with friends.</p>
+                  <button id="online-host-btn" class="button">Create room</button>
+                </div>
+                <div class="online-card">
+                  <h3>Join a game</h3>
+                  <p class="label-hint">Enter the code your host shares with you.</p>
+                  <input type="text" id="online-join-code" class="online-code-input" placeholder="e.g. FOX-42" maxlength="16">
+                  <button id="online-join-btn" class="button">Join</button>
+                </div>
+              </div>
+              <p id="online-error" class="online-error"></p>
+            </div>
+
+            <!-- Lobby -->
+            <div id="online-pane-lobby" style="display:none;">
+              <p class="label-hint" style="margin-bottom:0.25rem;">Share this room code:</p>
+              <div id="online-room-code" class="online-room-code">—</div>
+              <h3 style="margin:0 0 0.5rem;">Players</h3>
+              <ul id="online-roster" class="online-roster"></ul>
+              <p id="online-waiting-msg" class="label-hint" style="display:none;">Waiting for the host to start…</p>
+              <div class="modal-buttons">
+                <button id="online-start-btn" class="button button--primary" disabled>Start Game</button>
+                <button id="online-leave-btn" class="button">Leave</button>
+              </div>
+              <p id="online-error-lobby" class="online-error"></p>
+            </div>
+          </div>
+        </div>
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=1.1"></script>
+    <script type="module" src="assets/js/main.js?v=3.3"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');
@@ -425,23 +681,6 @@
             `;
             }
         });
-    </script>
-    <script>
-        // Rules modal functionality
-        const rulesModal = document.getElementById('rules-modal');
-        const rulesButton = document.getElementById('rules-button');
-        const closeRulesButton = document.getElementById('close-rules');
-        const setupScreen = document.getElementById('setup-screen');
-        const gameScreen = document.getElementById('game');
-
-        let previousScreen = null;
-
-        // Show rules modal
-        function showRulesModal() {
-            // Store which screen was visible
-            previousScreen = setupScreen.style.display === 'none' ? gameScreen : setupScreen;
-            rulesModal.style.display = 'flex';
-        }
     </script>
 </body>
 

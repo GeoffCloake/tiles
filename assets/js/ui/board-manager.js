@@ -6,6 +6,7 @@ export class BoardManager {
     this.boardElement = config.boardElement;
     this.onTilePlaced = config.onTilePlaced;
     this.gameState = null;
+    this._pathHighlights = new Map(); // "x,y" -> { color, edges }
   }
 
   initialize(gameState) {
@@ -49,13 +50,44 @@ export class BoardManager {
 
   handleCellClick(x, y) { if (this.onTilePlaced) this.onTilePlaced({ x, y }); }
 
-  renderTile(position, tile) {
+  renderTile(position, tile, pathColor = null, pathEdges = null) {
     const index = position.y * this.gameState.boardSize + position.x;
     const cell = this.boardElement.children[index];
     if (!cell) return;
     const canvas = cell.querySelector('canvas');
     if (!canvas) return;
-    this.gameState.tileSet.renderTile(tile, canvas, tile.rotation || 0);
+    this.gameState.tileSet.renderTile(tile, canvas, tile.rotation || 0, pathColor, pathEdges);
+  }
+
+  // Returns the edge index on `tile` that faces `neighbor` (N=0, E=1, S=2, W=3)
+  _edgeFacing(neighbor, tile) {
+    const dx = neighbor.x - tile.x;
+    const dy = neighbor.y - tile.y;
+    if (dy === -1) return 0;
+    if (dx ===  1) return 1;
+    if (dy ===  1) return 2;
+    if (dx === -1) return 3;
+    return null;
+  }
+
+  // Re-render every cell from the current boardState. Used when adopting a
+  // remote game snapshot in online play: paints placed tiles and clears any
+  // cell that should be empty, so the board always matches the authority.
+  renderAll() {
+    if (!this.boardElement || !this.gameState) return;
+    const n = this.gameState.boardSize;
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        const tile = this.gameState.boardState[y][x];
+        if (tile) {
+          this.renderTile({ x, y }, tile);
+        } else {
+          const index = y * n + x;
+          const canvas = this.boardElement.children[index]?.querySelector('canvas');
+          if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+    }
   }
 
   showValidMoves(validMoves) {
@@ -79,12 +111,37 @@ export class BoardManager {
     setTimeout(() => cell.classList.remove('invalid'), 500);
   }
 
-  highlightPath(path) {
+  highlightPath(path, color = null) {
     if (!path || !path.length) return;
-    path.forEach(pos => {
-      const index = pos.y * this.gameState.boardSize + pos.x;
+    path.forEach((pos, i) => {
+      const { x, y } = pos;
+      // Only draw segments the path actually travels: edges toward prev and next tiles
+      const edges = [];
+      if (i > 0) { const e = this._edgeFacing(path[i - 1], pos); if (e !== null) edges.push(e); }
+      if (i < path.length - 1) { const e = this._edgeFacing(path[i + 1], pos); if (e !== null) edges.push(e); }
+
+      this._pathHighlights.set(`${x},${y}`, { color, edges });
+      const index = y * this.gameState.boardSize + x;
       const cell = this.boardElement.children[index];
-      if (cell) cell.classList.add('bonus-path');
+      if (!cell) return;
+      cell.classList.add('bonus-path');
+      if (color) cell.style.setProperty('--path-color', color);
+      else cell.style.removeProperty('--path-color');
+      const tile = this.gameState.boardState[y][x];
+      if (tile) this.renderTile(pos, tile, color, edges);
+    });
+  }
+
+  clearPathHighlights() {
+    for (const [key] of this._pathHighlights) {
+      const [x, y] = key.split(',').map(Number);
+      const tile = this.gameState.boardState[y][x];
+      if (tile) this.renderTile({ x, y }, tile);
+    }
+    this._pathHighlights.clear();
+    this.boardElement.querySelectorAll('.bonus-path').forEach(cell => {
+      cell.classList.remove('bonus-path');
+      cell.style.removeProperty('--path-color');
     });
   }
 
@@ -111,7 +168,10 @@ export class BoardManager {
       const x = parseInt(cell.dataset.col, 10);
       const y = parseInt(cell.dataset.row, 10);
       const tile = this.gameState.boardState[y][x];
-      if (tile) this.renderTile({ x, y }, tile);
+      if (tile) {
+        const h = this._pathHighlights.get(`${x},${y}`);
+        this.renderTile({ x, y }, tile, h?.color ?? null, h?.edges ?? null);
+      }
     }
   }
 

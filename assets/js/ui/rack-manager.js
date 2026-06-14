@@ -43,27 +43,32 @@ export class RackManager {
             
             tileDiv.appendChild(canvas);
             tileDiv.dataset.tileId = tile.id;
-            tileDiv.onclick = () => this.selectTile(tile, tileDiv);
+            tileDiv.title = 'Click to select · Double-click to rotate';
+            tileDiv.onclick = () => {
+                if (!tileDiv.classList.contains('selected')) {
+                    this.selectTile(tile, tileDiv);
+                }
+            };
+            tileDiv.ondblclick = () => {
+                if (!tileDiv.classList.contains('selected')) this.selectTile(tile, tileDiv);
+                this.handleRotate();
+            };
             
             this.rackElement.appendChild(tileDiv);
         });
     }
 
     selectTile(tile, tileDiv) {
+        const selectedDiv = document.querySelector('.rack .tile.selected');
+
         // Remove selection from previously selected tile
-        const selectedTile = document.querySelector('.rack .tile.selected');
-        if (selectedTile) {
-            selectedTile.classList.remove('selected');
-            if (selectedTile === tileDiv) {
-                this.gameState.selectedTile = null;
-                this.clearValidMoves();
-                return;
-            }
+        if (selectedDiv) {
+            selectedDiv.classList.remove('selected');
         }
 
         // Select new tile
         tileDiv.classList.add('selected');
-        
+
         // Update game state and notify listeners
         if (this.onTileSelected) {
             this.onTileSelected(tile);

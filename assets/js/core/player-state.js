@@ -15,8 +15,10 @@ export class Player {
         this.name = name;
         this.score = 0;
         this.bonusScore = 0;
+        this.tally = {}; // key -> { label, points } accumulated per score component
         this.tiles = [];
         this.color = null;
+        this.aiLevel = null; // null = human; 'easy' | 'normal' | 'hard' for bots
     }
 
     addScore(points, isBonus = false) {
@@ -44,6 +46,19 @@ export class Player {
     addTile(tile) {
         this.tiles.push(tile);
     }
+
+    // Rebuild a Player (with methods) from a serialized snapshot. Used when
+    // adopting a remote game state in online play.
+    static fromJSON(obj) {
+        const p = new Player(obj.name, obj.id);
+        p.score = obj.score || 0;
+        p.bonusScore = obj.bonusScore || 0;
+        p.tally = obj.tally || {};
+        p.tiles = obj.tiles || [];
+        p.color = obj.color || null;
+        p.aiLevel = obj.aiLevel || null;
+        return p;
+    }
 }
 
 export class PlayerManager {
@@ -66,6 +81,9 @@ export class PlayerManager {
             // Set player color
             const playerColor = playerColors[index];
             player.setColor(playerColor);
+
+            // Mark computer-controlled seats (null/undefined = human)
+            player.aiLevel = config.ai || null;
 
             console.log(`PlayerManager: Player ${config.name} (Index ${index}) assigned color ${playerColor}.`);
 
@@ -137,12 +155,27 @@ export class PlayerManager {
         if (this.turnTimer) {
             this.initializeTurnTimer(this.timeLimit);
         }
+
+        // Online: a skip advances the turn — broadcast the new state.
+        this.gameState.onLocalCommit?.();
     }
 
-    updatePlayerScore(playerId, points) {
+    updatePlayerScore(playerId, points, bonusPoints = 0, breakdown = null) {
         const player = this.getPlayerById(playerId);
         if (player) {
             player.addScore(points);
+            if (bonusPoints) player.bonusScore += bonusPoints;
+
+            // Tally what each score was made up of
+            if (Array.isArray(breakdown)) {
+                breakdown.forEach(({ key, label, points: p }) => {
+                    if (!p || !key) return;
+                    const entry = player.tally[key] || { label, points: 0 };
+                    entry.points += p;
+                    player.tally[key] = entry;
+                });
+            }
+
             this.gameState.emit('scoreUpdate', player);
         }
     }

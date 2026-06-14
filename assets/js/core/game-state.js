@@ -1,7 +1,7 @@
 // assets/js/core/game-state.js
 import { PlayerManager } from './player-state.js';
 import { DEFAULT_BOARD_SIZE, DEFAULT_RACK_SIZE } from '../utils/game-utils.js';
-import { placeInitialTiles } from '../utils/initial-tiles-utils.js';
+import { placeInitialTiles } from '../utils/initial-tiles-utils.js?v=3.2';
 
 export class GameState {
     constructor(config) {
@@ -16,6 +16,15 @@ export class GameState {
         this.selectedTile = null;
         this.currentRotation = 0;
         this.firstMove = true;
+
+        // Online play: when locked, local input (select/rotate/place) is ignored
+        // because it isn't this device's turn. Set by the OnlineManager.
+        this.inputLocked = false;
+        // Optional hook invoked after a committed local move, so the online
+        // layer can broadcast the resulting snapshot. No-op in hotseat play.
+        this.onLocalCommit = null;
+        this._ended = false;
+        this._finalScores = null;
 
         this.eventHandlers = new Map();
 
@@ -89,12 +98,14 @@ export class GameState {
     }
 
     selectTile(tile) {
+        if (this.inputLocked) return;
         this.selectedTile = tile;
         this.currentRotation = 0;
         this.emit('tileSelected', tile);
     }
 
     rotateTile() {
+        if (this.inputLocked) return null;
         if (!this.selectedTile) return null;
 
         this.currentRotation = (this.currentRotation + 1) % 4;
@@ -139,6 +150,10 @@ export class GameState {
     placeTile(position) {
         const { x, y } = position;
 
+        if (this.inputLocked) {
+            return { success: false, reason: 'Not your turn' };
+        }
+
         if (!this.selectedTile) {
             return { success: false, reason: 'No tile selected' };
         }
@@ -162,11 +177,15 @@ export class GameState {
         // Handle object or number return
         const score = typeof result === 'object' ? result.total : result;
         const bonus = typeof result === 'object' ? result.bonus : 0;
+        const breakdown = typeof result === 'object' ? result.breakdown : null;
 
         this.boardState[y][x] = rotatedTile;
 
         const currentPlayer = this.getCurrentPlayer();
-        this.playerManager.updatePlayerScore(currentPlayer.id, score);
+        this.playerManager.updatePlayerScore(currentPlayer.id, score, bonus, breakdown);
+
+        // Claim any border-bonus tiles now connected to this player's street path
+        const claimed = this.scoringSystem.claimBorderBonusTiles?.(this, currentPlayer) ?? [];
 
         const playerIndex = this.playerManager.players.indexOf(currentPlayer);
         const newTile = this.tileSet.generateTile(playerIndex, this.playerManager.players.length);
@@ -181,8 +200,11 @@ export class GameState {
 
         this.nextTurn();
 
-        this.emit('tilePlaced', { position, tile: rotatedTile, score, bonus });
+        this.emit('tilePlaced', { position, tile: rotatedTile, score, bonus, breakdown, claimed });
         this.emit('scoreUpdate', currentPlayer);
+
+        // Online: broadcast the resulting snapshot (no-op in hotseat play).
+        this.onLocalCommit?.();
 
         return { success: true, score };
     }
@@ -254,6 +276,10 @@ export class GameState {
         });
 
         finalScores.sort((a, b) => b.score - a.score);
+
+        // Record on the state so online play can broadcast the result.
+        this._ended = true;
+        this._finalScores = finalScores;
 
         this.playerManager.stopTurnTimer();
         this.emit('gameEnd', finalScores);

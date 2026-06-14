@@ -12,8 +12,11 @@ class StreetsTileSet extends TileSet {
         enableCenterPatterns: true,
         centerPatternFrequency: 0.2,
         patternWeights: { circles: 0.7, squares: 0.3 },
+        // tileWeights: null means use _defaultWeights()
       },
     });
+
+    this._tileCountsPerPlayer = {};
 
     this.patterns = {
       street: {
@@ -53,28 +56,159 @@ class StreetsTileSet extends TileSet {
     };
   }
 
-  generateTile(playerIndex = null, playerCount = 1) {
-    const tile = {
-      id: Math.random().toString(32).substr(2, 9),
-      sides: Array(4).fill(null).map(() => (Math.random() < 0.75 ? 'street' : 'non-street')),
-    };
+  // ---- Tile type catalogue ----
 
-    // Weighted center patterns
-    if (this.options.enableCenterPatterns && Math.random() < this.options.centerPatternFrequency) {
-      tile.centerPattern = Math.random() < this.options.patternWeights.circles ? 'circles' : 'squares';
+  _defaultWeights() {
+    return [
+      { key: 'cross',     type: 'normal',    sides: ['street','street','street','street'],                weight: 5  },
+      { key: 'tJunction', type: 'normal',    sides: ['street','street','street','non-street'],            weight: 15 },
+      { key: 'straight',  type: 'normal',    sides: ['street','non-street','street','non-street'],        weight: 10 },
+      { key: 'corner',    type: 'normal',    sides: ['street','street','non-street','non-street'],        weight: 15 },
+      { key: 'deadEnd',   type: 'normal',    sides: ['street','non-street','non-street','non-street'],    weight: 10 },
+      { key: 'blank',     type: 'normal',    sides: ['non-street','non-street','non-street','non-street'],weight: 5  },
+      // Special tiles (disabled by default — set weight > 0 in setup to enable)
+      { key: 'tunnel',    type: 'tunnel',    sides: ['street','street','street','street'],                weight: 0  },
+      { key: 'roadblock', type: 'roadblock', sides: ['street','street','street','street'],                weight: 0  },
+      { key: 'private',   type: 'private',   sides: ['street','non-street','street','non-street'],        weight: 0  },
+    ];
+  }
+
+  _weightedSelect(weights) {
+    const total = weights.reduce((s, w) => s + w.weight, 0);
+    if (total === 0) return weights[0];
+    let r = Math.random() * total;
+    for (const item of weights) {
+      r -= item.weight;
+      if (r <= 0) return item;
+    }
+    return weights[weights.length - 1];
+  }
+
+  onNewGame() {
+    this._tileCountsPerPlayer = {};
+    this._debugLogged = new Set();
+  }
+
+  // Per-player tile-issue counts travel with each online snapshot so that
+  // max-per-game limits stay correct no matter which device deals a tile.
+  exportCounts() {
+    return JSON.parse(JSON.stringify(this._tileCountsPerPlayer || {}));
+  }
+
+  importCounts(counts) {
+    this._tileCountsPerPlayer = counts ? JSON.parse(JSON.stringify(counts)) : {};
+  }
+
+  generateTile(playerIndex = null, playerCount = 1) {
+    const pi = playerIndex ?? 0;
+    if (!this._tileCountsPerPlayer[pi]) this._tileCountsPerPlayer[pi] = {};
+    const counts = this._tileCountsPerPlayer[pi];
+
+    // Per-player options with fallback to global options
+    const pp = this.options.perPlayerOptions?.[pi] || {};
+    const weights   = pp.tileWeights   || this.options.tileWeights   || this._defaultWeights();
+    const maxCounts = pp.tileMaxCounts  || this.options.tileMaxCounts  || {};
+    const freq      = pp.centerPatternFrequency ?? this.options.centerPatternFrequency ?? 0.2;
+    const circlesRatio = pp.patternWeights?.circles ?? this.options.patternWeights?.circles ?? 0.7;
+
+    // Debug: log the active profile once per player each game
+    this._debugLogged ??= new Set();
+    if (!this._debugLogged.has(pi)) {
+      this._debugLogged.add(pi);
+      const limits = Object.entries(maxCounts).filter(([, v]) => v > 0).map(([k, v]) => `${k}≤${v}`).join(', ') || 'none';
+      console.log(`[Tiles P${pi}] weights: ${weights.map(w => `${w.key}:${w.weight}`).join(', ')} | limits: ${limits}`);
     }
 
-    // Use centralized player colors
+    // A tile type is eligible if it still has capacity AND is enabled — either
+    // by a positive weight, or by having a max set (a max alone switches the
+    // type on so the limit can drive how many appear). Weight-0 + max types are
+    // picked with a baseline weight of 1.
+    const valid = weights
+      .map(w => {
+        const max  = maxCounts[w.key] || 0;
+        const used = counts[w.key] || 0;
+        if (max > 0 && used >= max) return null;       // hit its cap
+        if (w.weight <= 0 && max <= 0) return null;     // disabled
+        return { ...w, weight: w.weight > 0 ? w.weight : 1 };
+      })
+      .filter(Boolean);
+
+    let shape;
+    if (valid.length) {
+      shape = this._weightedSelect(valid);
+    } else {
+      // Everything is disabled or has hit its cap — fall back to a neutral
+      // blank tile rather than random ones, so limits are never exceeded.
+      shape = {
+        type: 'normal',
+        sides: ['non-street', 'non-street', 'non-street', 'non-street'],
+      };
+    }
+
+    const tile = {
+      id: Math.random().toString(32).substr(2, 9),
+      sides: [...shape.sides],
+      type: shape.type || 'normal',
+    };
+
+    // Random rotation — skip for rotationally symmetric tile types
+    const allSame = tile.sides.every(s => s === tile.sides[0]);
+    const twoFold  = tile.sides[0] === tile.sides[2] && tile.sides[1] === tile.sides[3] && tile.sides[0] !== tile.sides[1];
+    const maxRot   = allSame ? 1 : twoFold ? 2 : 4;
+    const rot      = Math.floor(Math.random() * maxRot);
+    for (let i = 0; i < rot; i++) tile.sides.unshift(tile.sides.pop());
+
+    // Track per-player count for all tile types
+    if (shape.key) {
+      counts[shape.key] = (counts[shape.key] || 0) + 1;
+    }
+
+    // Centre pattern (normal, non-special tiles only)
+    if (this.options.enableCenterPatterns && Math.random() < freq && tile.type === 'normal') {
+      const maxC = maxCounts.centerCircles || 0;
+      const maxS = maxCounts.centerSquares || 0;
+      const canCircle = !(maxC > 0 && (counts.centerCircles || 0) >= maxC);
+      const canSquare = !(maxS > 0 && (counts.centerSquares || 0) >= maxS);
+      if (canCircle || canSquare) {
+        const pattern = (canCircle && canSquare)
+          ? (Math.random() < circlesRatio ? 'circles' : 'squares')
+          : (canCircle ? 'circles' : 'squares');
+        tile.centerPattern = pattern;
+        const key = pattern === 'circles' ? 'centerCircles' : 'centerSquares';
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    }
+
+    // Player colour
     if (playerIndex !== null) {
-      tile.backgroundColor = playerCount === 1 ? DEFAULT_PLAYER_COLORS[0] : DEFAULT_PLAYER_COLORS[playerIndex + 1];
+      tile.backgroundColor = playerCount === 1
+        ? DEFAULT_PLAYER_COLORS[0]
+        : DEFAULT_PLAYER_COLORS[playerIndex + 1];
+    }
+
+    // Private lane: record ownership index so path scoring can filter opponents
+    if (tile.type === 'private' && playerIndex !== null) {
+      tile.ownedByIndex = playerIndex;
     }
 
     return tile;
   }
 
-  renderTile(tile, canvas, rotation = 0) {
+  renderTile(tile, canvas, rotation = 0, pathColor = null, pathEdges = null) {
     const ctx = canvas.getContext('2d');
     const size = canvas.width;
+
+    // Road Block: fully custom, no road graphics
+    if (tile.type === 'roadblock') {
+      this._drawRoadblock(ctx, size);
+      return;
+    }
+
+    // Blocker: non-playable sealed cell
+    if (tile.type === 'blocker') {
+      this._drawBlocker(ctx, size);
+      return;
+    }
 
     ctx.fillStyle = tile.backgroundColor || '#ffffff';
     ctx.fillRect(0, 0, size, size);
@@ -86,16 +220,185 @@ class StreetsTileSet extends TileSet {
 
     if (tile.centerPattern) renderPattern(ctx, size, this.centerPatterns[tile.centerPattern], 0);
 
+    // Special overlays on top of road graphics
+    if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size);
+    if (tile.type === 'private') this._drawPrivateIndicator(ctx, size, tile);
+
     if (tile.isStarterTile) {
       ctx.fillStyle = 'rgba(68, 68, 68, 0.5)';
       ctx.beginPath();
       ctx.arc(size / 2, size / 2, size * 0.45, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    if (pathColor) this._drawPathHighlight(ctx, size, rotatedSides, pathColor, pathEdges);
+  }
+
+  // Draws a centreline stroke only along the edges the path actually travels.
+  // `edges` is an array of edge indices [0=N,1=E,2=S,3=W]; if null, fall back
+  // to all street edges (used when the caller doesn't know the direction).
+  // Two passes: wide translucent glow halo, then a bright narrow line on top.
+  _drawPathHighlight(ctx, size, rotatedSides, color, edges = null) {
+    const edgeEndpoints = [[size / 2, 0], [size, size / 2], [size / 2, size], [0, size / 2]];
+    const activeEdges = edges !== null
+      ? edges
+      : rotatedSides.map((s, i) => s === 'street' ? i : null).filter(i => i !== null);
+    if (!activeEdges.length) return;
+
+    const cx = size / 2;
+    const cy = size / 2;
+
+    const drawSegments = () => {
+      ctx.beginPath();
+      for (const e of activeEdges) {
+        ctx.moveTo(...edgeEndpoints[e]);
+        ctx.lineTo(cx, cy);
+      }
+      ctx.stroke();
+    };
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Glow halo
+    ctx.lineWidth = size * 0.12;
+    ctx.globalAlpha = 0.25;
+    drawSegments();
+
+    // Bright centreline
+    ctx.lineWidth = size * 0.045;
+    ctx.globalAlpha = 0.9;
+    drawSegments();
+
+    ctx.restore();
+  }
+
+  // Dark tile with red X — no road connections
+  _drawRoadblock(ctx, size) {
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, size, size);
+
+    ctx.strokeStyle = '#cc2200';
+    ctx.lineWidth = Math.max(2, size * 0.05);
+    ctx.strokeRect(size * 0.07, size * 0.07, size * 0.86, size * 0.86);
+
+    ctx.lineWidth = Math.max(3, size * 0.10);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(size * 0.22, size * 0.22);
+    ctx.lineTo(size * 0.78, size * 0.78);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(size * 0.78, size * 0.22);
+    ctx.lineTo(size * 0.22, size * 0.78);
+    ctx.stroke();
+  }
+
+  // Non-playable sealed corner — dark with fine hatching
+  _drawBlocker(ctx, size) {
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, 0, size, size);
+
+    // Diagonal hatch lines to signal "out of bounds"
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = Math.max(1, size * 0.025);
+    const step = size * 0.22;
+    ctx.beginPath();
+    for (let i = -size; i < size * 2; i += step) {
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + size, size);
+    }
+    ctx.stroke();
+
+    // Subtle inset border
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = Math.max(1, size * 0.03);
+    ctx.strokeRect(size * 0.06, size * 0.06, size * 0.88, size * 0.88);
+  }
+
+  // 4-way cross with bridge: N-S road goes over E-W road at the centre
+  _drawTunnelOverlay(ctx, size) {
+    const cx = size / 2;
+    const cy = size / 2;
+    const roadW = size * 0.34;
+
+    // Deep shadow over the E-W underground crossing
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
+    ctx.fillRect(0, cy - roadW * 0.5, size, roadW);
+
+    // Tunnel portal mouths — dark concrete blocks at E and W openings
+    ctx.fillStyle = '#1e1e1e';
+    const portalW = roadW * 0.45;
+    ctx.fillRect(0,            cy - roadW * 0.5, portalW, roadW);
+    ctx.fillRect(size - portalW, cy - roadW * 0.5, portalW, roadW);
+
+    // Bridge deck (N-S elevated road) — concrete grey
+    ctx.fillStyle = '#4a4a4a';
+    ctx.fillRect(cx - roadW * 0.5, 0, roadW, size);
+
+    // Redraw N-S road markings over the bridge deck
+    renderPattern(ctx, size, this.patterns['street'], 0);
+    renderPattern(ctx, size, this.patterns['street'], 2);
+
+    // Safety railing bars at the top and bottom edges of the bridge crossing
+    const railH = Math.max(3, size * 0.055);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(cx - roadW * 0.5, cy - roadW * 0.5 - railH, roadW, railH);
+    ctx.fillRect(cx - roadW * 0.5, cy + roadW * 0.5,          roadW, railH);
+
+    // Railing posts (vertical stubs)
+    ctx.fillStyle = '#cccccc';
+    const postW   = Math.max(1, size * 0.03);
+    const postH   = railH * 2.2;
+    const nPosts  = 3;
+    for (let i = 0; i < nPosts; i++) {
+      const px = cx - roadW * 0.4 + i * (roadW * 0.4);
+      ctx.fillRect(px - postW / 2, cy - roadW * 0.5 - postH, postW, postH);
+      ctx.fillRect(px - postW / 2, cy + roadW * 0.5,          postW, postH);
+    }
+  }
+
+  // Player-owned private lane: coloured shoulder stripes + badge
+  _drawPrivateIndicator(ctx, size, tile) {
+    const cx = size / 2;
+    const cy = size / 2;
+    const playerColor = tile?.backgroundColor || '#4488ff';
+    const roadHalfW   = size * 0.17;
+    const stripeW     = Math.max(2, size * 0.055);
+
+    // Shoulder stripes in the player's colour along both road edges
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    ctx.fillStyle   = playerColor;
+    ctx.fillRect(cx - roadHalfW - stripeW, 0, stripeW, size);
+    ctx.fillRect(cx + roadHalfW,           0, stripeW, size);
+    ctx.restore();
+
+    // Centre badge — larger, with player-colour border
+    const r = size * 0.22;
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = playerColor;
+    ctx.lineWidth   = Math.max(2, size * 0.04);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font      = `bold ${Math.max(9, size * 0.26)}px sans-serif`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('P', cx, cy + size * 0.01);
   }
 
   validateTile(tile) {
-    return Array.isArray(tile.sides) && tile.sides.length === 4 && tile.sides.every(s => s === 'street' || s === 'non-street');
+    return Array.isArray(tile.sides) && tile.sides.length === 4 &&
+      tile.sides.every(s => s === 'street' || s === 'non-street');
   }
 }
 

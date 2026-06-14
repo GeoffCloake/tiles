@@ -97,25 +97,161 @@ select {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.8);
-    display: grid;
-    place-items: center;
-    padding: clamp(1rem, 4vw, 2rem);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: clamp(0.5rem, 3vw, 2rem);
     z-index: 1000;
 }
 
-.modal__content {
+.modal-content {
+    position: relative;
     background: var(--bg-secondary);
-    padding: clamp(1.5rem, 4vw, 2.5rem);
+    border: 1px solid var(--border-color);
+    padding: clamp(1rem, 3vw, 2rem);
     border-radius: 12px;
-    width: min(600px, 100% - 2rem);
+    width: min(640px, 100%);
     max-height: 90vh;
-    overflow-y: auto;
+    max-height: 90dvh;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
-.modal__buttons {
+.modal-content > h2 {
+    margin-top: 0;
+    padding-right: 2.5rem; /* keep clear of the close button */
+}
+
+/* Scrollable body; heading and Close button stay visible */
+.rules-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-right: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.rules-content h3 {
+    color: var(--accent-blue);
+}
+
+.rules-content h4 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.modal-content > .button,
+.modal-buttons {
+    margin-top: 1rem;
+    flex-shrink: 0;
+}
+
+.modal-buttons {
     display: flex;
     gap: 1rem;
-    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+/* Final score tallies in the game-end modal */
+.final-score-entry {
+    margin-bottom: 0.75rem;
+}
+
+.final-score-entry p {
+    margin: 0;
+}
+
+.score-tally {
+    list-style: none;
+    margin: 0.25rem 0 0;
+    padding: 0 0 0 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    max-width: 18rem;
+}
+
+.score-tally li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.score-tally li span:last-child {
+    color: var(--accent-green);
+}
+
+@media (max-width: 480px) {
+    .modal {
+        padding: 0.5rem;
+    }
+
+    .modal-content {
+        max-height: 100%;
+        width: 100%;
+    }
+
+    .modal-buttons {
+        flex-direction: column;
+    }
+}
+
+/* Tournament table */
+.tournament-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.tournament-table th,
+.tournament-table td {
+    padding: 0.35rem 0.6rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tournament-table th {
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+.tournament-table td:first-child,
+.tournament-table th:first-child {
+    text-align: center;
+    width: 2.5rem;
+}
+
+.tournament-winner {
+    margin-top: 1rem;
+    font-size: 1.05rem;
+    color: var(--accent-yellow, #FFE600);
+    text-align: center;
 }
 
 /* Score Popup */

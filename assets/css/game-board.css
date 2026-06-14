@@ -73,22 +73,8 @@
   pointer-events: none;
 }
 
-/* Bonus Path Highlight */
-.bonus-path {
-  position: relative;
-}
-
-.bonus-path::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-color: rgba(255, 215, 0, 0.3); /* Gold overlay */
-  border: 2px solid #FFD700;
-  border-radius: 4px;
-  pointer-events: none;
-  z-index: 2;
-  animation: pulse 2s infinite;
-}
+/* Bonus Path Highlight — visual handled entirely on canvas via _drawPathHighlight */
+.bonus-path {}
 
 /* Invalid Placement Animation */
 .tile.invalid {
@@ -102,6 +88,7 @@
   50% { outline-color: rgba(76, 175, 80, 1); }
   100% { outline-color: rgba(76, 175, 80, 0.6); }
 }
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-5px); }
