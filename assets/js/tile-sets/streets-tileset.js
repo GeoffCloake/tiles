@@ -221,7 +221,7 @@ class StreetsTileSet extends TileSet {
     if (tile.centerPattern) renderPattern(ctx, size, this.centerPatterns[tile.centerPattern], 0);
 
     // Special overlays on top of road graphics
-    if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size);
+    if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size, rotation || tile.rotation || 0);
     if (tile.type === 'private') this._drawPrivateIndicator(ctx, size, tile, rotatedSides);
 
     if (tile.isStarterTile) {
@@ -318,11 +318,20 @@ class StreetsTileSet extends TileSet {
     ctx.strokeRect(size * 0.06, size * 0.06, size * 0.88, size * 0.88);
   }
 
-  // 4-way cross with bridge: N-S road goes over E-W road at the centre
-  _drawTunnelOverlay(ctx, size) {
+  // 4-way cross with bridge: N-S road goes over E-W road at the centre.
+  // Rotation 1 or 3 means the elevated road runs E-W; rotate canvas 90° so
+  // all drawing code can always assume N-S elevation.
+  _drawTunnelOverlay(ctx, size, rotation = 0) {
     const cx = size / 2;
     const cy = size / 2;
     const roadW = size * 0.34;
+
+    ctx.save();
+    if (rotation % 2 === 1) {
+      ctx.translate(cx, cy);
+      ctx.rotate(Math.PI / 2);
+      ctx.translate(-cx, -cy);
+    }
 
     // Deep shadow over the E-W underground crossing
     ctx.fillStyle = 'rgba(0,0,0,0.78)';
@@ -369,6 +378,8 @@ class StreetsTileSet extends TileSet {
       ctx.fillRect(px - postW / 2, cy - roadW * 0.5 - postH, postW, postH);
       ctx.fillRect(px - postW / 2, cy + roadW * 0.5,          postW, postH);
     }
+
+    ctx.restore();
   }
 
   // Player-owned private lane: coloured road surface + shoulder bollards, no centre line.
