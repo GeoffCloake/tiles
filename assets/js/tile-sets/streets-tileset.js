@@ -222,7 +222,7 @@ class StreetsTileSet extends TileSet {
 
     // Special overlays on top of road graphics
     if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size);
-    if (tile.type === 'private') this._drawPrivateIndicator(ctx, size, tile);
+    if (tile.type === 'private') this._drawPrivateIndicator(ctx, size, tile, rotatedSides);
 
     if (tile.isStarterTile) {
       ctx.fillStyle = 'rgba(68, 68, 68, 0.5)';
@@ -342,6 +342,17 @@ class StreetsTileSet extends TileSet {
     renderPattern(ctx, size, this.patterns['street'], 0);
     renderPattern(ctx, size, this.patterns['street'], 2);
 
+    // Enforce minimum-width centre dashes — the pattern dashes are sub-pixel at small tile sizes
+    {
+      const dashW = Math.max(2, size * 0.015);
+      const dashH = Math.max(4, size * 0.13);
+      const step  = dashH * 1.8;
+      ctx.fillStyle = '#ffffff';
+      for (let y = size * 0.07; y + dashH < size * 0.93; y += step) {
+        ctx.fillRect(cx - dashW / 2, y, dashW, dashH);
+      }
+    }
+
     // Safety railing bars at the top and bottom edges of the bridge crossing
     const railH = Math.max(3, size * 0.055);
     ctx.fillStyle = '#ffffff';
@@ -360,32 +371,39 @@ class StreetsTileSet extends TileSet {
     }
   }
 
-  // Player-owned private lane: coloured road surface + shoulder bollards, no centre line
-  _drawPrivateIndicator(ctx, size, tile) {
-    const cx     = size / 2;
-    const color  = tile?.backgroundColor || '#4488ff';
-    const roadHW = size * 0.168;
+  // Player-owned private lane: coloured road surface + shoulder bollards, no centre line.
+  // Rotates the canvas context 90° for E-W tiles so drawing is always done as N-S.
+  _drawPrivateIndicator(ctx, size, tile, rotatedSides) {
+    const cx    = size / 2;
+    const color = tile?.backgroundColor || '#4488ff';
+    const isEW  = rotatedSides?.[1] === 'street'; // east side is street → E-W orientation
 
     ctx.save();
+    if (isEW) {
+      ctx.translate(cx, cx);
+      ctx.rotate(Math.PI / 2);
+      ctx.translate(-cx, -cx);
+    }
 
-    // Flood the road interior with the player's colour — unmistakably not a public road
+    const roadHW = size * 0.168;
+
+    // Flood road interior with player colour
     ctx.fillStyle = color;
     ctx.globalAlpha = 0.55;
     ctx.fillRect(cx - roadHW + 1, 0, (roadHW - 1) * 2, size);
 
-    // Erase centre dashes so it reads as one undivided private lane
+    // Erase centre dashes → single undivided lane
     ctx.globalAlpha = 1;
     ctx.fillStyle = color;
     ctx.fillRect(cx - size * 0.025, 0, size * 0.05, size);
 
-    // Bollard posts on each shoulder — player colour with white reflector cap
-    const sw   = Math.max(2, size * 0.05);
+    // Bollard posts (black + white reflector cap) on each shoulder
     const bw   = Math.max(3, size * 0.055);
     const bh   = Math.max(7, size * 0.11);
     const capH = Math.max(2, bh * 0.28);
     const gap  = size / 4.5;
-    const lx   = cx - roadHW + 1 + sw / 2;
-    const rx   = cx + roadHW - 1 - sw / 2;
+    const lx   = cx - roadHW + 1 + bw;
+    const rx   = cx + roadHW - 1 - bw;
 
     for (let y = gap * 0.5; y < size; y += gap) {
       for (const bx of [lx, rx]) {
