@@ -108,6 +108,11 @@ export class SetupManager {
             });
         }
 
+        // Game version preset selection
+        document.getElementById('qs-game-preset')?.addEventListener('change', e => {
+            if (e.target.value) this.applyGamePreset(e.target.value);
+        });
+
         // Config save / load / delete
         document.getElementById('config-save-btn')?.addEventListener('click', () => this.saveCurrentConfig());
         document.getElementById('config-load-btn')?.addEventListener('click', () => this.loadSelectedConfig());
@@ -447,6 +452,171 @@ export class SetupManager {
         };
     }
 
+    // ---- Game version presets ----
+
+    static get GAME_PRESETS() {
+        const base = {
+            'enable-timer': false, 'time-limit': '60',
+            'enable-free-play': false, 'enable-border-rule': false,
+            'enable-blank-sides': false, 'shape-count': '6',
+            'starter-multiplier': '2', 'score-mode-endgame': false,
+            'enable-tournament': false, 'tournament-rounds': '3',
+            'initial-tile-layout': 'arrangement', 'initial-tiles': '0', 'layout-tiles': 'border-bonus',
+        };
+        const streets = extra => ({
+            ...base, 'tile-set': 'streets',
+            'circle-score': '10', 'square-score': '20',
+            'intersection-bonus': '5', 'center-bonus': '5',
+            'path-points': '3', 'completion-bonus': '20', 'roadblock-penalty': '0',
+            ...extra,
+        });
+        const shapes = extra => ({
+            ...base, 'tile-set': 'shapes',
+            'initial-tile-layout': 'arrangement', 'layout-tiles': 'border',
+            ...extra,
+        });
+        const pp = (overrides = {}) => ({
+            'center-pattern-freq': 20, 'circles-ratio': 70,
+            'tw-cross': 5, 'tw-t': 15, 'tw-straight': 10, 'tw-corner': 15, 'tw-dead': 10, 'tw-blank': 5,
+            'tw-tunnel': 0, 'tw-roadblock': 0, 'tw-private': 0,
+            'tm-circles': 0, 'tm-squares': 0,
+            'penalty-freq': 0, 'tm-speedcam': 0,
+            'tm-cross': 0, 'tm-t': 0, 'tm-straight': 0, 'tm-corner': 0, 'tm-dead': 0, 'tm-blank': 0,
+            'tm-tunnel': 0, 'tm-roadblock': 0, 'tm-private': 0,
+            ...overrides,
+        });
+        return {
+            'streets-starter': {
+                label: 'Streets · Starter — 7×7 · ~15 min',
+                values: streets({
+                    'board-size': '7', 'rack-size': '3', 'player-count': '2',
+                    'circle-score': '5', 'square-score': '10',
+                    'intersection-bonus': '3', 'center-bonus': '3',
+                    'path-points': '2', 'completion-bonus': '10',
+                }),
+                perPlayerValues: pp({
+                    'center-pattern-freq': 15, 'tm-circles': 4, 'tm-squares': 2,
+                    'tw-cross': 3, 'tw-t': 12, 'tw-straight': 8, 'tw-corner': 12, 'tw-dead': 8, 'tw-blank': 5,
+                }),
+            },
+            'streets-classic': {
+                label: 'Streets · Classic — 9×9 · ~30 min',
+                values: streets({ 'board-size': '9', 'rack-size': '5', 'player-count': '2' }),
+                perPlayerValues: pp(),
+            },
+            'streets-bonus-rush': {
+                label: 'Streets · Bonus Rush — 9×9 · ~25 min',
+                values: streets({
+                    'board-size': '9', 'rack-size': '5', 'player-count': '2',
+                    'square-score': '25', 'path-points': '4', 'completion-bonus': '30',
+                }),
+                perPlayerValues: pp({
+                    'center-pattern-freq': 45, 'circles-ratio': 50,
+                    'tw-cross': 6, 'tw-t': 14, 'tw-straight': 12, 'tw-corner': 14, 'tw-dead': 8, 'tw-blank': 4,
+                }),
+            },
+            'streets-extended': {
+                label: 'Streets · Extended — 11×11 · ~45 min',
+                values: streets({
+                    'board-size': '11', 'rack-size': '6', 'player-count': '2', 'completion-bonus': '25',
+                }),
+                perPlayerValues: pp({
+                    'circles-ratio': 60,
+                    'tw-cross': 5, 'tw-t': 12, 'tw-straight': 10, 'tw-corner': 12, 'tw-dead': 8, 'tw-blank': 4,
+                    'tw-tunnel': 8, 'tw-private': 6,
+                }),
+            },
+            'streets-speed': {
+                label: 'Streets · Speed Round — 7×7 · ~10 min',
+                values: streets({
+                    'board-size': '7', 'rack-size': '3', 'player-count': '2',
+                    'initial-tile-layout': 'random', 'initial-tiles': '3', 'layout-tiles': 'border',
+                    'enable-timer': true, 'time-limit': '30',
+                    'circle-score': '5', 'square-score': '10',
+                    'intersection-bonus': '3', 'center-bonus': '3',
+                    'path-points': '2', 'completion-bonus': '10',
+                }),
+                perPlayerValues: pp({ 'center-pattern-freq': 15, 'tm-circles': 4, 'tm-squares': 2 }),
+            },
+            'streets-hazards': {
+                label: 'Streets · Hazards — 9×9 · ~30 min',
+                values: streets({
+                    'board-size': '9', 'rack-size': '5', 'player-count': '2', 'roadblock-penalty': '15',
+                }),
+                perPlayerValues: pp({
+                    'tw-t': 13, 'tw-corner': 13, 'tw-dead': 8, 'tw-blank': 4, 'tw-roadblock': 6,
+                    'penalty-freq': 15, 'tm-speedcam': 3, 'tm-roadblock': 4,
+                }),
+            },
+            'streets-pro': {
+                label: 'Streets · Pro — 13×13 · ~60 min',
+                values: streets({
+                    'board-size': '13', 'rack-size': '7', 'player-count': '4',
+                    'starter-multiplier': '3', 'square-score': '25',
+                    'center-bonus': '10', 'path-points': '4', 'completion-bonus': '30',
+                    'roadblock-penalty': '15', 'enable-tournament': true, 'time-limit': '90',
+                }),
+                perPlayerValues: pp({
+                    'center-pattern-freq': 25, 'circles-ratio': 60,
+                    'tw-cross': 5, 'tw-t': 12, 'tw-straight': 10, 'tw-corner': 12, 'tw-dead': 8, 'tw-blank': 4,
+                    'tw-tunnel': 6, 'tw-roadblock': 5, 'tw-private': 6,
+                    'tm-circles': 6, 'tm-squares': 4,
+                    'penalty-freq': 10, 'tm-speedcam': 3, 'tm-tunnel': 4, 'tm-roadblock': 3, 'tm-private': 5,
+                }),
+            },
+            'shapes-starter': {
+                label: 'Shapes · Starter — 7×7 · ~15 min',
+                values: shapes({
+                    'board-size': '7', 'rack-size': '4', 'player-count': '2',
+                    'initial-tile-layout': 'random', 'initial-tiles': '3',
+                    'enable-blank-sides': false, 'shape-count': '4',
+                }),
+            },
+            'shapes-classic': {
+                label: 'Shapes · Classic — 9×9 · ~30 min',
+                values: shapes({
+                    'board-size': '9', 'rack-size': '5', 'player-count': '2',
+                    'enable-blank-sides': true, 'shape-count': '6',
+                }),
+            },
+            'shapes-extended': {
+                label: 'Shapes · Extended — 11×11 · ~45 min',
+                values: shapes({
+                    'board-size': '11', 'rack-size': '6', 'player-count': '4',
+                    'enable-blank-sides': true, 'shape-count': '8', 'enable-border-rule': true,
+                }),
+            },
+        };
+    }
+
+    applyGamePreset(key) {
+        const preset = SetupManager.GAME_PRESETS[key];
+        if (!preset) return;
+        if (preset.values) this._applyConfigValues({ values: preset.values });
+        if (preset.perPlayerValues) {
+            for (let p = 0; p < 4; p++) {
+                for (const [field, val] of Object.entries(preset.perPlayerValues)) {
+                    const el = document.getElementById(`${field}-p${p}`);
+                    if (!el) continue;
+                    el.value = val;
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+        }
+    }
+
+    populateGamePresetSelect() {
+        const sel = document.getElementById('qs-game-preset');
+        if (!sel || sel.dataset.populated) return;
+        for (const [key, p] of Object.entries(SetupManager.GAME_PRESETS)) {
+            const o = document.createElement('option');
+            o.value = key;
+            o.textContent = p.label;
+            sel.appendChild(o);
+        }
+        sel.dataset.populated = '1';
+    }
+
     // Write a preset's values into every player tab and refresh displays.
     applyTilePreset(name) {
         const preset = SetupManager.TILE_PRESETS[name];
@@ -613,8 +783,9 @@ export class SetupManager {
         // Initialize player names based on default player count
         this.updatePlayerNameInputs();
 
-        // Populate saved configs + tile preset dropdowns
+        // Populate saved configs + preset dropdowns
         this.populateConfigSelect();
         this.populateTilePresetSelect();
+        this.populateGamePresetSelect();
     }
 }
