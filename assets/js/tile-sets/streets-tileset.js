@@ -198,12 +198,6 @@ class StreetsTileSet extends TileSet {
     const ctx = canvas.getContext('2d');
     const size = canvas.width;
 
-    // Road Block: fully custom, no road graphics
-    if (tile.type === 'roadblock') {
-      this._drawRoadblock(ctx, size);
-      return;
-    }
-
     // Blocker: non-playable sealed cell
     if (tile.type === 'blocker') {
       this._drawBlocker(ctx, size);
@@ -221,8 +215,9 @@ class StreetsTileSet extends TileSet {
     if (tile.centerPattern) renderPattern(ctx, size, this.centerPatterns[tile.centerPattern], 0);
 
     // Special overlays on top of road graphics
-    if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size, rotation || tile.rotation || 0, tile.backgroundColor || '#ffffff');
-    if (tile.type === 'private') this._drawPrivateIndicator(ctx, size, tile, rotatedSides);
+    if (tile.type === 'tunnel')     this._drawTunnelOverlay(ctx, size, rotation || tile.rotation || 0, tile.backgroundColor || '#ffffff');
+    if (tile.type === 'private')    this._drawPrivateIndicator(ctx, size, tile, rotatedSides);
+    if (tile.type === 'roadblock')  this._drawRoadblockOverlay(ctx, size);
 
     if (tile.isStarterTile) {
       ctx.fillStyle = 'rgba(68, 68, 68, 0.5)';
@@ -275,25 +270,29 @@ class StreetsTileSet extends TileSet {
     ctx.restore();
   }
 
-  // Dark tile with red X — no road connections
-  _drawRoadblock(ctx, size) {
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(0, 0, size, size);
+  // Centre overlay: black square + white X drawn on top of the road graphics
+  _drawRoadblockOverlay(ctx, size) {
+    const cx = size / 2;
+    const cy = size / 2;
+    const sq = size * 0.44;
+    const m  = sq * 0.16;
 
-    ctx.strokeStyle = '#cc2200';
-    ctx.lineWidth = Math.max(2, size * 0.05);
-    ctx.strokeRect(size * 0.07, size * 0.07, size * 0.86, size * 0.86);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(cx - sq / 2, cy - sq / 2, sq, sq);
 
-    ctx.lineWidth = Math.max(3, size * 0.10);
-    ctx.lineCap = 'round';
+    ctx.save();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth   = Math.max(2, size * 0.09);
+    ctx.lineCap     = 'round';
     ctx.beginPath();
-    ctx.moveTo(size * 0.22, size * 0.22);
-    ctx.lineTo(size * 0.78, size * 0.78);
+    ctx.moveTo(cx - sq / 2 + m, cy - sq / 2 + m);
+    ctx.lineTo(cx + sq / 2 - m, cy + sq / 2 - m);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(size * 0.78, size * 0.22);
-    ctx.lineTo(size * 0.22, size * 0.78);
+    ctx.moveTo(cx + sq / 2 - m, cy - sq / 2 + m);
+    ctx.lineTo(cx - sq / 2 + m, cy + sq / 2 - m);
     ctx.stroke();
+    ctx.restore();
   }
 
   // Non-playable sealed corner — dark with fine hatching
