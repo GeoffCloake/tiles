@@ -343,14 +343,17 @@ class StreetsTileSet extends TileSet {
     renderPattern(ctx, size, this.patterns['street'], 0);
     renderPattern(ctx, size, this.patterns['street'], 2);
 
-    // Enforce minimum-width centre dashes (pattern rects are sub-pixel at small tile sizes)
-    const dashW = Math.max(2, size * 0.015);
-    const dashH = Math.max(4, size * 0.13);
-    const step  = dashH * 1.8;
-    ctx.fillStyle = '#ffffff';
-    for (let y = size * 0.07; y + dashH < size * 0.93; y += step) {
-      ctx.fillRect(cx - dashW / 2, y, dashW, dashH);
-    }
+    // Centre dashes on N-S flyover road — stroked dashed line for clear visibility at all sizes
+    ctx.save();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = Math.max(2, size * 0.04);
+    ctx.lineCap = 'butt';
+    ctx.setLineDash([Math.max(6, size * 0.13), Math.max(3, size * 0.07)]);
+    ctx.beginPath();
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, size);
+    ctx.stroke();
+    ctx.restore();
 
     // Safety railing bars at the top and bottom edges of the bridge crossing
     const railH = Math.max(3, size * 0.055);
