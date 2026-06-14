@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '3.3';
+const VERSION = '3.4';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=3.2';
