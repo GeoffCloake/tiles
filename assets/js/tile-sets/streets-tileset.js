@@ -360,40 +360,44 @@ class StreetsTileSet extends TileSet {
     }
   }
 
-  // Player-owned private lane: coloured shoulder stripes + badge
+  // Player-owned private lane: bollard posts along each shoulder, no centre line
   _drawPrivateIndicator(ctx, size, tile) {
-    const cx = size / 2;
-    const cy = size / 2;
-    const playerColor = tile?.backgroundColor || '#4488ff';
-    const roadHalfW   = size * 0.17;
-    const stripeW     = Math.max(2, size * 0.055);
+    const cx     = size / 2;
+    const color  = tile?.backgroundColor || '#4488ff';
+    const roadHW = size * 0.168;   // half road width
+    const sw     = Math.max(2, size * 0.05);  // shoulder band width
 
-    // Shoulder stripes in the player's colour along both road edges
     ctx.save();
-    ctx.globalAlpha = 0.8;
-    ctx.fillStyle   = playerColor;
-    ctx.fillRect(cx - roadHalfW - stripeW, 0, stripeW, size);
-    ctx.fillRect(cx + roadHalfW,           0, stripeW, size);
+
+    // Erase the centre dashes — one unbroken private lane, no dividing line
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(cx - size * 0.025, 0, size * 0.05, size);
+
+    // Coloured shoulder bands inside the road edges
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.9;
+    ctx.fillRect(cx - roadHW + 1, 0, sw, size);           // left shoulder
+    ctx.fillRect(cx + roadHW - sw - 1, 0, sw, size);      // right shoulder
+
+    // Bollard posts — player colour with white reflector cap
+    const bw      = Math.max(3, size * 0.055);
+    const bh      = Math.max(7, size * 0.11);
+    const capH    = Math.max(2, bh * 0.28);
+    const spacing = size / 4.5;
+    ctx.globalAlpha = 1;
+
+    const lx = cx - roadHW + 1 + sw / 2;
+    const rx = cx + roadHW - 1 - sw / 2;
+    for (let y = spacing * 0.5; y < size; y += spacing) {
+      for (const bx of [lx, rx]) {
+        ctx.fillStyle = color;
+        ctx.fillRect(bx - bw / 2, y - bh / 2, bw, bh);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(bx - bw / 2, y - bh / 2, bw, capH);
+      }
+    }
+
     ctx.restore();
-
-    // Centre badge — larger, with player-colour border
-    const r = size * 0.22;
-    ctx.fillStyle = 'rgba(0,0,0,0.78)';
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = playerColor;
-    ctx.lineWidth   = Math.max(2, size * 0.04);
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font      = `bold ${Math.max(9, size * 0.26)}px sans-serif`;
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('P', cx, cy + size * 0.01);
   }
 
   validateTile(tile) {
