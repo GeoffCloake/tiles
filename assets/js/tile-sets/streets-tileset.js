@@ -318,27 +318,16 @@ class StreetsTileSet extends TileSet {
     ctx.strokeRect(size * 0.06, size * 0.06, size * 0.88, size * 0.88);
   }
 
-  // Flyover tile: one road elevated over the other at the centre crossing.
-  // Even rotation → N-S elevated; odd rotation → E-W elevated.
-  // Uses explicit coordinates per orientation — no canvas rotation.
+  // Flyover tile: even rotation → N-S elevated; odd → E-W elevated.
+  // The base tile already draws the black cross. This overlay only adds dashes:
+  // white on the flyover road, grey only outside the crossing on the tunnel road.
   _drawTunnelOverlay(ctx, size, rotation = 0) {
     const cx   = size / 2;
     const cy   = size / 2;
-    const roadW = size * 0.34;
-    const r    = roadW / 2;
-    const ewUp = (rotation % 2 === 1); // true → E-W road is the flyover
+    const r    = size * 0.34 / 2;
+    const ewUp = (rotation % 2 === 1);
 
-    // 1. Darken the tunnel (underground) road
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    if (ewUp) ctx.fillRect(cx - r, 0, roadW, size);  // darken N-S (it goes under)
-    else      ctx.fillRect(0, cy - r, size, roadW);  // darken E-W (it goes under)
-
-    // 2. Paint the flyover road solid black on top
-    ctx.fillStyle = '#000000';
-    if (ewUp) ctx.fillRect(0, cy - r, size, roadW);  // E-W elevated
-    else      ctx.fillRect(cx - r, 0, roadW, size);  // N-S elevated
-
-    // 3. White centre dashes along the flyover road
+    // White dashes on flyover road — full length
     ctx.save();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth   = Math.max(2, size * 0.02);
@@ -350,9 +339,9 @@ class StreetsTileSet extends TileSet {
     ctx.stroke();
     ctx.restore();
 
-    // 4. Muted grey dashes on the tunnel sections visible outside the crossing
+    // Grey dashes on tunnel road — outside the crossing only (centre hidden by flyover)
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
     ctx.lineWidth   = Math.max(1, size * 0.02);
     ctx.lineCap     = 'butt';
     ctx.setLineDash([Math.max(5, size * 0.13), Math.max(3, size * 0.053)]);
@@ -366,28 +355,6 @@ class StreetsTileSet extends TileSet {
     }
     ctx.stroke();
     ctx.restore();
-
-    // 5. White edge lines at the bridge crossing boundaries
-    const lk = Math.max(2, size * 0.03);
-    ctx.fillStyle = '#ffffff';
-    if (ewUp) {
-      ctx.fillRect(cx - r - lk, cy - r, lk, roadW);  // W edge of crossing
-      ctx.fillRect(cx + r,       cy - r, lk, roadW);  // E edge of crossing
-    } else {
-      ctx.fillRect(cx - r, cy - r - lk, roadW, lk);  // N edge of crossing
-      ctx.fillRect(cx - r, cy + r,       roadW, lk);  // S edge of crossing
-    }
-
-    // 6. Shadow on the tunnel road adjacent to the crossing (depth cue)
-    const sk = Math.max(2, size * 0.025);
-    ctx.fillStyle = 'rgba(0,0,0,0.65)';
-    if (ewUp) {
-      ctx.fillRect(cx - r, cy - r - sk, roadW, sk);  // above crossing
-      ctx.fillRect(cx - r, cy + r,       roadW, sk);  // below crossing
-    } else {
-      ctx.fillRect(cx - r - sk, cy - r, sk, roadW);  // left of crossing
-      ctx.fillRect(cx + r,       cy - r, sk, roadW);  // right of crossing
-    }
   }
 
   // Player-owned private lane: coloured road surface + shoulder bollards, no centre line.
