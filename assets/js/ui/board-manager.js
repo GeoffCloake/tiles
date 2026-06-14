@@ -6,7 +6,7 @@ export class BoardManager {
     this.boardElement = config.boardElement;
     this.onTilePlaced = config.onTilePlaced;
     this.gameState = null;
-    this._pathHighlights = new Map(); // "x,y" -> color
+    this._pathHighlights = new Map(); // "x,y" -> { color, edges }
   }
 
   initialize(gameState) {
@@ -50,13 +50,24 @@ export class BoardManager {
 
   handleCellClick(x, y) { if (this.onTilePlaced) this.onTilePlaced({ x, y }); }
 
-  renderTile(position, tile, pathColor = null) {
+  renderTile(position, tile, pathColor = null, pathEdges = null) {
     const index = position.y * this.gameState.boardSize + position.x;
     const cell = this.boardElement.children[index];
     if (!cell) return;
     const canvas = cell.querySelector('canvas');
     if (!canvas) return;
-    this.gameState.tileSet.renderTile(tile, canvas, tile.rotation || 0, pathColor);
+    this.gameState.tileSet.renderTile(tile, canvas, tile.rotation || 0, pathColor, pathEdges);
+  }
+
+  // Returns the edge index on `tile` that faces `neighbor` (N=0, E=1, S=2, W=3)
+  _edgeFacing(neighbor, tile) {
+    const dx = neighbor.x - tile.x;
+    const dy = neighbor.y - tile.y;
+    if (dy === -1) return 0;
+    if (dx ===  1) return 1;
+    if (dy ===  1) return 2;
+    if (dx === -1) return 3;
+    return null;
   }
 
   // Re-render every cell from the current boardState. Used when adopting a
@@ -102,9 +113,14 @@ export class BoardManager {
 
   highlightPath(path, color = null) {
     if (!path || !path.length) return;
-    path.forEach(pos => {
+    path.forEach((pos, i) => {
       const { x, y } = pos;
-      this._pathHighlights.set(`${x},${y}`, color);
+      // Only draw segments the path actually travels: edges toward prev and next tiles
+      const edges = [];
+      if (i > 0) { const e = this._edgeFacing(path[i - 1], pos); if (e !== null) edges.push(e); }
+      if (i < path.length - 1) { const e = this._edgeFacing(path[i + 1], pos); if (e !== null) edges.push(e); }
+
+      this._pathHighlights.set(`${x},${y}`, { color, edges });
       const index = y * this.gameState.boardSize + x;
       const cell = this.boardElement.children[index];
       if (!cell) return;
@@ -112,7 +128,7 @@ export class BoardManager {
       if (color) cell.style.setProperty('--path-color', color);
       else cell.style.removeProperty('--path-color');
       const tile = this.gameState.boardState[y][x];
-      if (tile) this.renderTile(pos, tile, color);
+      if (tile) this.renderTile(pos, tile, color, edges);
     });
   }
 
@@ -153,8 +169,8 @@ export class BoardManager {
       const y = parseInt(cell.dataset.row, 10);
       const tile = this.gameState.boardState[y][x];
       if (tile) {
-        const pathColor = this._pathHighlights.get(`${x},${y}`) ?? null;
-        this.renderTile({ x, y }, tile, pathColor);
+        const h = this._pathHighlights.get(`${x},${y}`);
+        this.renderTile({ x, y }, tile, h?.color ?? null, h?.edges ?? null);
       }
     }
   }

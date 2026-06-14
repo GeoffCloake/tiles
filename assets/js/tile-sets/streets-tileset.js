@@ -194,7 +194,7 @@ class StreetsTileSet extends TileSet {
     return tile;
   }
 
-  renderTile(tile, canvas, rotation = 0, pathColor = null) {
+  renderTile(tile, canvas, rotation = 0, pathColor = null, pathEdges = null) {
     const ctx = canvas.getContext('2d');
     const size = canvas.width;
 
@@ -231,22 +231,29 @@ class StreetsTileSet extends TileSet {
       ctx.fill();
     }
 
-    if (pathColor) this._drawPathHighlight(ctx, size, rotatedSides, pathColor);
+    if (pathColor) this._drawPathHighlight(ctx, size, rotatedSides, pathColor, pathEdges);
   }
 
-  // Draws a continuous centreline stroke along each street edge of the tile.
-  // Two passes: a wide translucent glow halo, then a bright narrow line on top.
-  _drawPathHighlight(ctx, size, rotatedSides, color) {
-    if (!rotatedSides.some(s => s === 'street')) return;
+  // Draws a centreline stroke only along the edges the path actually travels.
+  // `edges` is an array of edge indices [0=N,1=E,2=S,3=W]; if null, fall back
+  // to all street edges (used when the caller doesn't know the direction).
+  // Two passes: wide translucent glow halo, then a bright narrow line on top.
+  _drawPathHighlight(ctx, size, rotatedSides, color, edges = null) {
+    const edgeEndpoints = [[size / 2, 0], [size, size / 2], [size / 2, size], [0, size / 2]];
+    const activeEdges = edges !== null
+      ? edges
+      : rotatedSides.map((s, i) => s === 'street' ? i : null).filter(i => i !== null);
+    if (!activeEdges.length) return;
+
     const cx = size / 2;
     const cy = size / 2;
 
     const drawSegments = () => {
       ctx.beginPath();
-      if (rotatedSides[0] === 'street') { ctx.moveTo(cx, 0);    ctx.lineTo(cx, cy); }
-      if (rotatedSides[1] === 'street') { ctx.moveTo(size, cy); ctx.lineTo(cx, cy); }
-      if (rotatedSides[2] === 'street') { ctx.moveTo(cx, size); ctx.lineTo(cx, cy); }
-      if (rotatedSides[3] === 'street') { ctx.moveTo(0,    cy); ctx.lineTo(cx, cy); }
+      for (const e of activeEdges) {
+        ctx.moveTo(...edgeEndpoints[e]);
+        ctx.lineTo(cx, cy);
+      }
       ctx.stroke();
     };
 
