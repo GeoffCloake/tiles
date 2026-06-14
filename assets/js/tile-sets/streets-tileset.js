@@ -221,7 +221,7 @@ class StreetsTileSet extends TileSet {
     if (tile.centerPattern) renderPattern(ctx, size, this.centerPatterns[tile.centerPattern], 0);
 
     // Special overlays on top of road graphics
-    if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size, rotation || tile.rotation || 0);
+    if (tile.type === 'tunnel')  this._drawTunnelOverlay(ctx, size);
     if (tile.type === 'private') this._drawPrivateIndicator(ctx, size, tile, rotatedSides);
 
     if (tile.isStarterTile) {
@@ -319,21 +319,13 @@ class StreetsTileSet extends TileSet {
   }
 
   // 4-way cross with bridge: N-S road goes over E-W road at the centre.
-  // Odd tile rotations (1,3) swap to E-W elevated via a 90° canvas rotation.
-  _drawTunnelOverlay(ctx, size, rotation = 0) {
+  _drawTunnelOverlay(ctx, size) {
     const cx = size / 2;
     const cy = size / 2;
     const roadW = size * 0.34;
 
-    ctx.save();
-    if (rotation % 2 === 1) {
-      ctx.translate(cx, cy);
-      ctx.rotate(Math.PI / 2);
-      ctx.translate(-cx, -cy);
-    }
-
-    // Fully opaque dark fill for the E-W underground road (hides base road markings)
-    ctx.fillStyle = '#0a0a0a';
+    // Deep shadow over the E-W underground crossing
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
     ctx.fillRect(0, cy - roadW * 0.5, size, roadW);
 
     // Tunnel portal mouths — dark concrete blocks at E and W openings
@@ -346,9 +338,12 @@ class StreetsTileSet extends TileSet {
     ctx.fillStyle = '#4a4a4a';
     ctx.fillRect(cx - roadW * 0.5, 0, roadW, size);
 
-    // Centre dashes on the N-S bridge deck — drawn directly (white on grey = always visible)
-    // Note: renderPattern was removed because it repainted the white road surface on top of the
-    // grey bridge deck, making these white dashes invisible.
+    // Redraw N-S road markings over the bridge deck
+    // (renderPattern draws the black road surface back, so dashes sit on black — readable)
+    renderPattern(ctx, size, this.patterns['street'], 0);
+    renderPattern(ctx, size, this.patterns['street'], 2);
+
+    // Enforce minimum-width centre dashes (pattern rects are sub-pixel at small tile sizes)
     const dashW = Math.max(2, size * 0.015);
     const dashH = Math.max(4, size * 0.13);
     const step  = dashH * 1.8;
@@ -373,8 +368,6 @@ class StreetsTileSet extends TileSet {
       ctx.fillRect(px - postW / 2, cy - roadW * 0.5 - postH, postW, postH);
       ctx.fillRect(px - postW / 2, cy + roadW * 0.5,          postW, postH);
     }
-
-    ctx.restore();
   }
 
   // Player-owned private lane: coloured road surface + shoulder bollards, no centre line.
