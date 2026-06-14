@@ -360,37 +360,36 @@ class StreetsTileSet extends TileSet {
     }
   }
 
-  // Player-owned private lane: bollard posts along each shoulder, no centre line
+  // Player-owned private lane: coloured road surface + shoulder bollards, no centre line
   _drawPrivateIndicator(ctx, size, tile) {
     const cx     = size / 2;
     const color  = tile?.backgroundColor || '#4488ff';
-    const roadHW = size * 0.168;   // half road width
-    const sw     = Math.max(2, size * 0.05);  // shoulder band width
+    const roadHW = size * 0.168;
 
     ctx.save();
 
-    // Erase the centre dashes — one unbroken private lane, no dividing line
-    ctx.fillStyle = '#000000';
+    // Flood the road interior with the player's colour — unmistakably not a public road
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.55;
+    ctx.fillRect(cx - roadHW + 1, 0, (roadHW - 1) * 2, size);
+
+    // Erase centre dashes so it reads as one undivided private lane
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = color;
     ctx.fillRect(cx - size * 0.025, 0, size * 0.05, size);
 
-    // Coloured shoulder bands inside the road edges
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.9;
-    ctx.fillRect(cx - roadHW + 1, 0, sw, size);           // left shoulder
-    ctx.fillRect(cx + roadHW - sw - 1, 0, sw, size);      // right shoulder
+    // Bollard posts on each shoulder — player colour with white reflector cap
+    const sw   = Math.max(2, size * 0.05);
+    const bw   = Math.max(3, size * 0.055);
+    const bh   = Math.max(7, size * 0.11);
+    const capH = Math.max(2, bh * 0.28);
+    const gap  = size / 4.5;
+    const lx   = cx - roadHW + 1 + sw / 2;
+    const rx   = cx + roadHW - 1 - sw / 2;
 
-    // Bollard posts — player colour with white reflector cap
-    const bw      = Math.max(3, size * 0.055);
-    const bh      = Math.max(7, size * 0.11);
-    const capH    = Math.max(2, bh * 0.28);
-    const spacing = size / 4.5;
-    ctx.globalAlpha = 1;
-
-    const lx = cx - roadHW + 1 + sw / 2;
-    const rx = cx + roadHW - 1 - sw / 2;
-    for (let y = spacing * 0.5; y < size; y += spacing) {
+    for (let y = gap * 0.5; y < size; y += gap) {
       for (const bx of [lx, rx]) {
-        ctx.fillStyle = color;
+        ctx.fillStyle = '#000000';
         ctx.fillRect(bx - bw / 2, y - bh / 2, bw, bh);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(bx - bw / 2, y - bh / 2, bw, capH);
