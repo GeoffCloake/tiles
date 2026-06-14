@@ -274,7 +274,7 @@ class StreetsTileSet extends TileSet {
   _drawRoadblockOverlay(ctx, size) {
     const cx = size / 2;
     const cy = size / 2;
-    const sq = size * 0.44;
+    const sq = size * 0.56;
     const m  = sq * 0.16;
 
     ctx.fillStyle = '#000000';
