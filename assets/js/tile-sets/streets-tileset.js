@@ -318,32 +318,27 @@ class StreetsTileSet extends TileSet {
     ctx.strokeRect(size * 0.06, size * 0.06, size * 0.88, size * 0.88);
   }
 
-  // 4-way cross with bridge: N-S road goes over E-W road at the centre.
+  // Flyover tile: N-S road elevated over E-W tunnel road.
+  // N-S appears on top (black with white dashes); E-W appears muted underneath.
   _drawTunnelOverlay(ctx, size) {
     const cx = size / 2;
     const cy = size / 2;
     const roadW = size * 0.34;
+    const halfRoad = roadW / 2;
 
-    // Deep shadow over the E-W underground crossing
-    ctx.fillStyle = 'rgba(0,0,0,0.78)';
-    ctx.fillRect(0, cy - roadW * 0.5, size, roadW);
+    // Darken the E-W road to show it goes underground
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(0, cy - halfRoad, size, roadW);
 
-    // Tunnel portal mouths — dark concrete blocks at E and W openings
-    ctx.fillStyle = '#1e1e1e';
-    const portalW = roadW * 0.45;
-    ctx.fillRect(0,             cy - roadW * 0.5, portalW, roadW);
-    ctx.fillRect(size - portalW, cy - roadW * 0.5, portalW, roadW);
+    // Paint the N-S flyover road solid black over the full tile height — elevated, on top
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(cx - halfRoad, 0, roadW, size);
 
-    // Bridge deck (N-S elevated road) — concrete grey
-    ctx.fillStyle = '#4a4a4a';
-    ctx.fillRect(cx - roadW * 0.5, 0, roadW, size);
-
-    // Redraw N-S road markings over the bridge deck
-    // (renderPattern draws the black road surface back, so dashes sit on black — readable)
+    // Redraw N-S road edge markings cleanly over the painted strip
     renderPattern(ctx, size, this.patterns['street'], 0);
     renderPattern(ctx, size, this.patterns['street'], 2);
 
-    // Centre dashes on N-S flyover road — stroked dashed line for clear visibility at all sizes
+    // White centre dashes on N-S flyover — clearly visible
     ctx.save();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = Math.max(2, size * 0.04);
@@ -355,22 +350,25 @@ class StreetsTileSet extends TileSet {
     ctx.stroke();
     ctx.restore();
 
-    // Safety railing bars at the top and bottom edges of the bridge crossing
-    const railH = Math.max(3, size * 0.055);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(cx - roadW * 0.5, cy - roadW * 0.5 - railH, roadW, railH);
-    ctx.fillRect(cx - roadW * 0.5, cy + roadW * 0.5,          roadW, railH);
+    // Muted grey dashes on the visible E-W tunnel sections (W and E of the bridge)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = Math.max(1, size * 0.03);
+    ctx.lineCap = 'butt';
+    ctx.setLineDash([Math.max(4, size * 0.1), Math.max(3, size * 0.07)]);
+    ctx.beginPath();
+    ctx.moveTo(0, cy);
+    ctx.lineTo(cx - halfRoad, cy);
+    ctx.moveTo(cx + halfRoad, cy);
+    ctx.lineTo(size, cy);
+    ctx.stroke();
+    ctx.restore();
 
-    // Railing posts (vertical stubs)
-    ctx.fillStyle = '#cccccc';
-    const postW  = Math.max(1, size * 0.03);
-    const postH  = railH * 2.2;
-    const nPosts = 3;
-    for (let i = 0; i < nPosts; i++) {
-      const px = cx - roadW * 0.4 + i * (roadW * 0.4);
-      ctx.fillRect(px - postW / 2, cy - roadW * 0.5 - postH, postW, postH);
-      ctx.fillRect(px - postW / 2, cy + roadW * 0.5,          postW, postH);
-    }
+    // Drop shadow at left and right edges of the elevated road (depth cue)
+    const shadowW = Math.max(2, size * 0.025);
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillRect(cx - halfRoad - shadowW, cy - halfRoad, shadowW, roadW);
+    ctx.fillRect(cx + halfRoad, cy - halfRoad, shadowW, roadW);
   }
 
   // Player-owned private lane: coloured road surface + shoulder bollards, no centre line.
