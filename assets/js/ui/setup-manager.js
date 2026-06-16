@@ -52,6 +52,12 @@ export class SetupManager {
         this.claimBonusInput = document.getElementById('claim-bonus');
         this.borderPathBonusInput = document.getElementById('border-path-bonus');
 
+        this.enableStartZoneCheckbox = document.getElementById('enable-start-zone');
+        this.startZoneSizeInput = document.getElementById('start-zone-size');
+        this.startZoneTurnsInput = document.getElementById('start-zone-turns');
+        this.specialStartCountInput = document.getElementById('special-start-count');
+        this.specialStartTypeSelect = document.getElementById('special-start-type');
+
         // Tournament options
         this.enableTournamentCheckbox = document.getElementById('enable-tournament');
         this.tournamentRoundsSelect = document.getElementById('tournament-rounds');
@@ -125,6 +131,16 @@ export class SetupManager {
         document.getElementById('qs-default-play-btn')?.addEventListener('click', () => this.startGame());
         document.getElementById('qs-vs-ai-btn')?.addEventListener('click', () => this.quickPlayVsAI());
         document.getElementById('setup-back-btn')?.addEventListener('click', () => this.showQuickStart());
+
+        this.enableStartZoneCheckbox?.addEventListener('change', () => {
+            const opts = document.getElementById('start-zone-options');
+            if (opts) opts.style.display = this.enableStartZoneCheckbox.checked ? 'block' : 'none';
+        });
+
+        this.specialStartCountInput?.addEventListener('input', () => {
+            const opt = document.getElementById('special-start-type-option');
+            if (opt) opt.style.display = parseInt(this.specialStartCountInput.value) > 0 ? 'block' : 'none';
+        });
 
         // Tile generation presets (in the Weights modal)
         document.getElementById('weights-apply-preset')?.addEventListener('click', () => {
@@ -321,11 +337,21 @@ export class SetupManager {
             // Rule variations (global across tile sets)
             rulesetOptions: {
                 enableFreePlay: this.enableFreePlayCheckbox?.checked || false,
-                enableBorderRule: this.enableBorderRuleCheckbox?.checked || false
+                enableBorderRule: this.enableBorderRuleCheckbox?.checked || false,
+                startZoneSize: this.enableStartZoneCheckbox?.checked ? parseInt(this.startZoneSizeInput?.value || '5') : 0,
+                startZoneTurns: this.enableStartZoneCheckbox?.checked ? parseInt(this.startZoneTurnsInput?.value || '2') : 0,
             },
 
             // Scoring configuration (global + tile-set specific)
             scoringOptions: this.getScoringOptions(tileSet),
+
+            // Special starting tiles
+            specialStartTiles: (() => {
+                const count = parseInt(this.specialStartCountInput?.value || '0');
+                return (count > 0 && this.tileSetSelect?.value === 'streets')
+                    ? { count, type: this.specialStartTypeSelect?.value || 'townSquare' }
+                    : null;
+            })(),
 
             // Tournament configuration
             tournament: this.enableTournamentCheckbox?.checked
@@ -473,6 +499,8 @@ export class SetupManager {
             'intersection-bonus': '5', 'center-bonus': '5',
             'path-points': '3', 'completion-bonus': '20', 'roadblock-penalty': '0',
             'claim-bonus': '5', 'border-path-bonus': '15',
+            'enable-start-zone': false, 'start-zone-size': '5', 'start-zone-turns': '2',
+            'special-start-count': '0', 'special-start-type': 'townSquare',
             ...extra,
         });
         const shapes = extra => ({
@@ -568,6 +596,16 @@ export class SetupManager {
                     'tm-circles': 6, 'tm-squares': 4,
                     'penalty-freq': 10, 'tm-speedcam': 3, 'tm-tunnel': 4, 'tm-roadblock': 3, 'tm-private': 5,
                 }),
+            },
+            'streets-town-square': {
+                label: 'Streets · Town Square — 9×9 · ~35 min',
+                values: streets({
+                    'board-size': '9', 'rack-size': '5', 'player-count': '2',
+                    'enable-start-zone': true, 'start-zone-size': '5', 'start-zone-turns': '2',
+                    'special-start-count': '1', 'special-start-type': 'townSquare',
+                    'claim-bonus': '5', 'border-path-bonus': '20',
+                }),
+                perPlayerValues: pp(),
             },
             'shapes-starter': {
                 label: 'Shapes · Starter — 7×7 · ~15 min',
@@ -671,6 +709,8 @@ export class SetupManager {
             ...perPlayerFields,
             'enable-blank-sides','shape-count',
             'enable-free-play','enable-border-rule',
+            'enable-start-zone', 'start-zone-size', 'start-zone-turns',
+            'special-start-count', 'special-start-type',
             'starter-multiplier','circle-score','square-score',
             'intersection-bonus','center-bonus','path-points','completion-bonus',
             'roadblock-penalty','claim-bonus','border-path-bonus',

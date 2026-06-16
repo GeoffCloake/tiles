@@ -10,13 +10,43 @@ export class BasicRuleset extends Ruleset {
                 requireAdjacent: true,
                 allowBlankMatches: false,
                 enableFreePlay: false,
-                enableBorderRule: false
+                enableBorderRule: false,
+                startZoneSize: 0,
+                startZoneTurns: 0
             }
         });
     }
 
+    _countPlacedTiles(gameState) {
+        let count = 0;
+        for (const row of gameState.boardState)
+            for (const cell of row)
+                if (cell && !cell.isStarterTile) count++;
+        return count;
+    }
+
+    _getStartZone(boardSize) {
+        const size = this.options.startZoneSize;
+        if (!size) return null;
+        const margin = Math.floor((boardSize - size) / 2);
+        return { x1: margin, y1: margin, x2: margin + size - 1, y2: margin + size - 1 };
+    }
+
+    _startZoneActive(gameState) {
+        const { startZoneSize, startZoneTurns } = this.options;
+        if (!startZoneSize || !startZoneTurns) return false;
+        const totalThreshold = startZoneTurns * (gameState.playerManager?.players?.length || 1);
+        return this._countPlacedTiles(gameState) < totalThreshold;
+    }
+
     isValidPlacement(gameState, position, tile) {
         const { x, y } = position;
+
+        // Start zone restriction: reject placements outside central zone during early game
+        if (this._startZoneActive(gameState)) {
+            const zone = this._getStartZone(gameState.boardSize);
+            if (zone && (x < zone.x1 || x > zone.x2 || y < zone.y1 || y > zone.y2)) return false;
+        }
 
         // Check if position is within bounds
         if (x < 0 || x >= gameState.boardSize || y < 0 || y >= gameState.boardSize) {
@@ -161,8 +191,11 @@ export class BasicRuleset extends Ruleset {
         const isFirstMove = this.isFirstMove(gameState);
         const hasStarterTiles = this.hasAnyStarterTiles(gameState);
 
+        const startZone = this._startZoneActive(gameState) ? this._getStartZone(gameState.boardSize) : null;
+
         for (let y = 0; y < gameState.boardSize; y++) {
             for (let x = 0; x < gameState.boardSize; x++) {
+                if (startZone && (x < startZone.x1 || x > startZone.x2 || y < startZone.y1 || y > startZone.y2)) continue;
                 // For first move with no starter tiles, any empty position is valid
                 if (isFirstMove && !hasStarterTiles && !gameState.boardState[y][x]) {
                     validMoves.push({ x, y });

@@ -182,4 +182,17 @@ export class BoardManager {
       t = setTimeout(() => this.resizeBoard(), 250);
     });
   }
+
+  updateZoneOverlay(active, zone) {
+    if (!this.boardElement || !this.gameState) return;
+    const n = this.gameState.boardSize;
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        const cell = this.boardElement.children[y * n + x];
+        if (!cell) continue;
+        const outside = active && zone && (x < zone.x1 || x > zone.x2 || y < zone.y1 || y > zone.y2);
+        cell.classList.toggle('zone-dim', !!outside);
+      }
+    }
+  }
 }

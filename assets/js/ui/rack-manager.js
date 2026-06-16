@@ -45,6 +45,10 @@ export class RackManager {
             tileDiv.appendChild(canvas);
             tileDiv.dataset.tileId = tile.id;
             tileDiv.title = 'Click to select · Double-click to rotate';
+            if (tile.isSpecialStart) {
+                tileDiv.classList.add('rack-special-tile');
+                tileDiv.title = 'Starter tile · plays once, not replenished';
+            }
             tileDiv.addEventListener('mouseenter', () => this._updateTileInfo(tile));
             tileDiv.addEventListener('mouseleave', () => this._updateTileInfo(this.gameState?.selectedTile || null));
             tileDiv.onclick = () => {
@@ -87,6 +91,7 @@ export class RackManager {
         if (tile.centerPattern === 'circles')     parts.push('Bonus Circle: extra pts when placed');
         if (tile.centerPattern === 'squares')     parts.push('Centre Square: high bonus when placed');
         if (tile.centerPattern === 'speedCamera') parts.push('Speed Camera: halves placement score');
+        if (tile.isSpecialStart) parts.push('Starter tile — plays once, not replenished');
         return parts.join('\n');
     }
 

@@ -243,6 +243,18 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="setup-option" style="margin-top: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                            <label for="special-start-count">Special Starter Tiles per player:</label>
+                            <input type="number" id="special-start-count" min="0" max="3" value="0" step="1">
+                        </div>
+                        <div class="setup-option" id="special-start-type-option" style="display:none;">
+                            <label for="special-start-type">Starter tile type:</label>
+                            <select id="special-start-type">
+                                <option value="townSquare">Town Square (dead-end + circle)</option>
+                                <option value="bonusCircle">Bonus Circle (corner + circle)</option>
+                                <option value="centreSquare">Centre Square (cross + square)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Tournament Mode Section -->
@@ -290,6 +302,20 @@
                         <div class="checkbox-option">
                             <input type="checkbox" id="enable-border-rule">
                             <label for="enable-border-rule">Border Rule (Only blank/non-streets on edges)</label>
+                        </div>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="enable-start-zone">
+                            <label for="enable-start-zone">Restrict to Central Start Zone</label>
+                        </div>
+                        <div id="start-zone-options" style="display:none; padding-left: 1.5rem; margin-top: 0.5rem;">
+                            <div class="setup-option" style="margin-bottom: 0.5rem;">
+                                <label for="start-zone-size">Zone Size (inner grid, e.g. 5 for 9×9):</label>
+                                <input type="number" id="start-zone-size" min="3" max="13" value="5" step="2">
+                            </div>
+                            <div class="setup-option">
+                                <label for="start-zone-turns">Rounds in zone (per player):</label>
+                                <input type="number" id="start-zone-turns" min="1" max="10" value="2" step="1">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -676,7 +702,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=4.07"></script>
+    <script type="module" src="assets/js/main.js?v=4.08"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

@@ -94,6 +94,10 @@ export class PlayerManager {
                     .map(() => this.gameState.tileSet.generateTile(index, playerConfigs.length))
             );
 
+            if (this.gameState.specialStartConfig?.count > 0) {
+                this._dealSpecialTiles(player, this.gameState.specialStartConfig);
+            }
+
             return player;
         });
     }
@@ -140,8 +144,25 @@ export class PlayerManager {
         const player = this.players.find(p => p.id === playerId);
         if (player) {
             player.removeTile(oldTileId);
-            player.addTile(newTile);
+            if (newTile) player.addTile(newTile);
         }
+    }
+
+    _makeSpecialTile(type) {
+        const specs = {
+            townSquare:   { key: 'deadEnd',   sides: ['street','non-street','non-street','non-street'], centerPattern: 'circles'  },
+            bonusCircle:  { key: 'corner',    sides: ['street','street','non-street','non-street'],     centerPattern: 'circles'  },
+            centreSquare: { key: 'cross',     sides: ['street','street','street','street'],              centerPattern: 'squares'  },
+        };
+        const spec = specs[type] || specs.townSquare;
+        return { id: generateId(), key: spec.key, type: 'normal', sides: spec.sides, centerPattern: spec.centerPattern, isSpecialStart: true };
+    }
+
+    _dealSpecialTiles(player, config) {
+        const { count, type } = config;
+        const specials = [];
+        for (let i = 0; i < count; i++) specials.push(this._makeSpecialTile(type));
+        player.tiles.unshift(...specials); // prepend so they appear first
     }
 
     getPlayerById(playerId) {

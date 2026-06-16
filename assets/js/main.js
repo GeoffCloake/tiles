@@ -1,17 +1,17 @@
 // assets/js/main.js
-const VERSION = '4.07';
+const VERSION = '4.08';
 
 import { GameRegistry } from './core/game-registry.js';
-import { GameState } from './core/game-state.js?v=4.07';
+import { GameState } from './core/game-state.js?v=4.08';
 import { Player } from './core/player-state.js';
 import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.03';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
-import { BasicRuleset } from './rules/basic-rules.js';
+import { BasicRuleset } from './rules/basic-rules.js?v=4.08';
 import { StandardScoring } from './scoring/standard-scoring.js';
 import { StreetScoring } from './scoring/street-scoring.js?v=4.07';
 import { BoardManager } from './ui/board-manager.js?v=3.3a';
-import { RackManager } from './ui/rack-manager.js?v=4.05';
-import { SetupManager } from './ui/setup-manager.js?v=4.07';
+import { RackManager } from './ui/rack-manager.js?v=4.08';
+import { SetupManager } from './ui/setup-manager.js?v=4.08';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
 import { OnlineManager } from './net/online-manager.js?v=4.06';
@@ -243,12 +243,14 @@ class Game {
       players: cfg.players,
       enableTimer: cfg.enableTimer,
       timeLimit: cfg.timeLimit,
+      specialStartTiles: cfg.specialStartTiles || null,
       ...(initialTilesArg ? { initialTiles: initialTilesArg } : {}) // only when needed
     });
 
     this.setupGameStateListeners();
 
     this.boardManager.initialize(this.gameState);
+    this._updateZoneOverlay();
     this.rackManager.initialize(this.gameState);
     this.playerUIManager.initialize(this.gameState);
     this.selectedPathPlayerId = null;
@@ -301,6 +303,14 @@ class Game {
     this.ai?.attach(this.gameState);
   }
 
+  _updateZoneOverlay() {
+    const ruleset = this.gameState?.ruleset;
+    if (!ruleset?._startZoneActive) return;
+    const active = ruleset._startZoneActive(this.gameState);
+    const zone = active ? ruleset._getStartZone(this.gameState.boardSize) : null;
+    this.boardManager?.updateZoneOverlay(active, zone);
+  }
+
   _normalizeConfig(config) {
     const norm = { ...config };
 
@@ -345,6 +355,7 @@ class Game {
         this.boardManager.renderTile({ x: c.x, y: c.y }, c.tile);
       }
       this.refreshPathHighlights();
+      this._updateZoneOverlay();
     });
 
     this.gameState.on('turnChange', () => this.updateUIForCurrentPlayer());
@@ -463,6 +474,7 @@ class Game {
 
     this.setupGameStateListeners();
     this.boardManager.initialize(this.gameState);
+    this._updateZoneOverlay();
     this.rackManager.initialize(this.gameState);
     this.playerUIManager.initialize(this.gameState);
     this.gameState.onLocalCommit = () => this.online.pushLocalMove();
@@ -485,6 +497,7 @@ class Game {
   applyOnlineSnapshot(snapshot) {
     this._applyOnlineSnapshotData(snapshot);
     this.boardManager.renderAll();
+    this._updateZoneOverlay();
     this._refreshOnlineView();
   }
 

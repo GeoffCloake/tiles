@@ -28,6 +28,7 @@ export class GameState {
 
         this.eventHandlers = new Map();
 
+        this.specialStartConfig = config.specialStartTiles || null;
         this.playerManager = new PlayerManager(this);
         if (config.players) {
             this.playerManager.initializePlayers(config.players);
@@ -199,7 +200,8 @@ export class GameState {
         }
 
         const playerIndex = this.playerManager.players.indexOf(currentPlayer);
-        const newTile = this.tileSet.generateTile(playerIndex, this.playerManager.players.length);
+        const isSpecialTile = !!this.selectedTile.isSpecialStart;
+        const newTile = isSpecialTile ? null : this.tileSet.generateTile(playerIndex, this.playerManager.players.length);
         this.playerManager.replaceTile(currentPlayer.id, this.selectedTile.id, newTile);
 
         this.selectedTile = null;

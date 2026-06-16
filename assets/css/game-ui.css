@@ -534,4 +534,24 @@
         /* Use more width */
         margin: 0 1rem;
     }
+}}
+
+/* Start zone overlay: dims cells outside the central start zone */
+.tile.zone-dim {
+    opacity: 0.35;
+    filter: brightness(0.35) saturate(0.5);
+    pointer-events: none;
+}
+.tile.zone-dim.valid-placement {
+    opacity: 1;
+    filter: none;
+    pointer-events: auto;
+}
+
+/* Special starter tiles in the rack */
+.rack-special-tile {
+    outline: 2px solid var(--accent-yellow, #FFE600);
+    outline-offset: 1px;
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(255,230,0,0.3);
 }
