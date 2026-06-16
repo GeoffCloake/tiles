@@ -337,6 +337,29 @@
 }
 .copy-weights-btn:hover { background: var(--border-color); color: #fff; }
 
+/* Make weights modal content area scrollable while keeping tab bar fixed */
+.modal-content-wide .streets-only {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* Rack tile info tooltip */
+.tile-info {
+    display: none;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    padding: 0.35rem 0.5rem;
+    line-height: 1.4;
+    white-space: pre-line;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    margin-top: 0.4rem;
+    border-left: 2px solid var(--border-color);
+}
+
 /* ---- Computer (AI) players ---- */
 .player-ai-select {
     width: 100%;

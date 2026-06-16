@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.04';
+const VERSION = '4.05';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=3.2';
@@ -10,9 +10,9 @@ import { BasicRuleset } from './rules/basic-rules.js';
 import { StandardScoring } from './scoring/standard-scoring.js';
 import { StreetScoring } from './scoring/street-scoring.js?v=3.2';
 import { BoardManager } from './ui/board-manager.js?v=3.3a';
-import { RackManager } from './ui/rack-manager.js';
+import { RackManager } from './ui/rack-manager.js?v=4.05';
 import { SetupManager } from './ui/setup-manager.js?v=4.04';
-import { PlayerUIManager } from './ui/player-ui.js';
+import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
 import { OnlineManager } from './net/online-manager.js?v=3.0';
 import { AIController } from './core/ai-player.js?v=3.1';
@@ -837,7 +837,7 @@ class Game {
         }
         const tallyHtml = tallyEntries.length
           ? `<ul class="score-tally">${tallyEntries
-              .map(t => `<li><span>${t.label}</span><span>+${t.points}</span></li>`)
+              .map(t => `<li><span>${t.label}</span><span${t.points < 0 ? ' class="tally-penalty"' : ''}>${t.points > 0 ? '+' : ''}${t.points}</span></li>`)
               .join('')}</ul>`
           : '';
 

@@ -32,18 +32,21 @@ export class RackManager {
         if (!this.rackElement) return;
 
         this.rackElement.innerHTML = '';
+        this._updateTileInfo(null);
         tiles.forEach(tile => {
             const tileDiv = document.createElement("div");
             tileDiv.classList.add("tile");
-            
+
             const canvas = document.createElement("canvas");
             canvas.width = 60;
             canvas.height = 60;
             this.gameState.tileSet.renderTile(tile, canvas);
-            
+
             tileDiv.appendChild(canvas);
             tileDiv.dataset.tileId = tile.id;
             tileDiv.title = 'Click to select · Double-click to rotate';
+            tileDiv.addEventListener('mouseenter', () => this._updateTileInfo(tile));
+            tileDiv.addEventListener('mouseleave', () => this._updateTileInfo(this.gameState?.selectedTile || null));
             tileDiv.onclick = () => {
                 if (!tileDiv.classList.contains('selected')) {
                     this.selectTile(tile, tileDiv);
@@ -53,31 +56,46 @@ export class RackManager {
                 if (!tileDiv.classList.contains('selected')) this.selectTile(tile, tileDiv);
                 this.handleRotate();
             };
-            
+
             this.rackElement.appendChild(tileDiv);
         });
     }
 
     selectTile(tile, tileDiv) {
         const selectedDiv = document.querySelector('.rack .tile.selected');
-
-        // Remove selection from previously selected tile
-        if (selectedDiv) {
-            selectedDiv.classList.remove('selected');
-        }
-
-        // Select new tile
+        if (selectedDiv) selectedDiv.classList.remove('selected');
         tileDiv.classList.add('selected');
+        this._updateTileInfo(tile);
+        if (this.onTileSelected) this.onTileSelected(tile);
+        if (this.showingValidMoves) this.showValidMoves();
+    }
 
-        // Update game state and notify listeners
-        if (this.onTileSelected) {
-            this.onTileSelected(tile);
-        }
+    getTileDescription(tile) {
+        if (!tile) return '';
+        const keyNames = {
+            cross:      'Intersection — roads in all 4 directions',
+            tJunction:  'T-Junction — 3-way road',
+            straight:   'Straight Road — connects opposite sides',
+            corner:     'Corner Road — bends between adjacent sides',
+            deadEnd:    'Dead End — one road exit only',
+            blank:      'Blank — no road connections',
+            tunnel:     'Flyover — two roads cross without joining',
+            roadblock:  'Road Block — costs points to play',
+            private:    'Private Road — only your colour can connect',
+        };
+        const parts = [keyNames[tile.key] || (tile.type ? tile.type : 'Tile')];
+        if (tile.centerPattern === 'circles')     parts.push('Bonus Circle: extra pts when placed');
+        if (tile.centerPattern === 'squares')     parts.push('Centre Square: high bonus when placed');
+        if (tile.centerPattern === 'speedCamera') parts.push('Speed Camera: halves placement score');
+        return parts.join('\n');
+    }
 
-        // Update valid moves display if enabled
-        if (this.showingValidMoves) {
-            this.showValidMoves();
-        }
+    _updateTileInfo(tile) {
+        const el = document.getElementById('tile-info');
+        if (!el) return;
+        if (!tile) { el.style.display = 'none'; return; }
+        el.textContent = this.getTileDescription(tile);
+        el.style.display = '';
     }
 
     handleRotate() {

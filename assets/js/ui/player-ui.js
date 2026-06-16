@@ -111,7 +111,7 @@ export class PlayerUIManager {
     }
 
     tallyDiv.innerHTML = entries
-      .map(t => `<div class="tally-row"><span>${t.label}</span><span>+${t.points}</span></div>`)
+      .map(t => `<div class="tally-row"><span>${t.label}</span><span${t.points < 0 ? ' class="tally-penalty"' : ''}>${t.points > 0 ? '+' : ''}${t.points}</span></div>`)
       .join('');
   }
 

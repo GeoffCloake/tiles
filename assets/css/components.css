@@ -206,6 +206,20 @@ select {
     color: var(--accent-green);
 }
 
+/* Penalty entries shown in red in both sidebar tally and end-modal tally */
+.tally-penalty {
+    color: var(--accent-red, #df0000) !important;
+}
+
+/* Scrollable final-scores area inside game-end modal */
+#final-scores {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
 @media (max-width: 480px) {
     .modal {
         padding: 0.5rem;
