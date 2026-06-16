@@ -94,8 +94,10 @@ export class PlayerManager {
                     .map(() => this.gameState.tileSet.generateTile(index, playerConfigs.length))
             );
 
+            console.log(`PlayerManager: specialStartConfig=`, this.gameState.specialStartConfig);
             if (this.gameState.specialStartConfig?.count > 0) {
                 this._dealSpecialTiles(player, this.gameState.specialStartConfig);
+                console.log(`PlayerManager: dealt special tiles, rack now ${player.tiles.length} tiles`);
             }
 
             return player;
