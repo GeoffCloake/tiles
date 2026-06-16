@@ -3,7 +3,7 @@ const VERSION = '4.10';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.08';
-import { Player } from './core/player-state.js';
+import { Player } from './core/player-state.js?v=4.10';
 import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.03';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js?v=4.09';
