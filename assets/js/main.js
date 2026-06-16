@@ -1,17 +1,17 @@
 // assets/js/main.js
-const VERSION = '4.08';
+const VERSION = '4.09';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.08';
 import { Player } from './core/player-state.js';
 import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.03';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
-import { BasicRuleset } from './rules/basic-rules.js?v=4.08';
+import { BasicRuleset } from './rules/basic-rules.js?v=4.09';
 import { StandardScoring } from './scoring/standard-scoring.js';
 import { StreetScoring } from './scoring/street-scoring.js?v=4.07';
 import { BoardManager } from './ui/board-manager.js?v=3.3a';
 import { RackManager } from './ui/rack-manager.js?v=4.08';
-import { SetupManager } from './ui/setup-manager.js?v=4.08';
+import { SetupManager } from './ui/setup-manager.js?v=4.09';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
 import { OnlineManager } from './net/online-manager.js?v=4.06';
@@ -305,9 +305,13 @@ class Game {
 
   _updateZoneOverlay() {
     const ruleset = this.gameState?.ruleset;
-    if (!ruleset?._startZoneActive) return;
-    const active = ruleset._startZoneActive(this.gameState);
-    const zone = active ? ruleset._getStartZone(this.gameState.boardSize) : null;
+    if (!ruleset?._getStartZone) return;
+    const opts = ruleset.options || {};
+    const selectedTile = this.gameState?.selectedTile;
+    const standardActive = ruleset._startZoneActive?.(this.gameState) ?? false;
+    const specialActive = opts.specialTileZoneOnly && !!selectedTile?.isSpecialStart;
+    const active = standardActive || specialActive;
+    const zone = (active && opts.startZoneSize) ? ruleset._getStartZone(this.gameState.boardSize) : null;
     this.boardManager?.updateZoneOverlay(active, zone);
   }
 
@@ -380,6 +384,7 @@ class Game {
     this.gameState.on('tileSelected', (tile) => {
       this.rackManager.updateSelectedTile(tile);
       if (this.rackManager.showingValidMoves) this.rackManager.showValidMoves();
+      this._updateZoneOverlay(); // zone dims when special tile is selected
     });
 
     this.gameState.on('tileRotated', ({ validMoves }) => {

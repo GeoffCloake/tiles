@@ -12,7 +12,8 @@ export class BasicRuleset extends Ruleset {
                 enableFreePlay: false,
                 enableBorderRule: false,
                 startZoneSize: 0,
-                startZoneTurns: 0
+                startZoneTurns: 0,
+                specialTileZoneOnly: false,
             }
         });
     }
@@ -39,11 +40,18 @@ export class BasicRuleset extends Ruleset {
         return this._countPlacedTiles(gameState) < totalThreshold;
     }
 
+    // True when a zone restriction applies to this specific tile.
+    _inRestrictedZone(gameState, tile) {
+        if (this._startZoneActive(gameState)) return true;
+        if (this.options.specialTileZoneOnly && tile?.isSpecialStart) return true;
+        return false;
+    }
+
     isValidPlacement(gameState, position, tile) {
         const { x, y } = position;
 
-        // Start zone restriction: reject placements outside central zone during early game
-        if (this._startZoneActive(gameState)) {
+        // Zone restriction: all tiles during timed phase, or special tiles permanently.
+        if (this._inRestrictedZone(gameState, tile)) {
             const zone = this._getStartZone(gameState.boardSize);
             if (zone && (x < zone.x1 || x > zone.x2 || y < zone.y1 || y > zone.y2)) return false;
         }
@@ -191,7 +199,7 @@ export class BasicRuleset extends Ruleset {
         const isFirstMove = this.isFirstMove(gameState);
         const hasStarterTiles = this.hasAnyStarterTiles(gameState);
 
-        const startZone = this._startZoneActive(gameState) ? this._getStartZone(gameState.boardSize) : null;
+        const startZone = this._inRestrictedZone(gameState, tile) ? this._getStartZone(gameState.boardSize) : null;
 
         for (let y = 0; y < gameState.boardSize; y++) {
             for (let x = 0; x < gameState.boardSize; x++) {
