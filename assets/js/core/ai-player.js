@@ -6,10 +6,73 @@
 // rendering and turn advancement happen exactly as they do for a human. Online
 // games are left entirely to the human devices, so the controller stands down
 // whenever an online match is active.
+//
+// Move selection by level:
+//   easy   — a random legal move (ignores score entirely).
+//   normal — the highest-scoring single move right now (1-ply greedy + noise).
+//   hard   — Monte Carlo Tree Search: it plays many short games ahead from the
+//            current position, modelling the opponents, and picks the move that
+//            leads to the best score differential. This lets it plan paths,
+//            keep the road network open and block opponents, rather than just
+//            grabbing the best immediate score.
 
 const THINK_MS = 650;         // visible "thinking" pause before an AI plays
 const THINK_JITTER_MS = 450;  // a little randomness so it feels less robotic
 const AI_PATH_BUDGET = 20000; // cap path-search work while weighing candidates
+
+// ---- MCTS tuning -----------------------------------------------------------
+const MCTS_BUDGET_MS   = 800;   // wall-clock budget for the whole tree search
+const MCTS_MAX_ITERS   = 6000;  // safety cap on simulations per move
+const MCTS_PATH_BUDGET = 5000;  // reduced path-search depth while simulating
+const MCTS_ROOT_WIDTH  = 14;    // only search the most promising root moves
+const ROLLOUT_DEPTH    = 5;     // plies played out past the tree each simulation
+const ROLLOUT_SAMPLE   = 6;     // candidate moves sampled per rollout ply
+const UCB_C            = 1.4;   // exploration constant (UCB1)
+const VALUE_SCALE      = 15;    // score-diff that maps to a decisive win/loss
+
+// A single node in the search tree.
+class MCTSNode {
+  constructor(parent, move) {
+    this.parent = parent;
+    this.move = move;     // {tileId, rotation, position} that led here (null at root)
+    this.children = [];
+    this.untried = null;  // lazily-filled legal moves; null = not yet enumerated
+    this.visits = 0;
+    this.reward = 0;      // summed reward, always from the AI player's perspective
+  }
+}
+
+// A throwaway, mutable view of the game used only for simulation. It doubles as
+// its own playerManager so the existing scoring and ruleset code — which reads
+// gameState.boardState, gameState.boardSize, gameState.tileSet,
+// gameState.getCurrentPlayer(), gameState.playerManager.players /
+// .getPlayerById / .currentPlayerIndex, and calls gameState.emit() — runs
+// unchanged against the simulated board.
+class SimGame {
+  get playerManager() { return this; }
+  getCurrentPlayer() { return this.players[this.currentPlayerIndex]; }
+  getPlayerById(id) { return this.players.find(p => p.id === id); }
+  emit() {} // scoring emits 'pathUpdate'; swallow it during simulation
+
+  clone() {
+    const s = new SimGame();
+    s.boardSize = this.boardSize;
+    s.boardState = this.boardState.map(row => row.slice());
+    s.tileSet = this.tileSet;
+    s.scoring = this.scoring;
+    s.ruleset = this.ruleset;
+    s.numPlayers = this.numPlayers;
+    s.currentPlayerIndex = this.currentPlayerIndex;
+    s.aiId = this.aiId;
+    // Players are fresh objects (score/tiles mutate per simulation); tile
+    // objects themselves are shared refs and never mutated in place.
+    s.players = this.players.map(p => ({
+      id: p.id, color: p.color, score: p.score, idx: p.idx, tiles: p.tiles.slice(),
+    }));
+    s.bestPaths = new Map(this.bestPaths);
+    return s;
+  }
+}
 
 export class AIController {
   constructor(game) {
@@ -81,16 +144,28 @@ export class AIController {
   // ---- Move selection ------------------------------------------------------
 
   chooseMove(gs, player) {
+    const level = player.aiLevel;
+
+    // Hard plans ahead with MCTS. If the search can't produce a move for any
+    // reason, fall through to the original greedy heuristic so a turn is never
+    // skipped when a legal move exists.
+    if (level === 'hard') {
+      const planned = this._chooseMoveMCTS(gs, player);
+      if (planned) return planned;
+    }
+
     const moves = this._enumerateMoves(gs, player);
     if (!moves.length) return null;
 
-    const level = player.aiLevel;
     if (level === 'easy') {
       // Beatable: ignore score, play a random legal move.
       return moves[(Math.random() * moves.length) | 0];
     }
+    return this._pickGreedy(moves, level === 'hard');
+  }
 
-    const hard = level === 'hard';
+  // 1-ply greedy pick shared by normal (and by hard as an MCTS fallback).
+  _pickGreedy(moves, hard) {
     let best = null;
     let bestVal = -Infinity;
     for (const m of moves) {
@@ -107,6 +182,304 @@ export class AIController {
     }
     return best;
   }
+
+  // ---- Monte Carlo Tree Search (hard) --------------------------------------
+
+  _chooseMoveMCTS(gs, player) {
+    const scoring = gs.scoringSystem;
+    if (!scoring || typeof scoring.calculateScore !== 'function') return null;
+
+    const sim0 = this._snapshot(gs, player.id);
+    const rootMoves = this._legalMoves(sim0);
+    if (!rootMoves.length) return null;
+    // Nothing to search when there's only one legal move.
+    if (rootMoves.length === 1) return this._resolveMove(gs, player, rootMoves[0]);
+
+    // State we temporarily borrow from the live objects and must hand back
+    // pristine: the scoring path map, the path-search budget and the tile
+    // generator's per-player counts (which enforce caps like one cross tile).
+    const ps = scoring.pathScoring;
+    const realBestPaths = scoring.bestPaths;
+    const realBudget = ps ? ps.searchBudget : null;
+    const realCounts = gs.tileSet ? gs.tileSet._tileCountsPerPlayer : null;
+    const canDraw = !!(gs.tileSet && typeof gs.tileSet.generateTile === 'function'
+                       && realCounts && typeof realCounts === 'object');
+
+    if (ps) ps.searchBudget = Math.min(realBudget ?? MCTS_PATH_BUDGET, MCTS_PATH_BUDGET);
+
+    const root = new MCTSNode(null, null);
+    // Focus the budget: rank the root moves by immediate score once and only
+    // search the strongest handful, rather than spreading thin over every cell.
+    const candidates = this._rootCandidates(sim0, rootMoves, MCTS_ROOT_WIDTH);
+    root.untried = candidates.slice();
+    const rootDiff = this._diff(sim0, player.id);
+
+    const deadline = Date.now() + MCTS_BUDGET_MS;
+    let iters = 0;
+    try {
+      while (iters < MCTS_MAX_ITERS && Date.now() < deadline) {
+        iters++;
+        // Each simulation draws unknown future tiles from an isolated copy of
+        // the per-player counts, so the real game's tile caps are never spent.
+        if (canDraw) gs.tileSet._tileCountsPerPlayer = this._copyCounts(realCounts);
+        try {
+          const sim = sim0.clone();
+          const leaf = this._treePolicy(root, sim, player.id);
+          const reward = this._rollout(sim, player.id, rootDiff, canDraw);
+          this._backprop(leaf, reward);
+        } finally {
+          if (canDraw) gs.tileSet._tileCountsPerPlayer = realCounts;
+        }
+      }
+    } finally {
+      // Leave every borrowed object exactly as we found it.
+      scoring.bestPaths = realBestPaths;
+      if (ps) ps.searchBudget = realBudget;
+      if (canDraw) gs.tileSet._tileCountsPerPlayer = realCounts;
+    }
+
+    const best = this._mostVisitedChild(root);
+    const chosen = best ? best.move : candidates[0];
+    return this._resolveMove(gs, player, chosen);
+  }
+
+  // Rank root moves by their immediate score and keep the best `width`. Scoring
+  // is done against a copy of the root path map so the live game is untouched.
+  _rootCandidates(sim, moves, width) {
+    if (moves.length <= width) return moves;
+    const scoring = sim.scoring;
+    const player = sim.players[sim.currentPlayerIndex];
+
+    // Free play can offer hundreds of legal cells; pre-trim with cheap edge-match
+    // counting (no path search) before paying for full scoring on each.
+    const CAP = 40;
+    let pool = moves;
+    if (moves.length > CAP && typeof scoring.countMatches === 'function') {
+      pool = moves
+        .map(m => {
+          const tile = player.tiles.find(t => t.id === m.tileId);
+          const matches = tile ? scoring.countMatches(sim, m.position, { ...tile, rotation: m.rotation }) : 0;
+          return { m, matches };
+        })
+        .sort((a, b) => b.matches - a.matches)
+        .slice(0, CAP)
+        .map(x => x.m);
+    }
+
+    const saved = scoring.bestPaths;
+    const scored = pool.map(m => {
+      const tile = player.tiles.find(t => t.id === m.tileId);
+      let s = -Infinity;
+      if (tile) {
+        scoring.bestPaths = new Map(sim.bestPaths);
+        try {
+          const r = scoring.calculateScore(sim, m.position, { ...tile, rotation: m.rotation });
+          s = (typeof r === 'object') ? (r.total || 0) : (r || 0);
+        } catch (_) { s = 0; }
+      }
+      return { m, s };
+    });
+    scoring.bestPaths = saved; // restore the live map we borrowed
+    scored.sort((a, b) => b.s - a.s);
+    return scored.slice(0, width).map(x => x.m);
+  }
+
+  // Build the simulation root from the live game (board rows and racks copied;
+  // tile objects shared but treated as immutable).
+  _snapshot(gs, aiId) {
+    const scoring = gs.scoringSystem;
+    const sim = new SimGame();
+    sim.boardSize = gs.boardSize;
+    sim.boardState = gs.boardState.map(row => row.slice());
+    sim.tileSet = gs.tileSet;
+    sim.scoring = scoring;
+    sim.ruleset = gs.ruleset;
+    sim.numPlayers = gs.playerManager.players.length;
+    sim.currentPlayerIndex = gs.playerManager.currentPlayerIndex;
+    sim.aiId = aiId;
+    sim.players = gs.playerManager.players.map((p, i) => ({
+      id: p.id, color: p.color, score: p.score, idx: i, tiles: p.tiles.slice(),
+    }));
+    sim.bestPaths = (scoring && scoring.bestPaths instanceof Map)
+      ? new Map(scoring.bestPaths) : new Map();
+    return sim;
+  }
+
+  // Walk down the tree (selecting with UCB1) until we reach a node with an
+  // unexpanded move or a terminal position, expanding one new child. The sim is
+  // advanced in lock-step so it reflects the returned node's position.
+  _treePolicy(root, sim, aiId) {
+    let node = root;
+    while (true) {
+      if (node.untried === null) node.untried = this._legalMoves(sim);
+
+      if (node.untried.length > 0) {
+        const i = (Math.random() * node.untried.length) | 0;
+        const move = node.untried.splice(i, 1)[0];
+        this._applyMove(sim, move, false); // tree moves don't draw replacements
+        const child = new MCTSNode(node, move);
+        node.children.push(child);
+        return child;
+      }
+
+      if (node.children.length === 0) return node; // no legal moves: terminal
+
+      // Paranoid model: the AI maximises its differential, every opponent is
+      // assumed to minimise it. Whose turn it is is read from the live sim.
+      const aiToMove = sim.players[sim.currentPlayerIndex].id === aiId;
+      node = this._ucbSelect(node, aiToMove);
+      this._applyMove(sim, node.move, false);
+    }
+  }
+
+  _ucbSelect(node, aiToMove) {
+    let best = null;
+    let bestU = -Infinity;
+    const lnN = Math.log(node.visits || 1);
+    for (const c of node.children) {
+      if (c.visits === 0) return c; // always try an unvisited child first
+      const mean = c.reward / c.visits;
+      const exploit = aiToMove ? mean : (1 - mean);
+      const u = exploit + UCB_C * Math.sqrt(lnN / c.visits);
+      if (u > bestU) { bestU = u; best = c; }
+    }
+    return best;
+  }
+
+  // Play out the position with a cheap, lightly-guided random policy and return
+  // a [0,1] reward for the AI: how much its score differential improved over the
+  // root, squashed so a couple of good moves reads as a near-certain win.
+  _rollout(sim, aiId, rootDiff, canDraw) {
+    for (let d = 0; d < ROLLOUT_DEPTH; d++) {
+      const moves = this._legalMoves(sim);
+      if (!moves.length) break;
+      const move = this._rolloutPick(sim, moves);
+      this._applyMove(sim, move, canDraw); // rollouts refill racks with draws
+    }
+    return this._logistic(this._diff(sim, aiId) - rootDiff);
+  }
+
+  // Sample a handful of legal moves and keep the one connecting the most edges.
+  // Uses countMatches only (no path search) so playouts stay fast.
+  _rolloutPick(sim, moves) {
+    const scoring = sim.scoring;
+    const player = sim.players[sim.currentPlayerIndex];
+    const k = Math.min(ROLLOUT_SAMPLE, moves.length);
+    let best = null;
+    let bestVal = -Infinity;
+    for (let i = 0; i < k; i++) {
+      const m = moves[(Math.random() * moves.length) | 0];
+      let matches = 0;
+      if (typeof scoring.countMatches === 'function') {
+        const tile = player.tiles.find(t => t.id === m.tileId);
+        if (tile) matches = scoring.countMatches(sim, m.position, { ...tile, rotation: m.rotation });
+      }
+      const val = matches + Math.random() * 0.5; // noise breaks ties / adds variety
+      if (val > bestVal) { bestVal = val; best = m; }
+    }
+    return best || moves[(Math.random() * moves.length) | 0];
+  }
+
+  // Apply a move to a simulation: score it (with this sim's own path map swapped
+  // in so the live game is untouched), place the tile, spend it from the rack,
+  // optionally draw a replacement, and advance the turn.
+  _applyMove(sim, move, draw) {
+    const player = sim.players[sim.currentPlayerIndex];
+    const ti = player.tiles.findIndex(t => t.id === move.tileId);
+    if (ti < 0) { // shouldn't happen; just pass the turn defensively
+      sim.currentPlayerIndex = (sim.currentPlayerIndex + 1) % sim.players.length;
+      return;
+    }
+    const tile = player.tiles[ti];
+    const placed = { ...tile, rotation: move.rotation };
+
+    const scoring = sim.scoring;
+    const savedPaths = scoring.bestPaths;
+    scoring.bestPaths = sim.bestPaths;
+    let total = 0;
+    try {
+      const r = scoring.calculateScore(sim, move.position, placed);
+      total = (typeof r === 'object') ? (r.total || 0) : (r || 0);
+    } catch (_) {
+      total = 0;
+    } finally {
+      sim.bestPaths = scoring.bestPaths; // capture path improvements this move made
+      scoring.bestPaths = savedPaths;    // hand the live map straight back
+    }
+
+    sim.boardState[move.position.y][move.position.x] = placed;
+    player.score += total;
+    player.tiles.splice(ti, 1);
+
+    // Special starter tiles are never replenished; everything else draws anew.
+    if (draw && !tile.isSpecialStart) {
+      const nt = sim.tileSet.generateTile(player.idx, sim.numPlayers);
+      if (nt) player.tiles.push(nt);
+    }
+
+    sim.currentPlayerIndex = (sim.currentPlayerIndex + 1) % sim.players.length;
+  }
+
+  // Every legal (tile, rotation, cell) for the player to move in `sim`.
+  // Rotations that leave a tile's edges unchanged are skipped.
+  _legalMoves(sim) {
+    const ruleset = sim.ruleset;
+    const player = sim.players[sim.currentPlayerIndex];
+    const moves = [];
+    for (const tile of player.tiles) {
+      const seen = new Set();
+      for (let rot = 0; rot < 4; rot++) {
+        const sides = this._rotatedSides(tile.sides, rot);
+        const key = sides.join(',');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const cells = ruleset.getValidMoves(sim, { ...tile, rotation: rot });
+        for (const pos of cells) moves.push({ tileId: tile.id, rotation: rot, position: pos });
+      }
+    }
+    return moves;
+  }
+
+  _backprop(node, reward) {
+    for (let n = node; n; n = n.parent) { n.visits++; n.reward += reward; }
+  }
+
+  // AI score minus the best opponent score (0 if the AI is the only player).
+  _diff(sim, aiId) {
+    let mine = 0;
+    let bestOther = -Infinity;
+    for (const p of sim.players) {
+      if (p.id === aiId) mine = p.score;
+      else if (p.score > bestOther) bestOther = p.score;
+    }
+    return mine - (bestOther === -Infinity ? 0 : bestOther);
+  }
+
+  _mostVisitedChild(node) {
+    let best = null;
+    let bestV = -1;
+    for (const c of node.children) {
+      if (c.visits > bestV) { bestV = c.visits; best = c; }
+    }
+    return best;
+  }
+
+  // Turn a move descriptor back into a playable move bound to the live rack.
+  _resolveMove(gs, player, move) {
+    const tile = player.tiles.find(t => t.id === move.tileId);
+    if (!tile) return null;
+    return { tile, rotation: move.rotation, position: move.position };
+  }
+
+  _copyCounts(counts) {
+    const out = {};
+    for (const k in counts) out[k] = { ...counts[k] };
+    return out;
+  }
+
+  _logistic(x) { return 1 / (1 + Math.exp(-x / VALUE_SCALE)); }
+
+  // ---- Greedy enumeration (easy / normal / hard fallback) ------------------
 
   // Enumerate every legal (tile, rotation, cell) and score it. Evaluation is
   // side-effect free: the scoring system's path-bonus bookkeeping is snapshotted

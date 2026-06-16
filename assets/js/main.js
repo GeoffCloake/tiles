@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.11';
+const VERSION = '4.12';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.11';
@@ -15,7 +15,7 @@ import { SetupManager } from './ui/setup-manager.js?v=4.11';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
 import { OnlineManager } from './net/online-manager.js?v=4.06';
-import { AIController } from './core/ai-player.js?v=3.1';
+import { AIController } from './core/ai-player.js?v=4.12';
 
 class Game {
   constructor() {
