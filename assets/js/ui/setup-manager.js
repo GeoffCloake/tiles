@@ -620,7 +620,8 @@ export class SetupManager {
                 values: streets({
                     'board-size': '11', 'rack-size': '6', 'player-count': '2',
                     'enable-special-tile-zone': true, 'start-zone-size': '5',
-                    'special-start-count': '1', 'special-start-type': 'townSquare',
+                    'special-start-count': '1', 'special-start-type': 'centreSquare',
+                    'enable-free-play': true,
                     'path-points': '4', 'completion-bonus': '25',
                     'claim-bonus': '8', 'border-path-bonus': '25', 'roadblock-penalty': '15',
                 }),
