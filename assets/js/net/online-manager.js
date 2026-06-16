@@ -359,7 +359,7 @@ export class OnlineManager {
 
   // ---- Leaving -------------------------------------------------------------
 
-  async leave(callServer = true) {
+  async leave(callServer = true, afterFn = null) {
     this._stopPolling();
     if (callServer && this.code) {
       try { await this.client.leave(this.code, this.token); } catch { /* ignore */ }
@@ -376,6 +376,6 @@ export class OnlineManager {
     this._built = false;
     this._endShown = false;
     this.closeModal();
-    this.game.setupManager.showQuickStart();
+    (afterFn ?? (() => this.game.setupManager.showQuickStart()))();
   }
 }

@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.05';
+const VERSION = '4.06';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=3.2';
@@ -14,7 +14,7 @@ import { RackManager } from './ui/rack-manager.js?v=4.05';
 import { SetupManager } from './ui/setup-manager.js?v=4.04';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
-import { OnlineManager } from './net/online-manager.js?v=3.0';
+import { OnlineManager } from './net/online-manager.js?v=4.06';
 import { AIController } from './core/ai-player.js?v=3.1';
 
 class Game {
@@ -92,16 +92,10 @@ class Game {
 
     document.getElementById('return-setup')?.addEventListener('click', () => {
       document.getElementById('game-end-modal').style.display = 'none';
-      if (this._exitOnline()) return;
-      this.ai?.detach(); // stop any computer players from playing the old game
-      this.setupManager.showSetup();
+      this._goToSetup();
     });
 
-    document.getElementById('setup-button')?.addEventListener('click', () => {
-      if (this._exitOnline()) return;
-      this.ai?.detach(); // stop any computer players from playing the old game
-      this.setupManager.showSetup();
-    });
+    document.getElementById('setup-button')?.addEventListener('click', () => this._goToSetup());
     document.getElementById('show-paths')?.addEventListener('click', () => this.togglePathHighlights());
 
     // Click a player card while paths are on to pin that player's path; click again to unpin
@@ -182,8 +176,8 @@ class Game {
   }
 
   async newGame() {
-    // In online play, "New Game" leaves the room and returns to the menu.
-    if (this._exitOnline()) return;
+    // In online play, leave the session then continue with a local new game.
+    if (this._exitOnline(() => this.newGame())) return;
     if (!this._savedConfig) {
       this.ai?.detach();
       this.setupManager.showSetup();
@@ -514,9 +508,21 @@ class Game {
     this.refreshPathHighlights();
   }
 
-  // Leave an online game (if any) and return to the quick-start screen.
-  _exitOnline() {
-    if (this.online?.active) { this.online.leave(); return true; }
+  // Navigate to the setup screen, leaving any active online session first.
+  _goToSetup() {
+    if (this._exitOnline(() => this._goToSetup())) return;
+    this.ai?.detach();
+    this.setupManager.showSetup();
+  }
+
+  // Leave an active online session. If afterFn is provided it runs once the
+  // session is torn down; otherwise the player returns to the quick-start screen.
+  // Returns true when online (caller should short-circuit its own logic).
+  _exitOnline(afterFn = null) {
+    if (this.online?.active) {
+      this.online.leave(true, afterFn ?? (() => this.setupManager.showQuickStart()));
+      return true;
+    }
     return false;
   }
 
