@@ -187,6 +187,17 @@ export class GameState {
         // Claim any border-bonus tiles now connected to this player's street path
         const claimed = this.scoringSystem.claimBorderBonusTiles?.(this, currentPlayer) ?? [];
 
+        // Award one-off bonus points for each newly claimed border tile
+        let claimScore = 0;
+        const claimBonus = this.scoringSystem.options?.claimBonus ?? 0;
+        if (claimBonus > 0 && claimed.length > 0) {
+            claimScore = claimBonus * claimed.length;
+            this.playerManager.updatePlayerScore(
+                currentPlayer.id, claimScore, claimScore,
+                [{ key: 'borderClaim', label: `Border Claim (×${claimed.length})`, points: claimScore }]
+            );
+        }
+
         const playerIndex = this.playerManager.players.indexOf(currentPlayer);
         const newTile = this.tileSet.generateTile(playerIndex, this.playerManager.players.length);
         this.playerManager.replaceTile(currentPlayer.id, this.selectedTile.id, newTile);
@@ -200,7 +211,7 @@ export class GameState {
 
         this.nextTurn();
 
-        this.emit('tilePlaced', { position, tile: rotatedTile, score, bonus, breakdown, claimed });
+        this.emit('tilePlaced', { position, tile: rotatedTile, score: score + claimScore, bonus: bonus + claimScore, breakdown, claimed });
         this.emit('scoreUpdate', currentPlayer);
 
         // Online: broadcast the resulting snapshot (no-op in hotseat play).

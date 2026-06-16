@@ -217,6 +217,14 @@
                                 <input type="number" id="roadblock-penalty" min="0" max="50" value="10" step="5">
                             </div>
                             <div class="setup-option">
+                                <label for="claim-bonus">Border Tile Claim Bonus (per tile):</label>
+                                <input type="number" id="claim-bonus" min="0" max="50" value="5" step="1">
+                            </div>
+                            <div class="setup-option">
+                                <label for="border-path-bonus">Town Square Connection Bonus:</label>
+                                <input type="number" id="border-path-bonus" min="0" max="100" value="15" step="5">
+                            </div>
+                            <div class="setup-option">
                                 <label style="margin-bottom: 0.5rem; display:block; color:var(--text-secondary);">Path
                                     Scoring Mode:</label>
                                 <div style="display: flex; gap: 1.5rem; align-items: center;">
@@ -668,7 +676,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=4.06"></script>
+    <script type="module" src="assets/js/main.js?v=4.07"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

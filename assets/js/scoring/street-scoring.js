@@ -21,12 +21,14 @@ export class StreetScoring extends AdjacencyScoring {
                 completionBonus: 20,
                 enableEndGameBonus: false,
                 penaltyScores: { roadblock: 10 },
+                claimBonus: 5,
+                borderPathBonus: 15,
                 ...options
             }
         });
 
         this.pathScoring = new PathScoring(this.options.pathPoints);
-        this.bestPaths = new Map(); // playerId -> { length, score } (instant mode)
+        this.bestPaths = new Map(); // playerId -> { length, score, borderReached } (instant mode)
     }
 
     onNewGame() {
@@ -96,12 +98,20 @@ export class StreetScoring extends AdjacencyScoring {
         const previous = gameState.boardState[position.y][position.x];
         gameState.boardState[position.y][position.x] = tile;
         const longestPath = this.pathScoring.findLongestPathForPlayer(gameState, player.id);
+
+        // Check endpoint while tile is still on the board (border-bonus tiles are pre-placed).
+        let endIsBorderBonus = false;
+        if (longestPath && longestPath.length > 0) {
+            const endPos = longestPath[longestPath.length - 1];
+            endIsBorderBonus = !!gameState.boardState[endPos?.y]?.[endPos?.x]?.isBorderBonus;
+        }
+
         gameState.boardState[position.y][position.x] = previous;
 
         if (!longestPath) return [];
 
         const entries = [];
-        const best = this.bestPaths.get(player.id) || { length: 0, score: 0 };
+        const best = this.bestPaths.get(player.id) || { length: 0, score: 0, borderReached: false };
 
         // One-off bonus the first time a centre-to-bonus connection is completed
         if (best.length === 0 && (this.options.completionBonus || 0) > 0) {
@@ -112,9 +122,16 @@ export class StreetScoring extends AdjacencyScoring {
         if (longestPath.length > best.length) {
             const pathScore = this.pathScoring.calculatePathScore(longestPath);
             entries.push({ key: 'paths', label: 'Path Bonus', points: pathScore - best.score });
+
+            // One-off bonus the first time a path terminates at a town-square (border-bonus) tile.
+            if (endIsBorderBonus && !best.borderReached && (this.options.borderPathBonus || 0) > 0) {
+                entries.push({ key: 'townSquarePath', label: 'Town Square Connection', points: this.options.borderPathBonus });
+            }
+
             this.bestPaths.set(player.id, {
                 length: longestPath.length,
-                score: pathScore
+                score: pathScore,
+                borderReached: endIsBorderBonus || best.borderReached,
             });
         }
 
