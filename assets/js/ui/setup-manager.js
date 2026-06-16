@@ -618,7 +618,7 @@ export class SetupManager {
             'streets-ahead': {
                 label: 'Streets Ahead — 11×11 · ~50 min',
                 values: streets({
-                    'board-size': '11', 'rack-size': '6', 'player-count': '2',
+                    'board-size': '11', 'rack-size': '5', 'player-count': '2',
                     'enable-special-tile-zone': true, 'start-zone-size': '5',
                     'special-start-count': '1', 'special-start-type': 'centreSquare',
                     'enable-free-play': true,
@@ -629,7 +629,7 @@ export class SetupManager {
                     'center-pattern-freq': 15, 'circles-ratio': 100,
                     'tw-cross': 8, 'tw-t': 20, 'tw-straight': 8, 'tw-corner': 8, 'tw-dead': 10, 'tw-blank': 0,
                     'tw-tunnel': 0, 'tw-roadblock': 5, 'tw-private': 3,
-                    'tm-cross': 3, 'tm-t': 9, 'tm-straight': 3, 'tm-corner': 3, 'tm-dead': 3,
+                    'tm-cross': 1, 'tm-t': 9, 'tm-straight': 3, 'tm-corner': 3, 'tm-dead': 3,
                     'tm-circles': 3, 'tm-squares': 0,
                     'penalty-freq': 0, 'tm-speedcam': 0,
                     'tm-tunnel': 0, 'tm-roadblock': 2, 'tm-private': 1, 'tm-blank': 0,

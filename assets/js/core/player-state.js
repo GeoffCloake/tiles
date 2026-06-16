@@ -94,10 +94,8 @@ export class PlayerManager {
                     .map(() => this.gameState.tileSet.generateTile(index, playerConfigs.length))
             );
 
-            console.log(`PlayerManager: specialStartConfig=`, this.gameState.specialStartConfig);
             if (this.gameState.specialStartConfig?.count > 0) {
                 this._dealSpecialTiles(player, this.gameState.specialStartConfig);
-                console.log(`PlayerManager: dealt special tiles, rack now ${player.tiles.length} tiles`);
             }
 
             return player;
@@ -163,7 +161,11 @@ export class PlayerManager {
     _dealSpecialTiles(player, config) {
         const { count, type } = config;
         const specials = [];
-        for (let i = 0; i < count; i++) specials.push(this._makeSpecialTile(type));
+        for (let i = 0; i < count; i++) {
+            const tile = this._makeSpecialTile(type);
+            tile.backgroundColor = player.color;
+            specials.push(tile);
+        }
         player.tiles.unshift(...specials); // prepend so they appear first
     }
 

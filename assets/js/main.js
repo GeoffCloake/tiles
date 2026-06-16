@@ -234,7 +234,6 @@ class Game {
     }
     // ----------------------------------------------------------------------
 
-    console.log('[_buildGame] specialStartTiles:', cfg.specialStartTiles);
     this.gameState = new GameState({
       tileSet,
       ruleset,
