@@ -1,5 +1,5 @@
 // assets/js/core/game-state.js
-import { PlayerManager } from './player-state.js';
+import { PlayerManager } from './player-state.js?v=4.10';
 import { DEFAULT_BOARD_SIZE, DEFAULT_RACK_SIZE } from '../utils/game-utils.js';
 import { placeInitialTiles } from '../utils/initial-tiles-utils.js?v=3.2';
 
