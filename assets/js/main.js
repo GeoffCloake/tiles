@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.28';
+const VERSION = '4.29';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.25';
@@ -14,7 +14,7 @@ import { RackManager } from './ui/rack-manager.js?v=4.14';
 import { SetupManager } from './ui/setup-manager.js?v=4.24';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
-import { OnlineManager } from './net/online-manager.js?v=4.14';
+import { OnlineManager } from './net/online-manager.js?v=4.29';
 import { AIController } from './core/ai-player.js?v=4.28';
 
 class Game {
@@ -875,10 +875,21 @@ class Game {
     scoresDiv.innerHTML = scoreHtml;
     modal.style.display = 'flex';
 
-    // In online play show "Play Again" (host only); hide local "New Game"
+    // In online play show "Play Again" (host) or a disabled wait indicator
+    // (non-host); hide the local "New Game" button entirely.
     const onlineActive = !!this.online?.active;
-    document.getElementById('new-game-modal').style.display   = onlineActive ? 'none' : '';
-    document.getElementById('online-play-again-btn').style.display = (onlineActive && this.online?.isHost) ? '' : 'none';
+    const isOnlineHost = onlineActive && !!this.online?.isHost;
+    document.getElementById('new-game-modal').style.display = onlineActive ? 'none' : '';
+    const playAgainBtn = document.getElementById('online-play-again-btn');
+    if (onlineActive) {
+      playAgainBtn.style.display = '';
+      playAgainBtn.disabled = !isOnlineHost;
+      playAgainBtn.textContent = isOnlineHost ? 'Play Again' : 'Waiting for host…';
+    } else {
+      playAgainBtn.style.display = 'none';
+      playAgainBtn.disabled = false;
+      playAgainBtn.textContent = 'Play Again';
+    }
 
     // Initialize Draggable Logic
     this.makeElementDraggable(document.querySelector('#game-end-modal .modal-content'), document.querySelector('#game-end-modal h2'));
