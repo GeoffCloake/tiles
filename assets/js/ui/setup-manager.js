@@ -276,8 +276,10 @@ export class SetupManager {
                 const circlesPct = parseInt(document.getElementById(`circles-ratio-p${i}`)?.value || '70') / 100;
                 const penaltyFreq = parseInt(document.getElementById(`penalty-freq-p${i}`)?.value || '0') / 100;
                 const rawCounts = this._getTileMaxCounts(i);
+                // centerSquares is a unique "one per player" tile — never scale it.
                 const tileMaxCounts = setScale === 1 ? rawCounts :
-                    Object.fromEntries(Object.entries(rawCounts).map(([k, v]) => [k, v > 0 ? v * setScale : v]));
+                    Object.fromEntries(Object.entries(rawCounts).map(([k, v]) =>
+                        [k, (v > 0 && k !== 'centerSquares') ? v * setScale : v]));
                 perPlayerOptions[i] = {
                     centerPatternFrequency: freq,
                     patternWeights: { circles: circlesPct, squares: 1 - circlesPct },
@@ -631,7 +633,7 @@ export class SetupManager {
                 values: streets({
                     'board-size': '11', 'rack-size': '5', 'player-count': '2',
                     'enable-special-tile-zone': true, 'start-zone-size': '5',
-                    'special-start-count': '0', 'special-start-type': 'centreSquare',
+                    'special-start-count': '1', 'special-start-type': 'centreSquare',
                     'enable-free-play': true,
                     'path-points': '4', 'completion-bonus': '25',
                     'claim-bonus': '8', 'connect-bonus': '15', 'border-path-bonus': '25', 'roadblock-penalty': '15',
@@ -641,7 +643,7 @@ export class SetupManager {
                     'tw-cross': 8, 'tw-t': 20, 'tw-straight': 8, 'tw-corner': 8, 'tw-dead': 10, 'tw-blank': 0,
                     'tw-tunnel': 0, 'tw-roadblock': 5, 'tw-private': 3,
                     'tm-cross': 1, 'tm-t': 9, 'tm-straight': 3, 'tm-corner': 3, 'tm-dead': 3,
-                    'tm-circles': 3, 'tm-squares': 0,
+                    'tm-circles': 3, 'tm-squares': 1,
                     'penalty-freq': 0, 'tm-speedcam': 0,
                     'tm-tunnel': 0, 'tm-roadblock': 2, 'tm-private': 1, 'tm-blank': 0,
                 }),
