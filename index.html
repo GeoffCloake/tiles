@@ -701,7 +701,7 @@
               <p id="online-error" class="online-error"></p>
             </div>
 
-            <!-- Lobby -->
+            <!-- Lobby (pre-game) -->
             <div id="online-pane-lobby" style="display:none;">
               <p class="label-hint" style="margin-bottom:0.25rem;">Share this room code:</p>
               <div id="online-room-code" class="online-room-code">—</div>
@@ -714,12 +714,27 @@
               </div>
               <p id="online-error-lobby" class="online-error"></p>
             </div>
+
+            <!-- In-game view (shown while a session is active) -->
+            <div id="online-pane-playing" style="display:none;">
+              <p class="label-hint" style="margin-bottom:0.25rem;">Room code:</p>
+              <div id="online-room-code-playing" class="online-room-code">—</div>
+              <h3 style="margin:0.75rem 0 0.5rem;">Players</h3>
+              <ul id="online-roster-playing" class="online-roster"></ul>
+              <p id="online-host-leave-warning" class="label-hint"
+                 style="display:none; color:var(--accent-red,#df0000); margin:0.5rem 0 0;">
+                As host, leaving will cancel the session for everyone.
+              </p>
+              <div class="modal-buttons" style="margin-top:0.75rem;">
+                <button id="online-abandon-btn" class="button">Leave Game</button>
+              </div>
+            </div>
           </div>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=4.24"></script>
+    <script type="module" src="assets/js/main.js?v=4.31"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

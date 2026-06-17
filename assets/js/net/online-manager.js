@@ -63,16 +63,51 @@ export class OnlineManager {
     click('online-start-btn', () => this.startMatch());
     click('online-play-again-btn', () => this.restartMatch());
     click('online-leave-btn', () => this.leave());
+    click('online-abandon-btn', () => this.leave());
     const modal = document.getElementById('online-modal');
     modal?.addEventListener('click', (e) => { if (e.target === modal) this.closeModal(); });
   }
 
   openModal() {
-    if (this.active) { this._enterLobby(); return; }
+    if (this.active) {
+      if (this.status === 'playing' || this.status === 'finished') {
+        this._enterPlayingModal();
+      } else {
+        this._enterLobby();
+      }
+      return;
+    }
     this._showPane('choose');
     this._error('');
     const m = document.getElementById('online-modal');
     if (m) m.style.display = 'flex';
+  }
+
+  _enterPlayingModal() {
+    this._showPane('playing');
+    const codeEl = document.getElementById('online-room-code-playing');
+    if (codeEl) codeEl.textContent = this.code;
+    this._renderRosterPlaying(this.roster);
+    const warn = document.getElementById('online-host-leave-warning');
+    if (warn) warn.style.display = this.isHost ? '' : 'none';
+    const m = document.getElementById('online-modal');
+    if (m) m.style.display = 'flex';
+  }
+
+  _renderRosterPlaying(roster) {
+    const ul = document.getElementById('online-roster-playing');
+    if (!ul) return;
+    ul.innerHTML = '';
+    (roster || []).forEach((r) => {
+      const li = document.createElement('li');
+      const badges =
+        (r.slot === 0 ? '<span class="online-badge">host</span>' : '') +
+        (r.slot === this.mySlot ? '<span class="online-badge">you</span>' : '');
+      li.innerHTML =
+        `<span class="online-dot ${r.online ? 'on' : ''}"></span>` +
+        `<span>${this._esc(r.name)}</span>${badges}`;
+      ul.appendChild(li);
+    });
   }
 
   closeModal() {
@@ -81,7 +116,7 @@ export class OnlineManager {
   }
 
   _showPane(which) {
-    ['choose', 'lobby'].forEach((p) => {
+    ['choose', 'lobby', 'playing'].forEach((p) => {
       const el = document.getElementById(`online-pane-${p}`);
       if (el) el.style.display = p === which ? 'block' : 'none';
     });
