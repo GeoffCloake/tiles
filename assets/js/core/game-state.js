@@ -1,7 +1,7 @@
 // assets/js/core/game-state.js
 import { PlayerManager } from './player-state.js?v=4.11';
 import { DEFAULT_BOARD_SIZE, DEFAULT_RACK_SIZE } from '../utils/game-utils.js';
-import { placeInitialTiles } from '../utils/initial-tiles-utils.js?v=3.2';
+import { placeInitialTiles } from '../utils/initial-tiles-utils.js?v=4.21';
 
 export class GameState {
     constructor(config) {
@@ -186,7 +186,7 @@ export class GameState {
         this.playerManager.updatePlayerScore(currentPlayer.id, score, bonus, breakdown);
 
         // Claim any border-bonus tiles now connected to this player's street path
-        const claimed = this.scoringSystem.claimBorderBonusTiles?.(this, currentPlayer, position) ?? [];
+        const claimed = this.scoringSystem.claimBonusTiles?.(this, currentPlayer, position) ?? [];
 
         // Award points for newly claimed tiles (adjacent road play, step 1)
         let claimScore = 0;

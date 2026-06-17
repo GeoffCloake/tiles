@@ -100,11 +100,11 @@ export class StreetScoring extends AdjacencyScoring {
         gameState.boardState[position.y][position.x] = tile;
         const longestPath = this.pathScoring.findLongestPathForPlayer(gameState, player.id);
 
-        // Check endpoint while tile is still on the board (border-bonus tiles are pre-placed).
-        let endIsBorderBonus = false;
+        // Check endpoint while tile is still on the board (bonus tiles are pre-placed).
+        let endIsBonusTile = false;
         if (longestPath && longestPath.length > 0) {
             const endPos = longestPath[longestPath.length - 1];
-            endIsBorderBonus = !!gameState.boardState[endPos?.y]?.[endPos?.x]?.isBorderBonus;
+            endIsBonusTile = !!gameState.boardState[endPos?.y]?.[endPos?.x]?.isBonusTile;
         }
 
         gameState.boardState[position.y][position.x] = previous;
@@ -124,15 +124,15 @@ export class StreetScoring extends AdjacencyScoring {
             const pathScore = this.pathScoring.calculatePathScore(longestPath);
             entries.push({ key: 'paths', label: 'Path Bonus', points: pathScore - best.score });
 
-            // One-off bonus the first time a path terminates at a town-square (border-bonus) tile.
-            if (endIsBorderBonus && !best.borderReached && (this.options.borderPathBonus || 0) > 0) {
+            // One-off bonus the first time a path terminates at a bonus tile.
+            if (endIsBonusTile && !best.borderReached && (this.options.borderPathBonus || 0) > 0) {
                 entries.push({ key: 'townSquarePath', label: 'Town Square Connection', points: this.options.borderPathBonus });
             }
 
             this.bestPaths.set(player.id, {
                 length: longestPath.length,
                 score: pathScore,
-                borderReached: endIsBorderBonus || best.borderReached,
+                borderReached: endIsBonusTile || best.borderReached,
             });
         }
 
@@ -175,7 +175,7 @@ export class StreetScoring extends AdjacencyScoring {
     //   Step 1 — adjacent road play → claim (star, no background yet)
     //   Step 2 — BFS from player's centre 'squares' tile → connect (background colour)
     // Both can fire on the same turn. Returns all tiles that need re-rendering.
-    claimBorderBonusTiles(gameState, player, position) {
+    claimBonusTiles(gameState, player, position) {
         const toRender = [];
 
         // ── Step 1: adjacent road play → claim ────────────────────────────────
@@ -197,7 +197,7 @@ export class StreetScoring extends AdjacencyScoring {
                     const nx = x + dx, ny = y + dy;
                     if (nx < 0 || nx >= gameState.boardSize || ny < 0 || ny >= gameState.boardSize) continue;
                     const t = gameState.boardState[ny]?.[nx];
-                    if (!t?.isBorderBonus || t.claimed) continue;
+                    if (!t?.isBonusTile || t.claimed) continue;
 
                     let bonusSides = [...t.sides];
                     for (let i = 0; i < (t.rotation || 0); i++) bonusSides.unshift(bonusSides.pop());
@@ -218,7 +218,7 @@ export class StreetScoring extends AdjacencyScoring {
         for (let cy = 0; cy < gameState.boardSize; cy++) {
             for (let cx = 0; cx < gameState.boardSize; cx++) {
                 const t = gameState.boardState[cy][cx];
-                if (t?.isBorderBonus && t.claimed && !t.backgroundColor) uncoloured.push({ x: cx, y: cy, tile: t });
+                if (t?.isBonusTile && t.claimed && !t.backgroundColor) uncoloured.push({ x: cx, y: cy, tile: t });
             }
         }
 
