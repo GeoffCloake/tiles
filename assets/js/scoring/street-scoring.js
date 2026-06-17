@@ -22,6 +22,7 @@ export class StreetScoring extends AdjacencyScoring {
                 enableEndGameBonus: false,
                 penaltyScores: { roadblock: 10 },
                 claimBonus: 5,
+                connectBonus: 10,
                 borderPathBonus: 15,
                 ...options
             }
@@ -230,7 +231,8 @@ export class StreetScoring extends AdjacencyScoring {
                 for (const { x, y, tile } of uncoloured) {
                     if (reachable.has(`${x},${y}`)) {
                         tile.backgroundColor = player.color;
-                        if (!toRender.find(c => c.x === x && c.y === y)) toRender.push({ x, y, tile });
+                        if (!toRender.find(c => c.x === x && c.y === y)) toRender.push({ x, y, tile, connected: true });
+                        else toRender.find(c => c.x === x && c.y === y).connected = true;
                     }
                 }
             }

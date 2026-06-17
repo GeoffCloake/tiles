@@ -188,14 +188,26 @@ export class GameState {
         // Claim any border-bonus tiles now connected to this player's street path
         const claimed = this.scoringSystem.claimBorderBonusTiles?.(this, currentPlayer, position) ?? [];
 
-        // Award one-off bonus points for each newly claimed border tile
+        // Award points for newly claimed tiles (adjacent road play, step 1)
         let claimScore = 0;
         const claimBonus = this.scoringSystem.options?.claimBonus ?? 0;
-        if (claimBonus > 0 && claimed.length > 0) {
-            claimScore = claimBonus * claimed.length;
+        const newlyClaimed = claimed.filter(c => !c.connected);
+        if (claimBonus > 0 && newlyClaimed.length > 0) {
+            claimScore += claimBonus * newlyClaimed.length;
             this.playerManager.updatePlayerScore(
                 currentPlayer.id, claimScore, claimScore,
-                [{ key: 'borderClaim', label: `Border Claim (×${claimed.length})`, points: claimScore }]
+                [{ key: 'borderClaim', label: `Border Claim (×${newlyClaimed.length})`, points: claimScore }]
+            );
+        }
+        // Award points for newly connected tiles (BFS from centre, step 2)
+        const connectBonus = this.scoringSystem.options?.connectBonus ?? 0;
+        const newlyConnected = claimed.filter(c => !!c.connected);
+        if (connectBonus > 0 && newlyConnected.length > 0) {
+            const connScore = connectBonus * newlyConnected.length;
+            claimScore += connScore;
+            this.playerManager.updatePlayerScore(
+                currentPlayer.id, connScore, connScore,
+                [{ key: 'borderConnect', label: `Centre Connected (×${newlyConnected.length})`, points: connScore }]
             );
         }
 
