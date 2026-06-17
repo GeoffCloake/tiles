@@ -50,6 +50,7 @@ export class SetupManager {
         this.completionBonusInput = document.getElementById('completion-bonus');
         this.endGameScoreModeRadio = document.getElementById('score-mode-endgame');
         this.claimBonusInput = document.getElementById('claim-bonus');
+        this.connectBonusInput = document.getElementById('connect-bonus');
         this.borderPathBonusInput = document.getElementById('border-path-bonus');
 
         this.enableStartZoneCheckbox = document.getElementById('enable-start-zone');
@@ -317,6 +318,7 @@ export class SetupManager {
                     roadblock: parseInt(document.getElementById('roadblock-penalty')?.value || '10'),
                 },
                 claimBonus: parseInt(this.claimBonusInput?.value || '5'),
+                connectBonus: parseInt(this.connectBonusInput?.value || '10'),
                 borderPathBonus: parseInt(this.borderPathBonusInput?.value || '15'),
             });
         }
@@ -506,7 +508,7 @@ export class SetupManager {
             'circle-score': '10', 'square-score': '20',
             'intersection-bonus': '5', 'center-bonus': '5',
             'path-points': '3', 'completion-bonus': '20', 'roadblock-penalty': '0',
-            'claim-bonus': '5', 'border-path-bonus': '15',
+            'claim-bonus': '5', 'connect-bonus': '10', 'border-path-bonus': '15',
             'enable-start-zone': false, 'enable-special-tile-zone': false,
             'start-zone-size': '5', 'start-zone-turns': '2',
             'special-start-count': '0', 'special-start-type': 'townSquare',
@@ -612,7 +614,7 @@ export class SetupManager {
                     'board-size': '9', 'rack-size': '5', 'player-count': '2',
                     'enable-start-zone': true, 'start-zone-size': '5', 'start-zone-turns': '2',
                     'special-start-count': '1', 'special-start-type': 'townSquare',
-                    'claim-bonus': '5', 'border-path-bonus': '20',
+                    'claim-bonus': '5', 'connect-bonus': '10', 'border-path-bonus': '20',
                 }),
                 perPlayerValues: pp(),
             },
@@ -624,7 +626,7 @@ export class SetupManager {
                     'special-start-count': '0', 'special-start-type': 'centreSquare',
                     'enable-free-play': true,
                     'path-points': '4', 'completion-bonus': '25',
-                    'claim-bonus': '8', 'border-path-bonus': '25', 'roadblock-penalty': '15',
+                    'claim-bonus': '8', 'connect-bonus': '15', 'border-path-bonus': '25', 'roadblock-penalty': '15',
                 }),
                 perPlayerValues: pp({
                     'center-pattern-freq': 15, 'circles-ratio': 100,
@@ -742,7 +744,7 @@ export class SetupManager {
             'special-start-count', 'special-start-type',
             'starter-multiplier','circle-score','square-score',
             'intersection-bonus','center-bonus','path-points','completion-bonus',
-            'roadblock-penalty','claim-bonus','border-path-bonus',
+            'roadblock-penalty','claim-bonus','connect-bonus','border-path-bonus',
             'score-mode-endgame','enable-tournament','tournament-rounds',
         ];
     }
