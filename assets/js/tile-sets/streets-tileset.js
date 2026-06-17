@@ -90,6 +90,18 @@ class StreetsTileSet extends TileSet {
     this._debugLogged = new Set();
   }
 
+  // Register a tile that was dealt outside of generateTile (e.g. special start
+  // tiles), so max-count checks in generateTile stay accurate.
+  notifyTileDealt(playerIndex, tile) {
+    const pi = playerIndex ?? 0;
+    if (!this._tileCountsPerPlayer[pi]) this._tileCountsPerPlayer[pi] = {};
+    const counts = this._tileCountsPerPlayer[pi];
+    if (tile.key) counts[tile.key] = (counts[tile.key] || 0) + 1;
+    if (tile.centerPattern === 'squares') counts.centerSquares = (counts.centerSquares || 0) + 1;
+    if (tile.centerPattern === 'circles') counts.centerCircles = (counts.centerCircles || 0) + 1;
+    counts._total = (counts._total || 0) + 1;
+  }
+
   // Per-player tile-issue counts travel with each online snapshot so that
   // max-per-game limits stay correct no matter which device deals a tile.
   exportCounts() {

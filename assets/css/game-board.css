@@ -76,7 +76,7 @@
 /* Bonus Path Highlight — visual handled entirely on canvas via _drawPathHighlight */
 .bonus-path {}
 
-/* Border Bonus Tile Status */
+/* Bonus Tile Status */
 .bonus-tile-unclaimed::after {
   content: '';
   position: absolute;

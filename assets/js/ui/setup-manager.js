@@ -15,6 +15,7 @@ export class SetupManager {
         // Basic Settings
         this.boardSizeSelect = document.getElementById('board-size');
         this.rackSizeSelect = document.getElementById('rack-size');
+        this.maxTilesPerPlayerInput = document.getElementById('max-tiles-per-player');
         this.tileSetSelect = document.getElementById('tile-set');
         this.playerCountSelect = document.getElementById('player-count');
 
@@ -50,6 +51,7 @@ export class SetupManager {
         this.completionBonusInput = document.getElementById('completion-bonus');
         this.endGameScoreModeRadio = document.getElementById('score-mode-endgame');
         this.claimBonusInput = document.getElementById('claim-bonus');
+        this.connectBonusInput = document.getElementById('connect-bonus');
         this.borderPathBonusInput = document.getElementById('border-path-bonus');
 
         this.enableStartZoneCheckbox = document.getElementById('enable-start-zone');
@@ -266,16 +268,25 @@ export class SetupManager {
         if (tileSet === 'streets') {
             const playerCount = playerCountOverride ?? parseInt(this.playerCountSelect?.value || '1');
             const perPlayerOptions = {};
+            // Scale tile counts for player count: counts configured for 4 players
+            // are multiplied so 2-player games use 2× as many tiles (2 sets worth).
+            const setScale = Math.max(1, Math.floor(4 / playerCount));
             for (let i = 0; i < playerCount; i++) {
                 const freq = parseInt(document.getElementById(`center-pattern-freq-p${i}`)?.value || '20') / 100;
                 const circlesPct = parseInt(document.getElementById(`circles-ratio-p${i}`)?.value || '70') / 100;
                 const penaltyFreq = parseInt(document.getElementById(`penalty-freq-p${i}`)?.value || '0') / 100;
+                const rawCounts = this._getTileMaxCounts(i);
+                // centerSquares is a unique "one per player" tile — never scale it.
+                const tileMaxCounts = setScale === 1 ? rawCounts :
+                    Object.fromEntries(Object.entries(rawCounts).map(([k, v]) =>
+                        [k, (v > 0 && k !== 'centerSquares') ? v * setScale : v]));
                 perPlayerOptions[i] = {
                     centerPatternFrequency: freq,
                     patternWeights: { circles: circlesPct, squares: 1 - circlesPct },
                     penaltyFrequency: penaltyFreq,
                     tileWeights: this._getTileWeights(i),
-                    tileMaxCounts: this._getTileMaxCounts(i),
+                    tileMaxCounts,
+                    tilesPerPlayer: Object.values(tileMaxCounts).reduce((s, v) => s + v, 0),
                 };
             }
             return { perPlayerOptions };
@@ -316,6 +327,7 @@ export class SetupManager {
                     roadblock: parseInt(document.getElementById('roadblock-penalty')?.value || '10'),
                 },
                 claimBonus: parseInt(this.claimBonusInput?.value || '5'),
+                connectBonus: parseInt(this.connectBonusInput?.value || '10'),
                 borderPathBonus: parseInt(this.borderPathBonusInput?.value || '15'),
             });
         }
@@ -330,6 +342,7 @@ export class SetupManager {
         return {
             boardSize: parseInt(this.boardSizeSelect.value),
             rackSize: parseInt(this.rackSizeSelect.value),
+            maxTilesPerPlayer: parseInt(this.maxTilesPerPlayerInput?.value || '0'),
             tileSet,
             ruleset: 'basic',
             initialTiles: this.getInitialTilesConfig(),
@@ -505,7 +518,7 @@ export class SetupManager {
             'circle-score': '10', 'square-score': '20',
             'intersection-bonus': '5', 'center-bonus': '5',
             'path-points': '3', 'completion-bonus': '20', 'roadblock-penalty': '0',
-            'claim-bonus': '5', 'border-path-bonus': '15',
+            'claim-bonus': '5', 'connect-bonus': '10', 'border-path-bonus': '15',
             'enable-start-zone': false, 'enable-special-tile-zone': false,
             'start-zone-size': '5', 'start-zone-turns': '2',
             'special-start-count': '0', 'special-start-type': 'townSquare',
@@ -611,7 +624,7 @@ export class SetupManager {
                     'board-size': '9', 'rack-size': '5', 'player-count': '2',
                     'enable-start-zone': true, 'start-zone-size': '5', 'start-zone-turns': '2',
                     'special-start-count': '1', 'special-start-type': 'townSquare',
-                    'claim-bonus': '5', 'border-path-bonus': '20',
+                    'claim-bonus': '5', 'connect-bonus': '10', 'border-path-bonus': '20',
                 }),
                 perPlayerValues: pp(),
             },
@@ -623,14 +636,14 @@ export class SetupManager {
                     'special-start-count': '1', 'special-start-type': 'centreSquare',
                     'enable-free-play': true,
                     'path-points': '4', 'completion-bonus': '25',
-                    'claim-bonus': '8', 'border-path-bonus': '25', 'roadblock-penalty': '15',
+                    'claim-bonus': '8', 'connect-bonus': '15', 'border-path-bonus': '25', 'roadblock-penalty': '15',
                 }),
                 perPlayerValues: pp({
                     'center-pattern-freq': 15, 'circles-ratio': 100,
                     'tw-cross': 8, 'tw-t': 20, 'tw-straight': 8, 'tw-corner': 8, 'tw-dead': 10, 'tw-blank': 0,
                     'tw-tunnel': 0, 'tw-roadblock': 5, 'tw-private': 3,
                     'tm-cross': 1, 'tm-t': 9, 'tm-straight': 3, 'tm-corner': 3, 'tm-dead': 3,
-                    'tm-circles': 3, 'tm-squares': 0,
+                    'tm-circles': 3, 'tm-squares': 1,
                     'penalty-freq': 0, 'tm-speedcam': 0,
                     'tm-tunnel': 0, 'tm-roadblock': 2, 'tm-private': 1, 'tm-blank': 0,
                 }),
@@ -731,7 +744,7 @@ export class SetupManager {
             `penalty-freq-p${i}`, `tm-speedcam-p${i}`,
         ]).flat();
         return [
-            'board-size','rack-size','tile-set','player-count',
+            'board-size','rack-size','max-tiles-per-player','tile-set','player-count',
             'initial-tile-layout','initial-tiles','layout-tiles',
             'enable-timer','time-limit',
             ...perPlayerFields,
@@ -741,7 +754,7 @@ export class SetupManager {
             'special-start-count', 'special-start-type',
             'starter-multiplier','circle-score','square-score',
             'intersection-bonus','center-bonus','path-points','completion-bonus',
-            'roadblock-penalty','claim-bonus','border-path-bonus',
+            'roadblock-penalty','claim-bonus','connect-bonus','border-path-bonus',
             'score-mode-endgame','enable-tournament','tournament-rounds',
         ];
     }

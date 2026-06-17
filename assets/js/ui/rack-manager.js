@@ -100,7 +100,7 @@ export class RackManager {
         if (!el) return;
         if (!tile) { el.style.display = 'none'; return; }
         el.textContent = this.getTileDescription(tile);
-        el.style.display = '';
+        el.style.display = 'block';
     }
 
     handleRotate() {

@@ -1,5 +1,5 @@
 // assets/js/core/game-state.js
-import { PlayerManager } from './player-state.js?v=4.11';
+import { PlayerManager } from './player-state.js?v=4.23';
 import { DEFAULT_BOARD_SIZE, DEFAULT_RACK_SIZE } from '../utils/game-utils.js';
 import { placeInitialTiles } from '../utils/initial-tiles-utils.js?v=4.21';
 
@@ -7,6 +7,7 @@ export class GameState {
     constructor(config) {
         this.boardSize = config.boardSize || DEFAULT_BOARD_SIZE;
         this.rackSize = config.rackSize || DEFAULT_RACK_SIZE;
+        this.maxTilesPerPlayer = config.maxTilesPerPlayer || 0;
         this.tileSet = config.tileSet;
         this.ruleset = config.ruleset;
         this.scoringSystem = config.scoringSystem;
@@ -185,7 +186,7 @@ export class GameState {
         const currentPlayer = this.getCurrentPlayer();
         this.playerManager.updatePlayerScore(currentPlayer.id, score, bonus, breakdown);
 
-        // Claim any bonus tiles now connected to this player's street path
+        // Claim any border-bonus tiles now connected to this player's street path
         const claimed = this.scoringSystem.claimBonusTiles?.(this, currentPlayer, position) ?? [];
 
         // Award points for newly claimed tiles (adjacent road play, step 1)
@@ -213,7 +214,9 @@ export class GameState {
 
         const playerIndex = this.playerManager.players.indexOf(currentPlayer);
         const isSpecialTile = !!this.selectedTile.isSpecialStart;
-        const newTile = isSpecialTile ? null : this.tileSet.generateTile(playerIndex, this.playerManager.players.length);
+        if (!isSpecialTile) currentPlayer.tilesPlayed = (currentPlayer.tilesPlayed || 0) + 1;
+        const limitReached = this.maxTilesPerPlayer > 0 && (currentPlayer.tilesPlayed || 0) >= this.maxTilesPerPlayer;
+        const newTile = isSpecialTile || limitReached ? null : this.tileSet.generateTile(playerIndex, this.playerManager.players.length);
         this.playerManager.replaceTile(currentPlayer.id, this.selectedTile.id, newTile);
 
         this.selectedTile = null;
@@ -314,6 +317,7 @@ export class GameState {
         return {
             boardSize: this.boardSize,
             rackSize: this.rackSize,
+            maxTilesPerPlayer: this.maxTilesPerPlayer,
             boardState: this.boardState,
             players: this.playerManager.players,
             currentPlayerIndex: this.playerManager.currentPlayerIndex,
@@ -325,7 +329,8 @@ export class GameState {
         const gameState = new GameState({
             ...config,
             boardSize: json.boardSize,
-            rackSize: json.rackSize
+            rackSize: json.rackSize,
+            maxTilesPerPlayer: json.maxTilesPerPlayer || 0
         });
 
         gameState.boardState = json.boardState;
