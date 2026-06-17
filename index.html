@@ -712,6 +712,7 @@
               <p id="online-waiting-msg" class="label-hint" style="display:none;">Waiting for the host to start…</p>
               <div class="modal-buttons">
                 <button id="online-start-btn" class="button button--primary" disabled>Start Game</button>
+                <button id="online-lobby-settings-btn" class="button" style="display:none;">Change Settings</button>
                 <button id="online-leave-btn" class="button">Leave</button>
               </div>
               <p id="online-error-lobby" class="online-error"></p>
@@ -727,13 +728,14 @@
                 <button id="online-stop-btn" class="button" style="display:none;">Stop Game</button>
                 <button id="online-abandon-btn" class="button">Leave Session</button>
               </div>
+              <p id="online-error-playing" class="online-error"></p>
             </div>
           </div>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=4.34"></script>
+    <script type="module" src="assets/js/main.js?v=4.35"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

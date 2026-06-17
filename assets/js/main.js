@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.34';
+const VERSION = '4.35';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.25';
@@ -14,7 +14,7 @@ import { RackManager } from './ui/rack-manager.js?v=4.14';
 import { SetupManager } from './ui/setup-manager.js?v=4.24';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
-import { OnlineManager } from './net/online-manager.js?v=4.34';
+import { OnlineManager } from './net/online-manager.js?v=4.35';
 import { AIController } from './core/ai-player.js?v=4.28';
 
 class Game {
@@ -29,6 +29,7 @@ class Game {
 
     this._savedConfig = null; // latest normalized config for New Game
     this._freshTournament = false; // force new TournamentManager on next _buildGame
+    this._onlineLobbySetup = false; // host entered setup from the online lobby
     this.tournament = null;
     this.wakeLock = null;
     this.showingPaths = false;
@@ -171,12 +172,44 @@ class Game {
       if (e.key === 'Escape') { this.hideRules(); this.hideScoring(); this.hideLeaderboard(); this.hideConfig(); this.hideWeights(); }
     });
 
+    // Override setup-back-btn: when the host accessed setup from the online lobby,
+    // clicking Back should return to the lobby modal rather than quick-start.
+    // We replace the element so setup-manager's listener (wired before this) is removed.
+    const setupBackEl = document.getElementById('setup-back-btn');
+    if (setupBackEl) {
+      const newBtn = setupBackEl.cloneNode(true);
+      setupBackEl.parentNode.replaceChild(newBtn, setupBackEl);
+      newBtn.addEventListener('click', () => {
+        if (this._onlineLobbySetup) {
+          this._onlineLobbySetup = false;
+          document.getElementById('setup-screen').style.display = 'none';
+          const gameEl = document.getElementById('game');
+          if (gameEl && this.gameState) gameEl.style.display = 'flex';
+          this.online._enterLobby();
+        } else {
+          this.setupManager.showQuickStart();
+        }
+      });
+    }
+
     document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
   }
 
   async startGame(config) {
     const normalized = this._normalizeConfig(config);
     this._savedConfig = normalized;
+
+    // Online host used the setup screen to change settings from the lobby.
+    // Don't build a local game — return to the lobby so they can start the online match.
+    if (this._onlineLobbySetup) {
+      this._onlineLobbySetup = false;
+      document.getElementById('setup-screen').style.display = 'none';
+      const gameEl = document.getElementById('game');
+      if (gameEl && this.gameState) gameEl.style.display = 'flex';
+      this.online._enterLobby();
+      return;
+    }
+
     this._freshTournament = true; // always start a new tournament when coming from Setup
     await this._buildGame(normalized);
   }
@@ -568,8 +601,16 @@ class Game {
     this._updateOnlineButtonStates();
   }
 
-  // Navigate to the setup screen, leaving any active online session first.
+  // Navigate to the setup screen.
+  // When the online host is in the lobby, access setup without destroying the
+  // session — settings changes are read by startMatch() via buildConfig().
   _goToSetup() {
+    if (this.online?.active && this.online?.isHost && this.online?.status === 'lobby') {
+      this._onlineLobbySetup = true;
+      this.ai?.detach();
+      this.setupManager.showSetup();
+      return;
+    }
     if (this._exitOnline(() => this._goToSetup())) return;
     this.ai?.detach();
     this.setupManager.showSetup();
