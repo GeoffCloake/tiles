@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.29';
+const VERSION = '4.30';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.25';
@@ -14,7 +14,7 @@ import { RackManager } from './ui/rack-manager.js?v=4.14';
 import { SetupManager } from './ui/setup-manager.js?v=4.24';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
-import { OnlineManager } from './net/online-manager.js?v=4.29';
+import { OnlineManager } from './net/online-manager.js?v=4.30';
 import { AIController } from './core/ai-player.js?v=4.28';
 
 class Game {
@@ -126,6 +126,7 @@ class Game {
     document.getElementById('config-button')?.addEventListener('click', () => this.showConfig());
     document.getElementById('close-config-x')?.addEventListener('click', () => this.hideConfig());
     document.getElementById('setup-config-btn')?.addEventListener('click', () => this.showConfig());
+    document.getElementById('online-game-settings-btn')?.addEventListener('click', () => this.showConfig());
     const configModal = document.getElementById('config-modal');
     configModal?.addEventListener('click', (e) => { if (e.target === configModal) this.hideConfig(); });
 
@@ -875,8 +876,8 @@ class Game {
     scoresDiv.innerHTML = scoreHtml;
     modal.style.display = 'flex';
 
-    // In online play show "Play Again" (host) or a disabled wait indicator
-    // (non-host); hide the local "New Game" button entirely.
+    // In online play show "Play Again" + "Settings" (host) or a disabled wait
+    // indicator (non-host); hide the local "New Game" button entirely.
     const onlineActive = !!this.online?.active;
     const isOnlineHost = onlineActive && !!this.online?.isHost;
     document.getElementById('new-game-modal').style.display = onlineActive ? 'none' : '';
@@ -890,6 +891,9 @@ class Game {
       playAgainBtn.disabled = false;
       playAgainBtn.textContent = 'Play Again';
     }
+    // "Settings" lets the online host tweak config before restarting without
+    // leaving the room.  Changes are picked up by restartMatch() via buildConfig().
+    document.getElementById('online-game-settings-btn').style.display = isOnlineHost ? '' : 'none';
 
     // Initialize Draggable Logic
     this.makeElementDraggable(document.querySelector('#game-end-modal .modal-content'), document.querySelector('#game-end-modal h2'));

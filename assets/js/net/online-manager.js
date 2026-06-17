@@ -182,11 +182,14 @@ export class OnlineManager {
   }
 
   // Host: start a new game in the same room without anyone leaving/rejoining.
+  // Re-reads the current setup UI so the host can change board size, tile set,
+  // scoring options etc. via the Settings button before clicking Play Again.
   async restartMatch() {
     if (!this.isHost) return;
     const roster = (this.roster || []).slice().sort((a, b) => a.slot - b.slot);
     const players = roster.map((r) => ({ name: r.name }));
-    const config = { ...this.config, players, tournament: null, enableTimer: false };
+    const freshConfig = this.game.setupManager.buildConfig(players.length);
+    const config = { ...freshConfig, players, tournament: null, enableTimer: false };
     config.tileSetOptions = this.game.setupManager.getTileSetOptions(config.tileSet, players.length);
     this.config = config;
 
@@ -278,7 +281,13 @@ export class OnlineManager {
     // Exception: a new game started by the host resets finished→playing, detected
     // by firstMove=true on the incoming state.
     const isRestart = res.state?.firstMove === true && this.status === 'finished';
-    if (isRestart) { this._endShown = false; this.status = 'playing'; }
+    if (isRestart) {
+      this._endShown = false;
+      this.status = 'playing';
+      // Force a full rebuild so non-hosts pick up any config changes (board size,
+      // tile set, scoring options) the host may have made via the Settings button.
+      this._built = false;
+    }
     const order = { idle: 0, lobby: 1, playing: 2, finished: 3 };
     if (res.status && order[res.status] >= order[this.status]) this.status = res.status;
     if (res.roster) { this.roster = res.roster; this._renderRoster(res.roster); }
