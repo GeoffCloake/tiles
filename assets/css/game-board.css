@@ -76,6 +76,34 @@
 /* Bonus Path Highlight — visual handled entirely on canvas via _drawPathHighlight */
 .bonus-path {}
 
+/* Border Bonus Tile Status */
+.border-bonus-unclaimed::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 2px dashed rgba(255, 255, 255, 0.55);
+  border-radius: 3px;
+  pointer-events: none;
+  animation: bonus-pulse 2.5s ease-in-out infinite;
+}
+
+.border-bonus-claimed::after {
+  content: '★';
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  line-height: 1;
+}
+
+@keyframes bonus-pulse {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.85; }
+}
+
 /* Invalid Placement Animation */
 .tile.invalid {
   background-color: rgba(0, 0, 0, 0.5);

@@ -242,7 +242,7 @@ class StreetsTileSet extends TileSet {
     if (tile.type === 'private')    this._drawPrivateIndicator(ctx, size, tile, rotatedSides);
     if (tile.type === 'roadblock')  this._drawRoadblockOverlay(ctx, size);
 
-    if (tile.isStarterTile) {
+    if (tile.isStarterTile && !tile.isBorderBonus) {
       ctx.fillStyle = 'rgba(68, 68, 68, 0.5)';
       ctx.beginPath();
       ctx.arc(size / 2, size / 2, size * 0.45, 0, Math.PI * 2);
