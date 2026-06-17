@@ -8,7 +8,7 @@
 // there's no RNG divergence. Per-player tile limits stay correct because the
 // tile-generation counts travel with each snapshot.
 
-import { OnlineClient } from './online-client.js?v=3.0';
+import { OnlineClient } from './online-client.js?v=3.1';
 
 const SESSION_KEY = 'tiles_online_session_v1';
 const POLL_MS = 1500;
