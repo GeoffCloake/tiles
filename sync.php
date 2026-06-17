@@ -279,6 +279,26 @@ case 'move': {
     out($resp);
 }
 
+case 'reset': {
+    $code  = sanitize_code(isset($body['code']) ? $body['code'] : '');
+    $token = (string)(isset($body['token']) ? $body['token'] : '');
+    if (!$code) fail('bad_code');
+    $resp = with_room($ROOMS, $code, function ($room) use ($token) {
+        if (!$room) return array(null, array('ok' => false, 'error' => 'not_found'));
+        if (!hash_equals((string)$room['hostToken'], $token)) return array(null, array('ok' => false, 'error' => 'not_host'));
+        $room['status']      = 'lobby';
+        $room['state']       = null;
+        $room['tileCounts']  = null;
+        $room['ended']       = false;
+        $room['finalScores'] = null;
+        $room['seq']++;
+        $room['updatedAt']   = time();
+        return array($room, array('ok' => true, 'seq' => $room['seq']));
+    });
+    if ($resp === null) fail('not_found');
+    out($resp);
+}
+
 case 'leave': {
     $code  = sanitize_code(isset($body['code']) ? $body['code'] : '');
     $token = (string)(isset($body['token']) ? $body['token'] : '');

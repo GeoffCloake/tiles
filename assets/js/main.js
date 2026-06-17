@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.33';
+const VERSION = '4.34';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.25';
@@ -14,7 +14,7 @@ import { RackManager } from './ui/rack-manager.js?v=4.14';
 import { SetupManager } from './ui/setup-manager.js?v=4.24';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
-import { OnlineManager } from './net/online-manager.js?v=4.33';
+import { OnlineManager } from './net/online-manager.js?v=4.34';
 import { AIController } from './core/ai-player.js?v=4.28';
 
 class Game {
@@ -93,6 +93,11 @@ class Game {
     document.getElementById('return-setup')?.addEventListener('click', () => {
       document.getElementById('game-end-modal').style.display = 'none';
       this._goToSetup();
+    });
+
+    document.getElementById('online-back-to-lobby-btn')?.addEventListener('click', () => {
+      document.getElementById('game-end-modal').style.display = 'none';
+      this.online?.stopGame();
     });
 
     document.getElementById('setup-button')?.addEventListener('click', () => this._goToSetup());
@@ -318,7 +323,8 @@ class Game {
   _updateOnlineButtonStates() {
     const isOnline = !!this.online?.active;
     const locked   = isOnline && !this.online?.isHost;
-    const hint = 'Settings are controlled by the host during online play';
+    const settingsHint = 'Settings are controlled by the host during online play';
+    const sessionHint  = 'Cannot start a new game while an online session is active';
 
     const onlineBtn = document.getElementById('game-online-btn');
     if (onlineBtn) onlineBtn.style.display = isOnline ? '' : 'none';
@@ -327,7 +333,14 @@ class Game {
       const btn = document.getElementById(id);
       if (!btn) return;
       btn.disabled = locked;
-      btn.title    = locked ? hint : '';
+      btn.title    = locked ? settingsHint : '';
+    });
+
+    ['new-game-button', 'setup-button'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.disabled = locked;
+      btn.title    = locked ? sessionHint : '';
     });
   }
 
@@ -382,7 +395,7 @@ class Game {
     this.gameState.on('tilePlaced', ({ position, tile, score, bonus, claimed }) => {
       this.boardManager.renderTile(position, tile);
       if (score !== 0) this.boardManager.showScorePopup(position, score, bonus);
-      // Re-render any border-bonus tiles that were just claimed
+      // Re-render any bonus tiles that were just claimed
       for (const c of (claimed ?? [])) {
         this.boardManager.renderTile({ x: c.x, y: c.y }, c.tile);
       }
@@ -906,8 +919,7 @@ class Game {
     scoresDiv.innerHTML = scoreHtml;
     modal.style.display = 'flex';
 
-    // In online play show "Play Again" + "Settings" (host) or a disabled wait
-    // indicator (non-host); hide the local "New Game" button entirely.
+    // Online game-end: hide local "New Game"; show host controls or non-host wait.
     const onlineActive = !!this.online?.active;
     const isOnlineHost = onlineActive && !!this.online?.isHost;
     document.getElementById('new-game-modal').style.display = onlineActive ? 'none' : '';
@@ -921,6 +933,8 @@ class Game {
       playAgainBtn.disabled = false;
       playAgainBtn.textContent = 'Play Again';
     }
+    // "Back to Lobby" lets host return to lobby without destroying the room.
+    document.getElementById('online-back-to-lobby-btn').style.display = isOnlineHost ? '' : 'none';
     // "Settings" lets the online host tweak config before restarting without
     // leaving the room.  Changes are picked up by restartMatch() via buildConfig().
     document.getElementById('online-game-settings-btn').style.display = isOnlineHost ? '' : 'none';

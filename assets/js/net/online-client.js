@@ -29,5 +29,6 @@ export class OnlineClient {
   poll(code, since, token)    { return this._get('poll', { code, since, token }); }
   start(code, token, payload) { return this._post('start', { code, token, ...payload }); }
   move(code, token, payload)  { return this._post('move', { code, token, ...payload }); }
+  reset(code, token)          { return this._post('reset', { code, token }); }
   leave(code, token)          { return this._post('leave', { code, token }); }
 }
