@@ -61,6 +61,7 @@ export class OnlineManager {
     click('online-host-btn', () => this.host());
     click('online-join-btn', () => this.join());
     click('online-start-btn', () => this.startMatch());
+    click('online-play-again-btn', () => this.restartMatch());
     click('online-leave-btn', () => this.leave());
     const modal = document.getElementById('online-modal');
     modal?.addEventListener('click', (e) => { if (e.target === modal) this.closeModal(); });
@@ -180,6 +181,37 @@ export class OnlineManager {
     this.closeModal();
   }
 
+  // Host: start a new game in the same room without anyone leaving/rejoining.
+  async restartMatch() {
+    if (!this.isHost) return;
+    const roster = (this.roster || []).slice().sort((a, b) => a.slot - b.slot);
+    const players = roster.map((r) => ({ name: r.name }));
+    const config = { ...this.config, players, tournament: null, enableTimer: false };
+    config.tileSetOptions = this.game.setupManager.getTileSetOptions(config.tileSet, players.length);
+    this.config = config;
+
+    this.status = 'playing';
+    this._endShown = false;
+    this.game.buildHostedGame(config, this.mySlot);
+    this._built = true;
+    document.getElementById('game-end-modal').style.display = 'none';
+
+    const gs = this.game.gameState;
+    let res;
+    try {
+      res = await this.client.start(this.code, this.token, {
+        state: gs.toJSON(),
+        tileCounts: gs.tileSet.exportCounts ? gs.tileSet.exportCounts() : null,
+        config,
+      });
+    } catch {
+      return this._error('Network error restarting game.', true);
+    }
+    if (!res.ok) return this._error(this._msg(res.error), true);
+    this.status = 'playing';
+    this.lastSeq = res.seq;
+  }
+
   // ---- Lobby ---------------------------------------------------------------
 
   _enterLobby() {
@@ -243,6 +275,10 @@ export class OnlineManager {
     }
     // Advance status monotonically: a late/stale poll must never drag us back
     // (e.g. from an optimistic 'playing' to the server's not-yet-updated 'lobby').
+    // Exception: a new game started by the host resets finished→playing, detected
+    // by firstMove=true on the incoming state.
+    const isRestart = res.state?.firstMove === true && this.status === 'finished';
+    if (isRestart) { this._endShown = false; this.status = 'playing'; }
     const order = { idle: 0, lobby: 1, playing: 2, finished: 3 };
     if (res.status && order[res.status] >= order[this.status]) this.status = res.status;
     if (res.roster) { this.roster = res.roster; this._renderRoster(res.roster); }
