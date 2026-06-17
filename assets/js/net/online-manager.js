@@ -65,6 +65,7 @@ export class OnlineManager {
     click('online-leave-btn', () => this.leave());
     click('online-abandon-btn', () => this.leave());
     click('online-stop-btn', () => this.stopGame());
+    click('online-lobby-settings-btn', () => { this.closeModal(); this.game._goToSetup(); });
     click('game-online-btn', () => this.openModal());
     const modal = document.getElementById('online-modal');
     modal?.addEventListener('click', (e) => { if (e.target === modal) this.closeModal(); });
@@ -134,8 +135,11 @@ export class OnlineManager {
     return v || 'Player';
   }
 
-  _error(msg, inLobby = false) {
-    const el = document.getElementById(inLobby ? 'online-error-lobby' : 'online-error');
+  _error(msg, inLobby = false, inPlaying = false) {
+    let id = 'online-error';
+    if (inLobby)   id = 'online-error-lobby';
+    if (inPlaying) id = 'online-error-playing';
+    const el = document.getElementById(id);
     if (el) el.textContent = msg || '';
   }
 
@@ -194,9 +198,10 @@ export class OnlineManager {
     if (roster.length < 2) return this._error('Need at least 2 players to start.', true);
 
     const players = roster.map((r) => ({ name: r.name }));
-    // Per-turn timers would advance turns locally without broadcasting, so they
-    // are disabled online for now.
-    const config = { ...this.config, players, tournament: null, enableTimer: false };
+    // Always read fresh settings from the setup UI so any changes the host made
+    // via Change Settings are picked up.
+    const freshConfig = this.game.setupManager.buildConfig(players.length);
+    const config = { ...freshConfig, players, tournament: null, enableTimer: false };
     config.tileSetOptions = this.game.setupManager.getTileSetOptions(config.tileSet, players.length);
     this.config = config;
 
@@ -264,8 +269,8 @@ export class OnlineManager {
     if (!this.isHost) return;
     let res;
     try { res = await this.client.reset(this.code, this.token); }
-    catch { return this._error('Network error — could not stop game.'); }
-    if (!res.ok) return this._error(this._msg(res.error));
+    catch { return this._error('Network error — could not stop game.', false, true); }
+    if (!res.ok) return this._error(this._msg(res.error), false, true);
 
     this.status = 'lobby';
     this._built = false;
@@ -285,6 +290,8 @@ export class OnlineManager {
     if (startBtn) startBtn.style.display = this.isHost ? '' : 'none';
     const waiting = document.getElementById('online-waiting-msg');
     if (waiting) waiting.style.display = this.isHost ? 'none' : '';
+    const settingsBtn = document.getElementById('online-lobby-settings-btn');
+    if (settingsBtn) settingsBtn.style.display = this.isHost ? '' : 'none';
     this._error('', true);
     this._renderRoster(this.roster);
     const m = document.getElementById('online-modal');
