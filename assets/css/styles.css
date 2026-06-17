@@ -9,6 +9,6 @@
 @import url('./components.css');
 
 /* Game-specific modules */
-@import url('./game-board.css');
+@import url('./game-board.css?v=4.15');
 @import url('./game-rack.css');
 @import url('./game-ui.css');
