@@ -204,7 +204,7 @@ function generateBorderBonusTiles(gameState) {
             rotation,
             centerPattern: 'circles',
             isStarterTile: true,
-            isBorderBonus: true,
+            isBonusTile: true,
             claimed: false,
         },
     });

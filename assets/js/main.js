@@ -1,20 +1,20 @@
 // assets/js/main.js
-const VERSION = '4.12';
+const VERSION = '4.21';
 
 import { GameRegistry } from './core/game-registry.js';
-import { GameState } from './core/game-state.js?v=4.11';
+import { GameState } from './core/game-state.js?v=4.21';
 import { Player } from './core/player-state.js?v=4.11';
-import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.03';
+import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.21';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js?v=4.09';
 import { StandardScoring } from './scoring/standard-scoring.js';
-import { StreetScoring } from './scoring/street-scoring.js?v=4.07';
-import { BoardManager } from './ui/board-manager.js?v=4.09';
-import { RackManager } from './ui/rack-manager.js?v=4.08';
-import { SetupManager } from './ui/setup-manager.js?v=4.11';
+import { StreetScoring } from './scoring/street-scoring.js?v=4.21';
+import { BoardManager } from './ui/board-manager.js?v=4.21';
+import { RackManager } from './ui/rack-manager.js?v=4.14';
+import { SetupManager } from './ui/setup-manager.js?v=4.20';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
-import { OnlineManager } from './net/online-manager.js?v=4.06';
+import { OnlineManager } from './net/online-manager.js?v=4.14';
 import { AIController } from './core/ai-player.js?v=4.12';
 
 class Game {
@@ -354,7 +354,7 @@ class Game {
     this.gameState.on('tilePlaced', ({ position, tile, score, bonus, claimed }) => {
       this.boardManager.renderTile(position, tile);
       if (score !== 0) this.boardManager.showScorePopup(position, score, bonus);
-      // Re-render any border-bonus tiles that were just claimed
+      // Re-render any bonus tiles that were just claimed
       for (const c of (claimed ?? [])) {
         this.boardManager.renderTile({ x: c.x, y: c.y }, c.tile);
       }
@@ -872,7 +872,12 @@ class Game {
       })
       .join('');
     scoresDiv.innerHTML = scoreHtml;
-    modal.style.display = 'flex'; // Ensure flex display
+    modal.style.display = 'flex';
+
+    // In online play show "Play Again" (host only); hide local "New Game"
+    const onlineActive = !!this.online?.active;
+    document.getElementById('new-game-modal').style.display   = onlineActive ? 'none' : '';
+    document.getElementById('online-play-again-btn').style.display = (onlineActive && this.online?.isHost) ? '' : 'none';
 
     // Initialize Draggable Logic
     this.makeElementDraggable(document.querySelector('#game-end-modal .modal-content'), document.querySelector('#game-end-modal h2'));

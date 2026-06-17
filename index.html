@@ -11,7 +11,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Multiplayer Tile Board Game</title>
-    <link rel="stylesheet" href="assets/css/styles.css?v=3.5">
+    <link rel="stylesheet" href="assets/css/styles.css?v=4.15">
+    <link rel="stylesheet" href="assets/css/game-board.css?v=4.21">
     <style>
         #game-container {
             position: relative;
@@ -220,6 +221,10 @@
                             <div class="setup-option">
                                 <label for="claim-bonus">Border Tile Claim Bonus (per tile):</label>
                                 <input type="number" id="claim-bonus" min="0" max="50" value="5" step="1">
+                            </div>
+                            <div class="setup-option">
+                                <label for="connect-bonus">Border Tile Centre Connection Bonus:</label>
+                                <input type="number" id="connect-bonus" min="0" max="50" value="10" step="1">
                             </div>
                             <div class="setup-option">
                                 <label for="border-path-bonus">Town Square Connection Bonus:</label>
@@ -529,6 +534,7 @@
                 <div id="final-scores"></div>
                 <div class="modal-buttons">
                     <button id="new-game-modal" class="button">New Game</button>
+                    <button id="online-play-again-btn" class="button" style="display:none;">Play Again</button>
                     <button id="view-board-modal" class="button">View Board</button>
                     <button id="return-setup" class="button">Return to Setup</button>
                 </div>
@@ -707,7 +713,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=4.12"></script>
+    <script type="module" src="assets/js/main.js?v=4.21"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

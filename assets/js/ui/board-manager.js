@@ -57,6 +57,12 @@ export class BoardManager {
     const canvas = cell.querySelector('canvas');
     if (!canvas) return;
     this.gameState.tileSet.renderTile(tile, canvas, tile.rotation || 0, pathColor, pathEdges);
+    if (tile.isBonusTile) {
+      cell.classList.toggle('bonus-tile-unclaimed', !tile.claimed);
+      cell.classList.toggle('bonus-tile-claimed',   !!tile.claimed);
+    } else {
+      cell.classList.remove('bonus-tile-unclaimed', 'bonus-tile-claimed');
+    }
   }
 
   // Returns the edge index on `tile` that faces `neighbor` (N=0, E=1, S=2, W=3)

@@ -13,6 +13,7 @@ class StreetsTileSet extends TileSet {
         centerPatternFrequency: 0.2,
         patternWeights: { circles: 0.7, squares: 0.3 },
         // tileWeights: null means use _defaultWeights()
+        tilesPerPlayer: 0, // 0 = unlimited; >0 caps total tiles dealt per player
       },
     });
 
@@ -106,6 +107,12 @@ class StreetsTileSet extends TileSet {
 
     // Per-player options with fallback to global options
     const pp = this.options.perPlayerOptions?.[pi] || {};
+
+    // Hard cap: once this player has received their allotment, return null so
+    // the rack slot stays empty rather than being refilled. The per-player limit
+    // is the sum of the max-count settings for this player (set by setup-manager).
+    const limit = pp.tilesPerPlayer || this.options.tilesPerPlayer || 0;
+    if (limit > 0 && (counts._total || 0) >= limit) return null;
     const weights   = pp.tileWeights   || this.options.tileWeights   || this._defaultWeights();
     const maxCounts = pp.tileMaxCounts  || this.options.tileMaxCounts  || {};
     const freq      = pp.centerPatternFrequency ?? this.options.centerPatternFrequency ?? 0.2;
@@ -201,6 +208,8 @@ class StreetsTileSet extends TileSet {
       tile.ownedByIndex = playerIndex;
     }
 
+    counts._total = (counts._total || 0) + 1;
+
     return tile;
   }
 
@@ -233,7 +242,7 @@ class StreetsTileSet extends TileSet {
     if (tile.type === 'private')    this._drawPrivateIndicator(ctx, size, tile, rotatedSides);
     if (tile.type === 'roadblock')  this._drawRoadblockOverlay(ctx, size);
 
-    if (tile.isStarterTile) {
+    if (tile.isStarterTile && !tile.isBonusTile) {
       ctx.fillStyle = 'rgba(68, 68, 68, 0.5)';
       ctx.beginPath();
       ctx.arc(size / 2, size / 2, size * 0.45, 0, Math.PI * 2);
