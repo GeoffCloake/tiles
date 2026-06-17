@@ -87,15 +87,16 @@ export class PlayerManager {
 
             console.log(`PlayerManager: Player ${config.name} (Index ${index}) assigned color ${playerColor}.`);
 
-            // Initialize player's tiles
-            player.setTiles(
-                Array(this.gameState.rackSize)
-                    .fill(null)
-                    .map(() => this.gameState.tileSet.generateTile(index, playerConfigs.length))
-            );
-
+            // Deal special tiles first so their types are registered in tile
+            // counts before the rack is generated — prevents duplicates.
             if (this.gameState.specialStartConfig?.count > 0) {
-                this._dealSpecialTiles(player, this.gameState.specialStartConfig);
+                this._dealSpecialTiles(player, index, this.gameState.specialStartConfig);
+            }
+
+            // Fill the rack with generated tiles (special tile types already counted)
+            for (let j = 0; j < this.gameState.rackSize; j++) {
+                const tile = this.gameState.tileSet.generateTile(index, playerConfigs.length);
+                if (tile) player.addTile(tile);
             }
 
             return player;
@@ -158,15 +159,16 @@ export class PlayerManager {
         return { id: generateId(), key: spec.key, type: 'normal', sides: spec.sides, centerPattern: spec.centerPattern, isSpecialStart: true };
     }
 
-    _dealSpecialTiles(player, config) {
+    _dealSpecialTiles(player, playerIndex, config) {
         const { count, type } = config;
         const specials = [];
         for (let i = 0; i < count; i++) {
             const tile = this._makeSpecialTile(type);
             tile.backgroundColor = player.color;
             specials.push(tile);
+            this.gameState.tileSet.notifyTileDealt?.(playerIndex, tile);
         }
-        player.tiles.unshift(...specials); // prepend so they appear first
+        player.tiles.unshift(...specials); // prepend so they appear first in the rack
     }
 
     getPlayerById(playerId) {

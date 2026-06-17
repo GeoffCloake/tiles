@@ -268,17 +268,23 @@ export class SetupManager {
         if (tileSet === 'streets') {
             const playerCount = playerCountOverride ?? parseInt(this.playerCountSelect?.value || '1');
             const perPlayerOptions = {};
+            // Scale tile counts for player count: counts configured for 4 players
+            // are multiplied so 2-player games use 2× as many tiles (2 sets worth).
+            const setScale = Math.max(1, Math.floor(4 / playerCount));
             for (let i = 0; i < playerCount; i++) {
                 const freq = parseInt(document.getElementById(`center-pattern-freq-p${i}`)?.value || '20') / 100;
                 const circlesPct = parseInt(document.getElementById(`circles-ratio-p${i}`)?.value || '70') / 100;
                 const penaltyFreq = parseInt(document.getElementById(`penalty-freq-p${i}`)?.value || '0') / 100;
+                const rawCounts = this._getTileMaxCounts(i);
+                const tileMaxCounts = setScale === 1 ? rawCounts :
+                    Object.fromEntries(Object.entries(rawCounts).map(([k, v]) => [k, v > 0 ? v * setScale : v]));
                 perPlayerOptions[i] = {
                     centerPatternFrequency: freq,
                     patternWeights: { circles: circlesPct, squares: 1 - circlesPct },
                     penaltyFrequency: penaltyFreq,
                     tileWeights: this._getTileWeights(i),
-                    tileMaxCounts: this._getTileMaxCounts(i),
-                    tilesPerPlayer: Object.values(this._getTileMaxCounts(i)).reduce((s, v) => s + v, 0),
+                    tileMaxCounts,
+                    tilesPerPlayer: Object.values(tileMaxCounts).reduce((s, v) => s + v, 0),
                 };
             }
             return { perPlayerOptions };
