@@ -175,9 +175,14 @@ export class AIController {
       // Special bonus: for the centre-square starter tile, reward placement
       //   cells whose exits have clear line-of-sight to border tiles.
       // Hard also values road-network extensibility and edge-matching.
+      // Path continuity: strongly reward moves that extend the player's
+      // existing road network; penalise isolated placements that can never
+      // contribute to the connected path score.
       let val = m.score
-        + m.borderApproach * 2.5
-        + m.specialBonus   * 2.0
+        + m.borderApproach               * 2.0
+        + m.specialBonus                 * 2.0
+        + (m.connectsToPlayer ? 5.0 : 0)
+        - (m.isolated         ? 8.0 : 0)
         + (hard ? m.openExits * 0.1 + m.matches * 0.05 : 0)
         - m.centerDist * 0.001;
       // Normal keeps a little noise so it isn't perfectly predictable; the
@@ -489,7 +494,7 @@ export class AIController {
 
   _logistic(x) { return 1 / (1 + Math.exp(-x / VALUE_SCALE)); }
 
-  // ---- Border-awareness helpers --------------------------------------------
+  // ----- Border-awareness helpers --------------------------------------------
 
   // All unclaimed border bonus tiles with their inward-facing edge index.
   _unclaimedBonusTiles(gs) {
@@ -569,6 +574,36 @@ export class AIController {
     return bonus;
   }
 
+  // ----- Path-continuity helper ----------------------------------------------
+
+  // Map of empty cells adjacent to the player's already-placed tiles that have
+  // a street edge facing outward.  The value is the edge index that a new tile
+  // must have as 'street' to connect.  Isolated placements (not in this set)
+  // cannot earn path-scoring points until the gap is later filled.
+  _getPlayerFrontier(gs, player) {
+    const N = gs.boardSize;
+    const dirs = [
+      { dx: 0, dy: -1, e: 0 }, { dx: 1, dy: 0, e: 1 },
+      { dx: 0, dy: 1,  e: 2 }, { dx: -1, dy: 0, e: 3 },
+    ];
+    const frontier = new Map(); // "x,y" -> inbound edge that must be 'street'
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const t = gs.boardState[y]?.[x];
+        if (!t || t.isBonusTile || t.backgroundColor !== player.color) continue;
+        const tsides = this._rotatedSides(t.sides, t.rotation || 0);
+        for (const { dx, dy, e } of dirs) {
+          if (tsides[e] !== 'street') continue;
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || nx >= N || ny < 0 || ny >= N) continue;
+          if (gs.boardState[ny]?.[nx]) continue;
+          frontier.set(`${nx},${ny}`, (e + 2) % 4);
+        }
+      }
+    }
+    return frontier;
+  }
+
   // ---- Greedy enumeration (easy / normal / hard fallback) ------------------
 
   // Enumerate every legal (tile, rotation, cell) and score it. Evaluation is
@@ -579,7 +614,9 @@ export class AIController {
     const scoring = gs.scoringSystem;
     const ruleset = gs.ruleset;
     const center = Math.floor(gs.boardSize / 2);
-    const bonusTiles = this._unclaimedBonusTiles(gs);
+    const bonusTiles    = this._unclaimedBonusTiles(gs);
+    const frontier      = this._getPlayerFrontier(gs, player);
+    const hasFrontier   = frontier.size > 0;
 
     const snap = (scoring && scoring.bestPaths instanceof Map)
       ? new Map(scoring.bestPaths) : null;
@@ -603,6 +640,10 @@ export class AIController {
             if (snap) scoring.bestPaths = new Map(snap);
             const r = scoring.calculateScore(gs, pos, probe);
             const score = (typeof r === 'object') ? r.total : r;
+            const fKey = `${pos.x},${pos.y}`;
+            const connectsToPlayer = hasFrontier
+              && frontier.has(fKey)
+              && sides[frontier.get(fKey)] === 'street';
             moves.push({
               tile,
               rotation: rot,
@@ -614,6 +655,8 @@ export class AIController {
               borderApproach: this._borderApproachBonus(pos, sides, bonusTiles),
               specialBonus: tile.isSpecialStart
                 ? this._centreSquarePlacementBonus(gs, pos, sides, bonusTiles) : 0,
+              connectsToPlayer,
+              isolated: hasFrontier && !connectsToPlayer,
             });
           }
         }
@@ -621,6 +664,12 @@ export class AIController {
     } finally {
       if (snap) scoring.bestPaths = new Map(snap); // leave scoring pristine
       if (ps) ps.searchBudget = origBudget;        // restore full-accuracy budget
+    }
+
+    // If every legal move is isolated (frontier exists but unreachable under
+    // current tiles), lift the penalty so we don't unfairly suppress all moves.
+    if (hasFrontier && !moves.some(m => m.connectsToPlayer)) {
+      for (const m of moves) m.isolated = false;
     }
     return moves;
   }
