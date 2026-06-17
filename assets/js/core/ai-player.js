@@ -169,10 +169,15 @@ export class AIController {
     let best = null;
     let bestVal = -Infinity;
     for (const m of moves) {
-      // Primary term is the immediate score. Hard also values keeping the road
-      // network extensible and well-connected. A tiny centre bias yields tidy
-      // openings; it's far smaller than any real score so it only breaks ties.
+      // Primary term: immediate placement score.
+      // Border approach: proxy for claim/connect bonuses not captured by
+      //   calculateScore — reward moves aligned with unclaimed border tiles.
+      // Special bonus: for the centre-square starter tile, reward placement
+      //   cells whose exits have clear line-of-sight to border tiles.
+      // Hard also values road-network extensibility and edge-matching.
       let val = m.score
+        + m.borderApproach * 2.5
+        + m.specialBonus   * 2.0
         + (hard ? m.openExits * 0.1 + m.matches * 0.05 : 0)
         - m.centerDist * 0.001;
       // Normal keeps a little noise so it isn't perfectly predictable; the
@@ -359,22 +364,27 @@ export class AIController {
     return this._logistic(this._diff(sim, aiId) - rootDiff);
   }
 
-  // Sample a handful of legal moves and keep the one connecting the most edges.
-  // Uses countMatches only (no path search) so playouts stay fast.
+  // Sample a handful of legal moves and keep the one connecting the most edges,
+  // also weighted toward moves that approach unclaimed border bonus tiles.
+  // Uses countMatches + _borderApproachBonus only (no path search) so fast.
   _rolloutPick(sim, moves) {
     const scoring = sim.scoring;
     const player = sim.players[sim.currentPlayerIndex];
+    const bonusTiles = this._unclaimedBonusTiles(sim);
     const k = Math.min(ROLLOUT_SAMPLE, moves.length);
     let best = null;
     let bestVal = -Infinity;
     for (let i = 0; i < k; i++) {
       const m = moves[(Math.random() * moves.length) | 0];
+      const tile = player.tiles.find(t => t.id === m.tileId);
       let matches = 0;
-      if (typeof scoring.countMatches === 'function') {
-        const tile = player.tiles.find(t => t.id === m.tileId);
-        if (tile) matches = scoring.countMatches(sim, m.position, { ...tile, rotation: m.rotation });
+      if (tile && typeof scoring.countMatches === 'function') {
+        matches = scoring.countMatches(sim, m.position, { ...tile, rotation: m.rotation });
       }
-      const val = matches + Math.random() * 0.5; // noise breaks ties / adds variety
+      const sides = tile ? this._rotatedSides(tile.sides, m.rotation) : [];
+      const borderBonus = bonusTiles.length
+        ? this._borderApproachBonus(m.position, sides, bonusTiles) : 0;
+      const val = matches + borderBonus * 0.4 + Math.random() * 0.5;
       if (val > bestVal) { bestVal = val; best = m; }
     }
     return best || moves[(Math.random() * moves.length) | 0];
@@ -479,6 +489,86 @@ export class AIController {
 
   _logistic(x) { return 1 / (1 + Math.exp(-x / VALUE_SCALE)); }
 
+  // ---- Border-awareness helpers --------------------------------------------
+
+  // All unclaimed border bonus tiles with their inward-facing edge index.
+  _unclaimedBonusTiles(gs) {
+    const N = gs.boardSize;
+    const out = [];
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const t = gs.boardState[y]?.[x];
+        if (t?.isBonusTile && !t.claimed) {
+          const sides = this._rotatedSides(t.sides, t.rotation || 0);
+          const inward = sides.indexOf('street');
+          if (inward >= 0) out.push({ x, y, inward });
+        }
+      }
+    }
+    return out;
+  }
+
+  // Reward for moves aligned with unclaimed border tiles along a shared axis.
+  // The claim bonus and connect bonus never appear in calculateScore (they are
+  // awarded separately in placeTile), so the AI needs this explicit signal.
+  // Direct edge-matching neighbour: +6; further away: tapers to 0 at 5 cells.
+  _borderApproachBonus(pos, sides, bonusTiles) {
+    const dirs = [
+      { dx: 0, dy: -1, e: 0 }, { dx: 1, dy: 0, e: 1 },
+      { dx: 0, dy: 1,  e: 2 }, { dx: -1, dy: 0, e: 3 },
+    ];
+    let bonus = 0;
+    for (const bt of bonusTiles) {
+      const dx = bt.x - pos.x, dy = bt.y - pos.y;
+      if (dx !== 0 && dy !== 0) continue;               // not on the same axis
+      const dist = Math.abs(dx || dy);
+      if (dist === 0 || dist > 5) continue;
+      const dir = dx !== 0
+        ? (dx > 0 ? dirs[1] : dirs[3])
+        : (dy > 0 ? dirs[2] : dirs[0]);
+      if (sides[dir.e] !== 'street') continue;           // our edge doesn't face it
+      if (((dir.e + 2) % 4) !== bt.inward) continue;    // bonus tile faces away
+      bonus += dist === 1 ? 6 : Math.max(0, 5 - dist);
+    }
+    return bonus;
+  }
+
+  // Extra bonus when placing the centre-square starter tile.  Reward cells
+  // whose street exits have a clear line-of-sight to unclaimed border tiles,
+  // since that determines how productive early path-building will be.
+  _centreSquarePlacementBonus(gs, pos, sides, bonusTiles) {
+    const N = gs.boardSize;
+    const dirs = [
+      { dx: 0, dy: -1, e: 0 }, { dx: 1, dy: 0, e: 1 },
+      { dx: 0, dy: 1,  e: 2 }, { dx: -1, dy: 0, e: 3 },
+    ];
+    let bonus = 0;
+    for (const { dx, dy, e } of dirs) {
+      if (sides[e] !== 'street') continue;
+      let cx = pos.x + dx, cy = pos.y + dy;
+      while (cx >= 0 && cx < N && cy >= 0 && cy < N) {
+        const t = gs.boardState[cy]?.[cx];
+        if (t) {
+          if (t.isBonusTile && !t.claimed) bonus += 3; // clear shot at a bonus tile
+          break;                                        // any tile blocks the view
+        }
+        cx += dx; cy += dy;
+      }
+    }
+    // Slight penalty for each unclaimed border tile with no aligned exit —
+    // signals exits are pointed at already-claimed or blocked directions.
+    const unaligned = bonusTiles.filter(bt => {
+      const dx = bt.x - pos.x, dy = bt.y - pos.y;
+      if (dx !== 0 && dy !== 0) return false;
+      const dist = Math.abs(dx || dy);
+      if (dist === 0) return false;
+      const dir = dx !== 0 ? (dx > 0 ? dirs[1] : dirs[3]) : (dy > 0 ? dirs[2] : dirs[0]);
+      return sides[dir.e] !== 'street';
+    }).length;
+    bonus -= unaligned * 0.5;
+    return bonus;
+  }
+
   // ---- Greedy enumeration (easy / normal / hard fallback) ------------------
 
   // Enumerate every legal (tile, rotation, cell) and score it. Evaluation is
@@ -489,6 +579,7 @@ export class AIController {
     const scoring = gs.scoringSystem;
     const ruleset = gs.ruleset;
     const center = Math.floor(gs.boardSize / 2);
+    const bonusTiles = this._unclaimedBonusTiles(gs);
 
     const snap = (scoring && scoring.bestPaths instanceof Map)
       ? new Map(scoring.bestPaths) : null;
@@ -520,6 +611,9 @@ export class AIController {
               matches: scoring.countMatches ? scoring.countMatches(gs, pos, probe) : 0,
               openExits: this._openExits(gs, pos, sides),
               centerDist: Math.abs(pos.x - center) + Math.abs(pos.y - center),
+              borderApproach: this._borderApproachBonus(pos, sides, bonusTiles),
+              specialBonus: tile.isSpecialStart
+                ? this._centreSquarePlacementBonus(gs, pos, sides, bonusTiles) : 0,
             });
           }
         }
