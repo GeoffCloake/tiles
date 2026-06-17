@@ -305,6 +305,12 @@ export class OnlineManager {
     }
     this.closeModal();
 
+    // When a fresh game arrives after the previous one ended, clear any
+    // lingering game-end screen so the non-host player sees the new board.
+    if (snapshot.status === 'playing' && !this._endShown) {
+      document.getElementById('game-end-modal')?.style.setProperty('display', 'none');
+    }
+
     if ((snapshot.status === 'finished' || snapshot.ended) && !this._endShown) {
       this._endShown = true;
       this.game.showGameEndModal(snapshot.finalScores || []);
