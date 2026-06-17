@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.36';
+const VERSION = '4.37';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.25';
@@ -373,13 +373,13 @@ class Game {
 
   // Sync online-related button states after every build/snapshot.
   // The Online button (green) is only visible during an active session so
-  // players can reach Leave Game from anywhere in the game view.
-  // Config/Weights/Scoring are locked for non-hosts to prevent local scoring
-  // changes that would give an unfair advantage on their turn.
+  // players can reach session management from anywhere in the game view.
+  // All sidebar action buttons are locked for everyone during an online session;
+  // the host manages settings via the Online modal → Change Settings pathway.
   _updateOnlineButtonStates() {
     const isOnline = !!this.online?.active;
-    const locked   = isOnline && !this.online?.isHost;
-    const settingsHint = 'Settings are controlled by the host during online play';
+    const locked   = isOnline;
+    const settingsHint = 'Use the Online button to manage settings during an active session';
     const sessionHint  = 'Cannot start a new game while an online session is active';
 
     const onlineBtn = document.getElementById('game-online-btn');
