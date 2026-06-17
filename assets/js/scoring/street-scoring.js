@@ -170,33 +170,41 @@ export class StreetScoring extends AdjacencyScoring {
         return position.x === center && position.y === center;
     }
 
-    // Called after a tile is placed on the board. Finds every unclaimed border-bonus
-    // tile that is now street-reachable from the player's centre squares and claims it
-    // (colours it, removes neutral status). Returns the list of claimed tiles so the
-    // caller can re-render them.
-    claimBorderBonusTiles(gameState, player) {
-        const unclaimed = [];
-        for (let y = 0; y < gameState.boardSize; y++) {
-            for (let x = 0; x < gameState.boardSize; x++) {
-                const t = gameState.boardState[y][x];
-                if (t?.isBorderBonus && !t.claimed) unclaimed.push({ x, y, tile: t });
-            }
-        }
-        if (!unclaimed.length) return [];
+    // Called after a tile is placed on the board. Claims any unclaimed border-bonus
+    // tile that is directly adjacent to the placed tile via matching street edges
+    // ("adjacent road play"). Returns claimed tiles for re-rendering.
+    claimBorderBonusTiles(gameState, player, position) {
+        if (!position) return [];
+        const { x, y } = position;
+        const placedTile = gameState.boardState[y][x];
+        if (!placedTile) return [];
 
-        const centerSquares = this.pathScoring.findSpecialTilesForPlayer(
-            gameState, 'squares', player.color
-        );
-        if (!centerSquares.length) return [];
+        // Rotate the placed tile's sides
+        let placedSides = [...placedTile.sides];
+        for (let i = 0; i < (placedTile.rotation || 0); i++) placedSides.unshift(placedSides.pop());
 
-        const reachable = this._streetReachableFrom(gameState, centerSquares, player.id);
+        const dirs = [
+            { dx:  0, dy: -1, myEdge: 0, theirEdge: 2 },
+            { dx:  1, dy:  0, myEdge: 1, theirEdge: 3 },
+            { dx:  0, dy:  1, myEdge: 2, theirEdge: 0 },
+            { dx: -1, dy:  0, myEdge: 3, theirEdge: 1 },
+        ];
+
         const claimed = [];
-        for (const { x, y, tile } of unclaimed) {
-            if (reachable.has(`${x},${y}`)) {
-                tile.backgroundColor = player.color;
-                tile.claimed = true;
-                tile.isStarterTile = false; // now exclusively this player's circle
-                claimed.push({ x, y, tile });
+        for (const { dx, dy, myEdge, theirEdge } of dirs) {
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || nx >= gameState.boardSize || ny < 0 || ny >= gameState.boardSize) continue;
+            const t = gameState.boardState[ny]?.[nx];
+            if (!t?.isBorderBonus || t.claimed) continue;
+
+            let bonusSides = [...t.sides];
+            for (let i = 0; i < (t.rotation || 0); i++) bonusSides.unshift(bonusSides.pop());
+
+            if (placedSides[myEdge] === 'street' && bonusSides[theirEdge] === 'street') {
+                t.backgroundColor = player.color;
+                t.claimed = true;
+                t.isStarterTile = false;
+                claimed.push({ x: nx, y: ny, tile: t });
             }
         }
         return claimed;

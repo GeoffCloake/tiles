@@ -186,7 +186,7 @@ export class GameState {
         this.playerManager.updatePlayerScore(currentPlayer.id, score, bonus, breakdown);
 
         // Claim any border-bonus tiles now connected to this player's street path
-        const claimed = this.scoringSystem.claimBorderBonusTiles?.(this, currentPlayer) ?? [];
+        const claimed = this.scoringSystem.claimBorderBonusTiles?.(this, currentPlayer, position) ?? [];
 
         // Award one-off bonus points for each newly claimed border tile
         let claimScore = 0;
