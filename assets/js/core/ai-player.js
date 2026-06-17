@@ -178,11 +178,16 @@ export class AIController {
       // Path continuity: strongly reward moves that extend the player's
       // existing road network; penalise isolated placements that can never
       // contribute to the connected path score.
+      // Blocking: reward moves that occupy cells on the opponent's approach
+      // toward an unclaimed border tile (level 4 = adjacent = highest threat).
+      // Don't apply the isolation penalty to blocking moves — cutting off the
+      // opponent is worthwhile even if the move is outside the player's road.
       let val = m.score
         + m.borderApproach               * 2.0
         + m.specialBonus                 * 2.0
         + (m.connectsToPlayer ? 5.0 : 0)
-        - (m.isolated         ? 8.0 : 0)
+        - (m.isolated && !m.blocksOpponent ? 8.0 : 0)
+        + m.blocksOpponent               * 2.25
         + (hard ? m.openExits * 0.1 + m.matches * 0.05 : 0)
         - m.centerDist * 0.001;
       // Normal keeps a little noise so it isn't perfectly predictable; the
@@ -276,6 +281,12 @@ export class AIController {
         .map(x => x.m);
     }
 
+    // Include blocking bonus so MCTS explores moves that stop an opponent from
+    // claiming a border tile, even when their immediate score is low.
+    const bonusTilesForThreats = this._unclaimedBonusTiles(sim);
+    const oppThreatsRoot = bonusTilesForThreats.length
+      ? this._opponentBorderThreats(sim, player, bonusTilesForThreats) : new Map();
+
     const saved = scoring.bestPaths;
     const scored = pool.map(m => {
       const tile = player.tiles.find(t => t.id === m.tileId);
@@ -286,6 +297,7 @@ export class AIController {
           const r = scoring.calculateScore(sim, m.position, { ...tile, rotation: m.rotation });
           s = (typeof r === 'object') ? (r.total || 0) : (r || 0);
         } catch (_) { s = 0; }
+        s += (oppThreatsRoot.get(`${m.position.x},${m.position.y}`) || 0) * 2.25;
       }
       return { m, s };
     });
@@ -604,6 +616,43 @@ export class AIController {
     return frontier;
   }
 
+  // Cells in any opponent's road frontier that lie on the approach axis toward
+  // an unclaimed border bonus tile.  Returns Map<"x,y", level> where level 4
+  // means the opponent is ONE step from claiming; level 1 means four steps.
+  // Works with both live GameState (gs.playerManager.players) and SimGame
+  // (gs.players), so it can be called from _rootCandidates too.
+  _opponentBorderThreats(gs, player, bonusTiles) {
+    const threats = new Map();
+    if (!bonusTiles.length) return threats;
+    const dirs = [
+      { dx: 0, dy: -1, e: 0 }, { dx: 1, dy: 0, e: 1 },
+      { dx: 0, dy: 1,  e: 2 }, { dx: -1, dy: 0, e: 3 },
+    ];
+    const allPlayers = gs.playerManager?.players ?? gs.players;
+    const opponents = allPlayers.filter(p => p.id !== player.id);
+    for (const opp of opponents) {
+      const frontier = this._getPlayerFrontier(gs, opp);
+      for (const [fKey] of frontier) {
+        const [fx, fy] = fKey.split(',').map(Number);
+        let maxLevel = 0;
+        for (const bt of bonusTiles) {
+          const dx = bt.x - fx, dy = bt.y - fy;
+          if (dx !== 0 && dy !== 0) continue;          // must share an axis
+          const dist = Math.abs(dx || dy);
+          if (dist === 0 || dist > 4) continue;
+          // Confirm the approach direction aligns with the bonus tile's inward street.
+          const dir = dx !== 0
+            ? (dx > 0 ? dirs[1] : dirs[3])
+            : (dy > 0 ? dirs[2] : dirs[0]);
+          if ((dir.e + 2) % 4 !== bt.inward) continue; // tile faces wrong way
+          maxLevel = Math.max(maxLevel, 5 - dist);
+        }
+        if (maxLevel > 0) threats.set(fKey, maxLevel);
+      }
+    }
+    return threats;
+  }
+
   // ---- Greedy enumeration (easy / normal / hard fallback) ------------------
 
   // Enumerate every legal (tile, rotation, cell) and score it. Evaluation is
@@ -617,6 +666,7 @@ export class AIController {
     const bonusTiles    = this._unclaimedBonusTiles(gs);
     const frontier      = this._getPlayerFrontier(gs, player);
     const hasFrontier   = frontier.size > 0;
+    const oppThreats    = this._opponentBorderThreats(gs, player, bonusTiles);
 
     const snap = (scoring && scoring.bestPaths instanceof Map)
       ? new Map(scoring.bestPaths) : null;
@@ -657,6 +707,7 @@ export class AIController {
                 ? this._centreSquarePlacementBonus(gs, pos, sides, bonusTiles) : 0,
               connectsToPlayer,
               isolated: hasFrontier && !connectsToPlayer,
+              blocksOpponent: oppThreats.get(fKey) || 0,
             });
           }
         }
