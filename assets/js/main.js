@@ -362,10 +362,7 @@ class Game {
       this._updateZoneOverlay();
     });
 
-    this.gameState.on('turnChange', () => {
-      this._revealClaimedBonusTiles();
-      this.updateUIForCurrentPlayer();
-    });
+    this.gameState.on('turnChange', () => this.updateUIForCurrentPlayer());
     this.gameState.on('gameEnd', (finalScores) => {
       // Highlight every player's bonus path in their colour
       finalScores.forEach(s => {
@@ -407,20 +404,6 @@ class Game {
     if (this.gameState?.inputLocked) return; // online: not your turn
     if (this.gameState?.getCurrentPlayer()?.aiLevel) return; // AI plays its own turn
     this.gameState?.playerManager?.skipTurn?.();
-  }
-
-  _revealClaimedBonusTiles() {
-    const bs = this.gameState?.boardState;
-    if (!bs) return;
-    for (let y = 0; y < this.gameState.boardSize; y++) {
-      for (let x = 0; x < this.gameState.boardSize; x++) {
-        const t = bs[y]?.[x];
-        if (t?.newlyClaimed) {
-          delete t.newlyClaimed;
-          this.boardManager.renderTile({ x, y }, t);
-        }
-      }
-    }
   }
 
   updateUIForCurrentPlayer() {
