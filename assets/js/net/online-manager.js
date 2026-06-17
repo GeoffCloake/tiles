@@ -64,6 +64,7 @@ export class OnlineManager {
     click('online-play-again-btn', () => this.restartMatch());
     click('online-leave-btn', () => this.leave());
     click('online-abandon-btn', () => this.leave());
+    click('online-stop-btn', () => this.stopGame());
     click('game-online-btn', () => this.openModal());
     const modal = document.getElementById('online-modal');
     modal?.addEventListener('click', (e) => { if (e.target === modal) this.closeModal(); });
@@ -89,8 +90,13 @@ export class OnlineManager {
     const codeEl = document.getElementById('online-room-code-playing');
     if (codeEl) codeEl.textContent = this.code;
     this._renderRosterPlaying(this.roster);
-    const warn = document.getElementById('online-host-leave-warning');
-    if (warn) warn.style.display = this.isHost ? '' : 'none';
+
+    // Host sees Stop Game + Leave Room; non-host sees only Leave Session.
+    const stopBtn = document.getElementById('online-stop-btn');
+    if (stopBtn) stopBtn.style.display = this.isHost ? '' : 'none';
+    const abandonBtn = document.getElementById('online-abandon-btn');
+    if (abandonBtn) abandonBtn.textContent = this.isHost ? 'Leave Room' : 'Leave Session';
+
     const m = document.getElementById('online-modal');
     if (m) m.style.display = 'flex';
   }
@@ -251,6 +257,24 @@ export class OnlineManager {
     this.lastSeq = res.seq;
   }
 
+  // Host: return the room to lobby state without destroying it.
+  // All connected non-hosts will detect the status change on their next poll
+  // and be shown the lobby waiting screen automatically.
+  async stopGame() {
+    if (!this.isHost) return;
+    let res;
+    try { res = await this.client.reset(this.code, this.token); }
+    catch { return this._error('Network error — could not stop game.'); }
+    if (!res.ok) return this._error(this._msg(res.error));
+
+    this.status = 'lobby';
+    this._built = false;
+    this._endShown = false;
+    this.lastSeq = res.seq;
+    document.getElementById('game-end-modal')?.style.setProperty('display', 'none');
+    this._enterLobby();
+  }
+
   // ---- Lobby ---------------------------------------------------------------
 
   _enterLobby() {
@@ -312,6 +336,25 @@ export class OnlineManager {
       }
       return;
     }
+
+    // Host reset the room back to lobby while a game was in progress.
+    // Non-hosts detect this and return to the lobby waiting screen.
+    const isLobbyReset = res.status === 'lobby' &&
+      (this.status === 'playing' || this.status === 'finished') &&
+      res.seq > this.lastSeq;
+    if (isLobbyReset) {
+      this._endShown = false;
+      this._built = false;
+      this.status = 'lobby';
+      this.lastSeq = res.seq;
+      if (res.roster) { this.roster = res.roster; this._renderRoster(res.roster); }
+      if (!this.isHost) {
+        document.getElementById('game-end-modal')?.style.setProperty('display', 'none');
+        this._enterLobby();
+      }
+      return;
+    }
+
     // Advance status monotonically: a late/stale poll must never drag us back
     // (e.g. from an optimistic 'playing' to the server's not-yet-updated 'lobby').
     // Exception: a new game started by the host resets finished→playing, detected

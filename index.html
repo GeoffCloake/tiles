@@ -541,6 +541,7 @@
                 <div class="modal-buttons">
                     <button id="new-game-modal" class="button">New Game</button>
                     <button id="online-play-again-btn" class="button" style="display:none;">Play Again</button>
+                    <button id="online-back-to-lobby-btn" class="button" style="display:none;">Back to Lobby</button>
                     <button id="online-game-settings-btn" class="button" style="display:none;">Settings</button>
                     <button id="view-board-modal" class="button">View Board</button>
                     <button id="return-setup" class="button">Return to Setup</button>
@@ -722,12 +723,9 @@
               <div id="online-room-code-playing" class="online-room-code">—</div>
               <h3 style="margin:0.75rem 0 0.5rem;">Players</h3>
               <ul id="online-roster-playing" class="online-roster"></ul>
-              <p id="online-host-leave-warning" class="label-hint"
-                 style="display:none; color:var(--accent-red,#df0000); margin:0.5rem 0 0;">
-                As host, leaving will cancel the session for everyone.
-              </p>
               <div class="modal-buttons" style="margin-top:0.75rem;">
-                <button id="online-abandon-btn" class="button">Leave Game</button>
+                <button id="online-stop-btn" class="button" style="display:none;">Stop Game</button>
+                <button id="online-abandon-btn" class="button">Leave Session</button>
               </div>
             </div>
           </div>
@@ -735,7 +733,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=4.33"></script>
+    <script type="module" src="assets/js/main.js?v=4.34"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');
