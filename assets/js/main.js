@@ -1,8 +1,8 @@
 // assets/js/main.js
-const VERSION = '4.24';
+const VERSION = '4.25';
 
 import { GameRegistry } from './core/game-registry.js';
-import { GameState } from './core/game-state.js?v=4.22';
+import { GameState } from './core/game-state.js?v=4.25';
 import { Player } from './core/player-state.js?v=4.23';
 import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.23';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
@@ -240,6 +240,7 @@ class Game {
       scoringSystem,
       boardSize: cfg.boardSize,
       rackSize: cfg.rackSize,
+      maxTilesPerPlayer: cfg.maxTilesPerPlayer || 0,
       players: cfg.players,
       enableTimer: cfg.enableTimer,
       timeLimit: cfg.timeLimit,
