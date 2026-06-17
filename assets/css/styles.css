@@ -11,4 +11,4 @@
 /* Game-specific modules */
 @import url('./game-board.css');
 @import url('./game-rack.css');
-@import url('./game-ui.css');
+@import url('./game-ui.css?v=4.1');

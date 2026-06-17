@@ -74,32 +74,121 @@ export class RackManager {
         if (this.showingValidMoves) this.showValidMoves();
     }
 
+    _inferTileKey(tile) {
+        if (tile.key) return tile.key;
+        const { type, sides } = tile;
+        if (!Array.isArray(sides)) return type || 'unknown';
+        if (type === 'tunnel')    return 'tunnel';
+        if (type === 'roadblock') return 'roadblock';
+        if (type === 'private')   return 'private';
+        const sc = sides.filter(s => s === 'street').length;
+        if (sc === 4) return 'cross';
+        if (sc === 3) return 'tJunction';
+        if (sc === 1) return 'deadEnd';
+        if (sc === 0) return 'blank';
+        // 2 streets: opposite = straight, adjacent = corner
+        const idx = sides.reduce((a, s, i) => s === 'street' ? [...a, i] : a, []);
+        return (idx[1] - idx[0] === 2) ? 'straight' : 'corner';
+    }
+
     getTileDescription(tile) {
         if (!tile) return '';
-        const keyNames = {
-            cross:      'Intersection — roads in all 4 directions',
-            tJunction:  'T-Junction — 3-way road',
-            straight:   'Straight Road — connects opposite sides',
-            corner:     'Corner Road — bends between adjacent sides',
-            deadEnd:    'Dead End — one road exit only',
-            blank:      'Blank — no road connections',
-            tunnel:     'Flyover — two roads cross without joining',
-            roadblock:  'Road Block — costs points to play',
-            private:    'Private Road — only your colour can connect',
+        const gs = this.gameState;
+        const scoring = gs?.scoringSystem;
+        const key = this._inferTileKey(tile);
+
+        const NAMES = {
+            cross: 'Intersection', tJunction: 'T-Junction', straight: 'Straight Road',
+            corner: 'Corner Road', deadEnd: 'Dead End', blank: 'Blank Tile',
+            tunnel: 'Flyover', roadblock: 'Road Block', private: 'Private Road',
         };
-        const parts = [keyNames[tile.key] || (tile.type ? tile.type : 'Tile')];
-        if (tile.centerPattern === 'circles')     parts.push('Bonus Circle: extra pts when placed');
-        if (tile.centerPattern === 'squares')     parts.push('Centre Square: high bonus when placed');
-        if (tile.centerPattern === 'speedCamera') parts.push('Speed Camera: halves placement score');
-        if (tile.isSpecialStart) parts.push('Starter tile — plays once, not replenished');
-        return parts.join('\n');
+        const DESCS = {
+            cross:     'roads in all 4 directions',
+            tJunction: '3-way road junction',
+            straight:  'connects two opposite sides',
+            corner:    'bends between two adjacent sides',
+            deadEnd:   'single road exit only',
+            blank:     'no road connections',
+            tunnel:    'two roads cross without joining',
+            roadblock: 'all roads connect, but penalises placement',
+            private:   'only your colour can score a connection',
+        };
+
+        const name = NAMES[key] || tile.type || 'Tile';
+        const desc = DESCS[key] || '';
+        const streetCount = tile.sides.filter(s => s === 'street').length;
+
+        let html = `<div class="ti-name">${name}</div>`;
+        if (desc) html += `<div class="ti-meta">${desc}</div>`;
+
+        // Connection scoring table up to this tile's max road count
+        if (streetCount > 0) {
+            const connScores = scoring?.options?.scores || { 1: 1, 2: 4, 3: 9, 4: 16 };
+            const pairs = [];
+            for (let m = 1; m <= Math.min(streetCount, 4); m++) {
+                const pts = connScores[m];
+                if (pts != null) pairs.push(`${m}→${pts}`);
+            }
+            if (pairs.length) {
+                const mult = scoring?.options?.starterTileMultiplier;
+                const note = mult && mult > 1 ? `  ·  ×${mult} near starter` : '';
+                html += `<div class="ti-scores">Score: ${pairs.join('  ')} pts${note}</div>`;
+            }
+        }
+
+        // Intersection bonus (all-street non-tunnel tiles)
+        if (streetCount === 4 && tile.type !== 'tunnel') {
+            const ib = scoring?.options?.intersectionBonus;
+            if (ib) html += `<div class="ti-bonus">+${ib} pts intersection bonus</div>`;
+        }
+
+        // Roadblock penalty
+        if (tile.type === 'roadblock') {
+            const pen = scoring?.options?.penaltyScores?.roadblock;
+            if (pen) html += `<div class="ti-penalty">−${pen} pts road block penalty</div>`;
+        }
+
+        // Centre patterns
+        if (tile.centerPattern === 'circles') {
+            const pts = scoring?.options?.centerPatternScores?.circles ?? 10;
+            html += `<div class="ti-bonus">Bonus Circle: +${pts} pts when placed</div>`;
+        } else if (tile.centerPattern === 'squares') {
+            const pts = scoring?.options?.centerPatternScores?.squares ?? 20;
+            html += `<div class="ti-bonus">Centre Square: +${pts} pts when placed</div>`;
+        } else if (tile.centerPattern === 'speedCamera') {
+            html += `<div class="ti-penalty">Speed Camera: halves placement score</div>`;
+        }
+
+        // Starter tile note
+        if (tile.isSpecialStart) {
+            html += `<div class="ti-note">Starter tile — plays once, not replenished</div>`;
+        }
+
+        // On-board count + dealt count
+        if (gs) {
+            const pi = gs.playerManager?.currentPlayerIndex ?? 0;
+            const dealt = gs.tileSet?._tileCountsPerPlayer?.[pi]?.[key] ?? 0;
+            let onBoard = 0;
+            if (gs.boardState) {
+                for (const row of gs.boardState) {
+                    if (!row) continue;
+                    for (const t of row) {
+                        if (!t || t.isStarterTile || t.isBonusTile || !t.sides) continue;
+                        if (this._inferTileKey(t) === key) onBoard++;
+                    }
+                }
+            }
+            html += `<div class="ti-count">${onBoard} on board  ·  ${dealt} dealt to you this game</div>`;
+        }
+
+        return html;
     }
 
     _updateTileInfo(tile) {
         const el = document.getElementById('tile-info');
         if (!el) return;
         if (!tile) { el.style.display = 'none'; return; }
-        el.textContent = this.getTileDescription(tile);
+        el.innerHTML = this.getTileDescription(tile);
         el.style.display = 'block';
     }
 
