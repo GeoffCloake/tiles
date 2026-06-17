@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.35';
+const VERSION = '4.36';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.25';
@@ -14,7 +14,7 @@ import { RackManager } from './ui/rack-manager.js?v=4.14';
 import { SetupManager } from './ui/setup-manager.js?v=4.24';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
-import { OnlineManager } from './net/online-manager.js?v=4.35';
+import { OnlineManager } from './net/online-manager.js?v=4.36';
 import { AIController } from './core/ai-player.js?v=4.28';
 
 class Game {
@@ -132,7 +132,16 @@ class Game {
     document.getElementById('config-button')?.addEventListener('click', () => this.showConfig());
     document.getElementById('close-config-x')?.addEventListener('click', () => this.hideConfig());
     document.getElementById('setup-config-btn')?.addEventListener('click', () => this.showConfig());
-    document.getElementById('online-game-settings-btn')?.addEventListener('click', () => this.showConfig());
+    // "Settings" in the game-end modal takes the online host to the full Setup
+    // screen (which also has a Config button to load saved configs).
+    document.getElementById('online-game-settings-btn')?.addEventListener('click', () => {
+      if (this.online?.active) {
+        document.getElementById('game-end-modal').style.display = 'none';
+        this._goToSetup();
+      } else {
+        this.showConfig();
+      }
+    });
     const configModal = document.getElementById('config-modal');
     configModal?.addEventListener('click', (e) => { if (e.target === configModal) this.hideConfig(); });
 
@@ -184,7 +193,11 @@ class Game {
           this._onlineLobbySetup = false;
           document.getElementById('setup-screen').style.display = 'none';
           const gameEl = document.getElementById('game');
-          if (gameEl && this.gameState) gameEl.style.display = 'flex';
+          if (gameEl && this.gameState) {
+            gameEl.style.display = 'flex';
+          } else {
+            document.getElementById('quick-start-screen')?.style.setProperty('display', 'flex');
+          }
           this.online._enterLobby();
         } else {
           this.setupManager.showQuickStart();
@@ -199,14 +212,24 @@ class Game {
     const normalized = this._normalizeConfig(config);
     this._savedConfig = normalized;
 
-    // Online host used the setup screen to change settings from the lobby.
-    // Don't build a local game — return to the lobby so they can start the online match.
+    // Online host used the setup screen to change settings.
     if (this._onlineLobbySetup) {
       this._onlineLobbySetup = false;
       document.getElementById('setup-screen').style.display = 'none';
       const gameEl = document.getElementById('game');
-      if (gameEl && this.gameState) gameEl.style.display = 'flex';
-      this.online._enterLobby();
+      if (gameEl && this.gameState) {
+        gameEl.style.display = 'flex';
+      } else {
+        // No game built yet — restore quick-start screen behind the modal.
+        document.getElementById('quick-start-screen')?.style.setProperty('display', 'flex');
+      }
+      if (this.online.status === 'finished') {
+        // Game just ended: start a new one immediately with the updated settings.
+        await this.online.restartMatch();
+      } else {
+        // Still in lobby: return there so the host can confirm the start.
+        this.online._enterLobby();
+      }
       return;
     }
 
@@ -602,10 +625,13 @@ class Game {
   }
 
   // Navigate to the setup screen.
-  // When the online host is in the lobby, access setup without destroying the
-  // session — settings changes are read by startMatch() via buildConfig().
+  // Online host in lobby or finished state: access setup without destroying the
+  // session — settings changes are read by startMatch/restartMatch via buildConfig().
+  // The setup screen's top-bar Config button lets them load a saved config too.
   _goToSetup() {
-    if (this.online?.active && this.online?.isHost && this.online?.status === 'lobby') {
+    const onlineHostCanEdit = this.online?.active && this.online?.isHost &&
+      (this.online?.status === 'lobby' || this.online?.status === 'finished');
+    if (onlineHostCanEdit) {
       this._onlineLobbySetup = true;
       this.ai?.detach();
       this.setupManager.showSetup();
