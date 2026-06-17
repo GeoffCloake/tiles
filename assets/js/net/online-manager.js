@@ -64,6 +64,7 @@ export class OnlineManager {
     click('online-play-again-btn', () => this.restartMatch());
     click('online-leave-btn', () => this.leave());
     click('online-abandon-btn', () => this.leave());
+    click('game-online-btn', () => this.openModal());
     const modal = document.getElementById('online-modal');
     modal?.addEventListener('click', (e) => { if (e.target === modal) this.closeModal(); });
   }

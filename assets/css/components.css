@@ -18,6 +18,18 @@
     transform: translateY(-2px);
 }
 
+.button:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+.button:disabled:hover {
+    transform: none;
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+    box-shadow: none;
+}
+
 .button.active {
     background: var(--bg-primary);
 }

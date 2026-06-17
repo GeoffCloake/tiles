@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.32';
+const VERSION = '4.33';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.25';
@@ -14,7 +14,7 @@ import { RackManager } from './ui/rack-manager.js?v=4.14';
 import { SetupManager } from './ui/setup-manager.js?v=4.24';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
-import { OnlineManager } from './net/online-manager.js?v=4.31';
+import { OnlineManager } from './net/online-manager.js?v=4.33';
 import { AIController } from './core/ai-player.js?v=4.28';
 
 class Game {
@@ -310,16 +310,24 @@ class Game {
     this._updateOnlineButtonStates();
   }
 
-  // Disable game-affecting settings buttons for non-host online players.
-  // Called after every build and snapshot so the state stays in sync.
+  // Sync online-related button states after every build/snapshot.
+  // The Online button (green) is only visible during an active session so
+  // players can reach Leave Game from anywhere in the game view.
+  // Config/Weights/Scoring are locked for non-hosts to prevent local scoring
+  // changes that would give an unfair advantage on their turn.
   _updateOnlineButtonStates() {
-    const locked = !!this.online?.active && !this.online?.isHost;
+    const isOnline = !!this.online?.active;
+    const locked   = isOnline && !this.online?.isHost;
     const hint = 'Settings are controlled by the host during online play';
+
+    const onlineBtn = document.getElementById('game-online-btn');
+    if (onlineBtn) onlineBtn.style.display = isOnline ? '' : 'none';
+
     ['config-button', 'weights-button', 'scoring-button'].forEach(id => {
       const btn = document.getElementById(id);
       if (!btn) return;
       btn.disabled = locked;
-      btn.title = locked ? hint : '';
+      btn.title    = locked ? hint : '';
     });
   }
 
