@@ -105,13 +105,14 @@ class StreetsTileSet extends TileSet {
     if (!this._tileCountsPerPlayer[pi]) this._tileCountsPerPlayer[pi] = {};
     const counts = this._tileCountsPerPlayer[pi];
 
-    // Hard cap: once this player has received their allotment, return null so
-    // the rack slot stays empty rather than being refilled.
-    const limit = this.options.tilesPerPlayer || 0;
-    if (limit > 0 && (counts._total || 0) >= limit) return null;
-
     // Per-player options with fallback to global options
     const pp = this.options.perPlayerOptions?.[pi] || {};
+
+    // Hard cap: once this player has received their allotment, return null so
+    // the rack slot stays empty rather than being refilled. The per-player limit
+    // is the sum of the max-count settings for this player (set by setup-manager).
+    const limit = pp.tilesPerPlayer || this.options.tilesPerPlayer || 0;
+    if (limit > 0 && (counts._total || 0) >= limit) return null;
     const weights   = pp.tileWeights   || this.options.tileWeights   || this._defaultWeights();
     const maxCounts = pp.tileMaxCounts  || this.options.tileMaxCounts  || {};
     const freq      = pp.centerPatternFrequency ?? this.options.centerPatternFrequency ?? 0.2;
