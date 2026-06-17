@@ -170,44 +170,73 @@ export class StreetScoring extends AdjacencyScoring {
         return position.x === center && position.y === center;
     }
 
-    // Called after a tile is placed on the board. Claims any unclaimed border-bonus
-    // tile that is directly adjacent to the placed tile via matching street edges
-    // ("adjacent road play"). Returns claimed tiles for re-rendering.
+    // Two-step process called after each tile placement:
+    //   Step 1 — adjacent road play → claim (star, no background yet)
+    //   Step 2 — BFS from player's centre 'squares' tile → connect (background colour)
+    // Both can fire on the same turn. Returns all tiles that need re-rendering.
     claimBorderBonusTiles(gameState, player, position) {
-        if (!position) return [];
-        const { x, y } = position;
-        const placedTile = gameState.boardState[y][x];
-        if (!placedTile) return [];
+        const toRender = [];
 
-        // Rotate the placed tile's sides
-        let placedSides = [...placedTile.sides];
-        for (let i = 0; i < (placedTile.rotation || 0); i++) placedSides.unshift(placedSides.pop());
+        // ── Step 1: adjacent road play → claim ────────────────────────────────
+        if (position) {
+            const { x, y } = position;
+            const placedTile = gameState.boardState[y][x];
+            if (placedTile) {
+                let placedSides = [...placedTile.sides];
+                for (let i = 0; i < (placedTile.rotation || 0); i++) placedSides.unshift(placedSides.pop());
 
-        const dirs = [
-            { dx:  0, dy: -1, myEdge: 0, theirEdge: 2 },
-            { dx:  1, dy:  0, myEdge: 1, theirEdge: 3 },
-            { dx:  0, dy:  1, myEdge: 2, theirEdge: 0 },
-            { dx: -1, dy:  0, myEdge: 3, theirEdge: 1 },
-        ];
+                const dirs = [
+                    { dx:  0, dy: -1, myEdge: 0, theirEdge: 2 },
+                    { dx:  1, dy:  0, myEdge: 1, theirEdge: 3 },
+                    { dx:  0, dy:  1, myEdge: 2, theirEdge: 0 },
+                    { dx: -1, dy:  0, myEdge: 3, theirEdge: 1 },
+                ];
 
-        const claimed = [];
-        for (const { dx, dy, myEdge, theirEdge } of dirs) {
-            const nx = x + dx, ny = y + dy;
-            if (nx < 0 || nx >= gameState.boardSize || ny < 0 || ny >= gameState.boardSize) continue;
-            const t = gameState.boardState[ny]?.[nx];
-            if (!t?.isBorderBonus || t.claimed) continue;
+                for (const { dx, dy, myEdge, theirEdge } of dirs) {
+                    const nx = x + dx, ny = y + dy;
+                    if (nx < 0 || nx >= gameState.boardSize || ny < 0 || ny >= gameState.boardSize) continue;
+                    const t = gameState.boardState[ny]?.[nx];
+                    if (!t?.isBorderBonus || t.claimed) continue;
 
-            let bonusSides = [...t.sides];
-            for (let i = 0; i < (t.rotation || 0); i++) bonusSides.unshift(bonusSides.pop());
+                    let bonusSides = [...t.sides];
+                    for (let i = 0; i < (t.rotation || 0); i++) bonusSides.unshift(bonusSides.pop());
 
-            if (placedSides[myEdge] === 'street' && bonusSides[theirEdge] === 'street') {
-                t.backgroundColor = player.color;
-                t.claimed = true;
-                t.isStarterTile = false;
-                claimed.push({ x: nx, y: ny, tile: t });
+                    if (placedSides[myEdge] === 'street' && bonusSides[theirEdge] === 'street') {
+                        t.claimed = true;
+                        t.isStarterTile = false; // no longer a neutral endpoint
+                        toRender.push({ x: nx, y: ny, tile: t });
+                    }
+                }
             }
         }
-        return claimed;
+
+        // ── Step 2: BFS from centre → connect (background colour) ─────────────
+        // For every claimed-but-uncoloured tile, check if this player's centre
+        // square is now street-connected to it (including tiles just claimed above).
+        const uncoloured = [];
+        for (let cy = 0; cy < gameState.boardSize; cy++) {
+            for (let cx = 0; cx < gameState.boardSize; cx++) {
+                const t = gameState.boardState[cy][cx];
+                if (t?.isBorderBonus && t.claimed && !t.backgroundColor) uncoloured.push({ x: cx, y: cy, tile: t });
+            }
+        }
+
+        if (uncoloured.length) {
+            const centerSquares = this.pathScoring.findSpecialTilesForPlayer(
+                gameState, 'squares', player.color
+            );
+            if (centerSquares.length) {
+                const reachable = this._streetReachableFrom(gameState, centerSquares, player.id);
+                for (const { x, y, tile } of uncoloured) {
+                    if (reachable.has(`${x},${y}`)) {
+                        tile.backgroundColor = player.color;
+                        if (!toRender.find(c => c.x === x && c.y === y)) toRender.push({ x, y, tile });
+                    }
+                }
+            }
+        }
+
+        return toRender;
     }
 
     // BFS: set of all cells reachable from `starts` via connected street edges.

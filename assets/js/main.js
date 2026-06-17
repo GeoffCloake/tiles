@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.18';
+const VERSION = '4.19';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.17';
@@ -8,7 +8,7 @@ import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.15';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js?v=4.09';
 import { StandardScoring } from './scoring/standard-scoring.js';
-import { StreetScoring } from './scoring/street-scoring.js?v=4.17';
+import { StreetScoring } from './scoring/street-scoring.js?v=4.19';
 import { BoardManager } from './ui/board-manager.js?v=4.16';
 import { RackManager } from './ui/rack-manager.js?v=4.14';
 import { SetupManager } from './ui/setup-manager.js?v=4.14';
@@ -351,19 +351,6 @@ class Game {
   }
 
   setupGameStateListeners() {
-    // When a player's longest path first reaches a border bonus tile, colour the
-    // tile background to show "connected" — persists until someone claims it.
-    this.gameState.on('pathUpdate', ({ playerId, path }) => {
-      if (!path?.length) return;
-      const endPos = path[path.length - 1];
-      const t = this.gameState.boardState[endPos.y]?.[endPos.x];
-      if (!t?.isBorderBonus || t.claimed || t.backgroundColor) return;
-      const player = this.gameState.playerManager.getPlayerById(playerId);
-      if (!player) return;
-      t.backgroundColor = player.color;
-      this.boardManager?.renderTile(endPos, t);
-    });
-
     this.gameState.on('tilePlaced', ({ position, tile, score, bonus, claimed }) => {
       this.boardManager.renderTile(position, tile);
       if (score !== 0) this.boardManager.showScorePopup(position, score, bonus);
