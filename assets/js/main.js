@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.38';
+const VERSION = '4.39';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.25';
@@ -29,7 +29,7 @@ class Game {
 
     this._savedConfig = null; // latest normalized config for New Game
     this._freshTournament = false; // force new TournamentManager on next _buildGame
-    this._onlineLobbySetup = false; // host entered setup from the online lobby
+    this._onlineLobbySetup = false; // unused — kept to avoid breakage during transition
     this.tournament = null;
     this.wakeLock = null;
     this.showingPaths = false;
@@ -181,28 +181,14 @@ class Game {
       if (e.key === 'Escape') { this.hideRules(); this.hideScoring(); this.hideLeaderboard(); this.hideConfig(); this.hideWeights(); }
     });
 
-    // Override setup-back-btn: when the host accessed setup from the online lobby,
-    // clicking Back should return to the lobby modal rather than quick-start.
-    // We replace the element so setup-manager's listener (wired before this) is removed.
+    // Override setup-back-btn: remove setup-manager's own listener and replace
+    // with one that always returns to quick-start (online host case included — the
+    // isOnlineHostLobby check in startGame handles interception there).
     const setupBackEl = document.getElementById('setup-back-btn');
     if (setupBackEl) {
       const newBtn = setupBackEl.cloneNode(true);
       setupBackEl.parentNode.replaceChild(newBtn, setupBackEl);
-      newBtn.addEventListener('click', () => {
-        if (this._onlineLobbySetup) {
-          this._onlineLobbySetup = false;
-          document.getElementById('setup-screen').style.display = 'none';
-          const gameEl = document.getElementById('game');
-          if (gameEl && this.gameState) {
-            gameEl.style.display = 'flex';
-          } else {
-            document.getElementById('quick-start-screen')?.style.setProperty('display', 'flex');
-          }
-          this.online._enterLobby();
-        } else {
-          this.setupManager.showQuickStart();
-        }
-      });
+      newBtn.addEventListener('click', () => this.setupManager.showQuickStart());
     }
 
     document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
@@ -212,22 +198,19 @@ class Game {
     const normalized = this._normalizeConfig(config);
     this._savedConfig = normalized;
 
-    // Online host used the setup screen to change settings.
-    if (this._onlineLobbySetup) {
-      this._onlineLobbySetup = false;
+    // Online host in lobby or finished: intercept to start/restart the online match
+    // rather than a local game. Applies to Quick Play, Load & Play, and Full Setup's
+    // Start button — anything that reaches startGame() while the session is active.
+    const isOnlineHostLobby = this.online?.active && this.online?.isHost &&
+      (this.online?.status === 'lobby' || this.online?.status === 'finished');
+    if (isOnlineHostLobby) {
       document.getElementById('setup-screen').style.display = 'none';
+      document.getElementById('quick-start-screen').style.display = 'none';
       const gameEl = document.getElementById('game');
-      if (gameEl && this.gameState) {
-        gameEl.style.display = 'flex';
-      } else {
-        // No game built yet — restore quick-start screen behind the modal.
-        document.getElementById('quick-start-screen')?.style.setProperty('display', 'flex');
-      }
+      if (gameEl && this.gameState) gameEl.style.display = 'flex';
       if (this.online.status === 'finished') {
-        // Game just ended: start a new one immediately with the updated settings.
         await this.online.restartMatch();
       } else {
-        // Still in lobby: return there so the host can confirm the start.
         this.online._enterLobby();
       }
       return;
@@ -624,17 +607,16 @@ class Game {
     this._updateOnlineButtonStates();
   }
 
-  // Navigate to the setup screen.
-  // Online host in lobby or finished state: access setup without destroying the
-  // session — settings changes are read by startMatch/restartMatch via buildConfig().
-  // The setup screen's top-bar Config button lets them load a saved config too.
+  // Navigate to settings. Online host in lobby/finished state goes to the Quick
+  // Start screen so they can use the version selector and saved-config loader;
+  // Full Setup is one click away from there. startGame() intercepts any "play"
+  // action while the session is active so it starts the online match, not a local one.
   _goToSetup() {
     const onlineHostCanEdit = this.online?.active && this.online?.isHost &&
       (this.online?.status === 'lobby' || this.online?.status === 'finished');
     if (onlineHostCanEdit) {
-      this._onlineLobbySetup = true;
       this.ai?.detach();
-      this.setupManager.showSetup();
+      this.setupManager.showQuickStart();
       return;
     }
     if (this._exitOnline(() => this._goToSetup())) return;
