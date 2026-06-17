@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.31';
+const VERSION = '4.32';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.25';
@@ -303,6 +303,24 @@ class Game {
     // Hand any computer-controlled seats to the AI. Harmless online (the
     // controller stands down while a network match is active).
     this.ai?.attach(this.gameState);
+
+    // Sync button states: settings buttons are locked for non-host online players
+    // because scoring/config changes on their device would affect their turn's
+    // calculations, creating a fairness issue.
+    this._updateOnlineButtonStates();
+  }
+
+  // Disable game-affecting settings buttons for non-host online players.
+  // Called after every build and snapshot so the state stays in sync.
+  _updateOnlineButtonStates() {
+    const locked = !!this.online?.active && !this.online?.isHost;
+    const hint = 'Settings are controlled by the host during online play';
+    ['config-button', 'weights-button', 'scoring-button'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.disabled = locked;
+      btn.title = locked ? hint : '';
+    });
   }
 
   _updateZoneOverlay() {
@@ -526,6 +544,7 @@ class Game {
     this.updateUIForCurrentPlayer();
     this._updatePathPlayerIndicators();
     this.refreshPathHighlights();
+    this._updateOnlineButtonStates();
   }
 
   // Navigate to the setup screen, leaving any active online session first.
@@ -586,6 +605,7 @@ class Game {
   // ---- Scoring Settings Panel ----
 
   showScoring() {
+    if (this.online?.active && !this.online?.isHost) return;
     this.populateScoringPanel();
     const m = document.getElementById('scoring-modal');
     if (m) m.style.display = 'flex';
@@ -733,6 +753,7 @@ class Game {
   }
 
   showConfig() {
+    if (this.online?.active && !this.online?.isHost) return;
     this.setupManager?.populateConfigSelect();
     const m = document.getElementById('config-modal');
     if (m) m.style.display = 'flex';
@@ -744,6 +765,7 @@ class Game {
   }
 
   showWeights() {
+    if (this.online?.active && !this.online?.isHost) return;
     const m = document.getElementById('weights-modal');
     if (!m) return;
 
