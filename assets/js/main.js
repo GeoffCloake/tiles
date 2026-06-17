@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.17';
+const VERSION = '4.18';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.17';
@@ -351,6 +351,19 @@ class Game {
   }
 
   setupGameStateListeners() {
+    // When a player's longest path first reaches a border bonus tile, colour the
+    // tile background to show "connected" — persists until someone claims it.
+    this.gameState.on('pathUpdate', ({ playerId, path }) => {
+      if (!path?.length) return;
+      const endPos = path[path.length - 1];
+      const t = this.gameState.boardState[endPos.y]?.[endPos.x];
+      if (!t?.isBorderBonus || t.claimed || t.backgroundColor) return;
+      const player = this.gameState.playerManager.getPlayerById(playerId);
+      if (!player) return;
+      t.backgroundColor = player.color;
+      this.boardManager?.renderTile(endPos, t);
+    });
+
     this.gameState.on('tilePlaced', ({ position, tile, score, bonus, claimed }) => {
       this.boardManager.renderTile(position, tile);
       if (score !== 0) this.boardManager.showScorePopup(position, score, bonus);
