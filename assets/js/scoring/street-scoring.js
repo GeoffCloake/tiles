@@ -195,6 +195,7 @@ export class StreetScoring extends AdjacencyScoring {
             if (reachable.has(`${x},${y}`)) {
                 tile.backgroundColor = player.color;
                 tile.claimed = true;
+                tile.newlyClaimed = true; // star deferred until next turn
                 tile.isStarterTile = false; // now exclusively this player's circle
                 claimed.push({ x, y, tile });
             }

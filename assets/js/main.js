@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.15';
+const VERSION = '4.16';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.11';
@@ -8,8 +8,8 @@ import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.15';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
 import { BasicRuleset } from './rules/basic-rules.js?v=4.09';
 import { StandardScoring } from './scoring/standard-scoring.js';
-import { StreetScoring } from './scoring/street-scoring.js?v=4.07';
-import { BoardManager } from './ui/board-manager.js?v=4.15';
+import { StreetScoring } from './scoring/street-scoring.js?v=4.16';
+import { BoardManager } from './ui/board-manager.js?v=4.16';
 import { RackManager } from './ui/rack-manager.js?v=4.14';
 import { SetupManager } from './ui/setup-manager.js?v=4.14';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
@@ -362,7 +362,10 @@ class Game {
       this._updateZoneOverlay();
     });
 
-    this.gameState.on('turnChange', () => this.updateUIForCurrentPlayer());
+    this.gameState.on('turnChange', () => {
+      this._revealClaimedBonusTiles();
+      this.updateUIForCurrentPlayer();
+    });
     this.gameState.on('gameEnd', (finalScores) => {
       // Highlight every player's bonus path in their colour
       finalScores.forEach(s => {
@@ -404,6 +407,20 @@ class Game {
     if (this.gameState?.inputLocked) return; // online: not your turn
     if (this.gameState?.getCurrentPlayer()?.aiLevel) return; // AI plays its own turn
     this.gameState?.playerManager?.skipTurn?.();
+  }
+
+  _revealClaimedBonusTiles() {
+    const bs = this.gameState?.boardState;
+    if (!bs) return;
+    for (let y = 0; y < this.gameState.boardSize; y++) {
+      for (let x = 0; x < this.gameState.boardSize; x++) {
+        const t = bs[y]?.[x];
+        if (t?.newlyClaimed) {
+          delete t.newlyClaimed;
+          this.boardManager.renderTile({ x, y }, t);
+        }
+      }
+    }
   }
 
   updateUIForCurrentPlayer() {

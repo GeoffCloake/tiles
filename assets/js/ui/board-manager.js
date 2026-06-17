@@ -58,8 +58,8 @@ export class BoardManager {
     if (!canvas) return;
     this.gameState.tileSet.renderTile(tile, canvas, tile.rotation || 0, pathColor, pathEdges);
     if (tile.isBorderBonus) {
-      cell.classList.toggle('border-bonus-unclaimed', !tile.claimed);
-      cell.classList.toggle('border-bonus-claimed',   !!tile.claimed);
+      cell.classList.toggle('border-bonus-unclaimed', !tile.claimed || !!tile.newlyClaimed);
+      cell.classList.toggle('border-bonus-claimed',   !!tile.claimed && !tile.newlyClaimed);
     } else {
       cell.classList.remove('border-bonus-unclaimed', 'border-bonus-claimed');
     }
