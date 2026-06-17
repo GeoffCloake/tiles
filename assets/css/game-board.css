@@ -80,9 +80,9 @@
 .border-bonus-unclaimed::after {
   content: '';
   position: absolute;
-  inset: 3px;
+  inset: 1px;
   z-index: 10;
-  border: 2px dashed rgba(255, 255, 255, 0.55);
+  border: 3px dashed rgba(255, 215, 0, 0.85);
   border-radius: 3px;
   pointer-events: none;
   animation: bonus-pulse 2.5s ease-in-out infinite;
