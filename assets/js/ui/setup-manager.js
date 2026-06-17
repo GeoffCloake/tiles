@@ -15,6 +15,7 @@ export class SetupManager {
         // Basic Settings
         this.boardSizeSelect = document.getElementById('board-size');
         this.rackSizeSelect = document.getElementById('rack-size');
+        this.maxTilesPerPlayerInput = document.getElementById('max-tiles-per-player');
         this.tileSetSelect = document.getElementById('tile-set');
         this.playerCountSelect = document.getElementById('player-count');
 
@@ -333,6 +334,7 @@ export class SetupManager {
         return {
             boardSize: parseInt(this.boardSizeSelect.value),
             rackSize: parseInt(this.rackSizeSelect.value),
+            maxTilesPerPlayer: parseInt(this.maxTilesPerPlayerInput?.value || '0'),
             tileSet,
             ruleset: 'basic',
             initialTiles: this.getInitialTilesConfig(),
@@ -734,7 +736,7 @@ export class SetupManager {
             `penalty-freq-p${i}`, `tm-speedcam-p${i}`,
         ]).flat();
         return [
-            'board-size','rack-size','tile-set','player-count',
+            'board-size','rack-size','max-tiles-per-player','tile-set','player-count',
             'initial-tile-layout','initial-tiles','layout-tiles',
             'enable-timer','time-limit',
             ...perPlayerFields,

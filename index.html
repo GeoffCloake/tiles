@@ -153,6 +153,11 @@
                         </div>
 
                         <div class="setup-option">
+                            <label for="max-tiles-per-player">Max Tiles Per Player (0 = unlimited):</label>
+                            <input type="number" id="max-tiles-per-player" min="0" max="200" value="0" step="1">
+                        </div>
+
+                        <div class="setup-option">
                             <label for="tile-set">Tile Set:</label>
                             <select id="tile-set">
                                 <option value="streets">Streets</option>
@@ -713,7 +718,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=4.21"></script>
+    <script type="module" src="assets/js/main.js?v=4.22"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');

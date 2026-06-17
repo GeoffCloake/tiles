@@ -1,8 +1,8 @@
 // assets/js/main.js
-const VERSION = '4.21';
+const VERSION = '4.22';
 
 import { GameRegistry } from './core/game-registry.js';
-import { GameState } from './core/game-state.js?v=4.21';
+import { GameState } from './core/game-state.js?v=4.22';
 import { Player } from './core/player-state.js?v=4.11';
 import { StreetsTileSet } from './tile-sets/streets-tileset.js?v=4.21';
 import { ShapesTileSet } from './tile-sets/shapes-tileset.js';
@@ -11,7 +11,7 @@ import { StandardScoring } from './scoring/standard-scoring.js';
 import { StreetScoring } from './scoring/street-scoring.js?v=4.21';
 import { BoardManager } from './ui/board-manager.js?v=4.21';
 import { RackManager } from './ui/rack-manager.js?v=4.14';
-import { SetupManager } from './ui/setup-manager.js?v=4.20';
+import { SetupManager } from './ui/setup-manager.js?v=4.22';
 import { PlayerUIManager } from './ui/player-ui.js?v=4.05';
 import { TournamentManager } from './core/tournament.js';
 import { OnlineManager } from './net/online-manager.js?v=4.14';
