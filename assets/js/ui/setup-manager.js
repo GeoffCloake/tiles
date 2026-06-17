@@ -278,7 +278,8 @@ export class SetupManager {
                     tileMaxCounts: this._getTileMaxCounts(i),
                 };
             }
-            return { perPlayerOptions };
+            const tilesPerPlayer = parseInt(document.getElementById('tiles-per-player')?.value || '0', 10) || 0;
+            return { perPlayerOptions, tilesPerPlayer };
         }
         return {};
     }
@@ -741,7 +742,7 @@ export class SetupManager {
             'special-start-count', 'special-start-type',
             'starter-multiplier','circle-score','square-score',
             'intersection-bonus','center-bonus','path-points','completion-bonus',
-            'roadblock-penalty','claim-bonus','border-path-bonus',
+            'roadblock-penalty','claim-bonus','border-path-bonus','tiles-per-player',
             'score-mode-endgame','enable-tournament','tournament-rounds',
         ];
     }

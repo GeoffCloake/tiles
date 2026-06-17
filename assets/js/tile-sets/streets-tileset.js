@@ -13,6 +13,7 @@ class StreetsTileSet extends TileSet {
         centerPatternFrequency: 0.2,
         patternWeights: { circles: 0.7, squares: 0.3 },
         // tileWeights: null means use _defaultWeights()
+        tilesPerPlayer: 0, // 0 = unlimited; >0 caps total tiles dealt per player
       },
     });
 
@@ -103,6 +104,11 @@ class StreetsTileSet extends TileSet {
     const pi = playerIndex ?? 0;
     if (!this._tileCountsPerPlayer[pi]) this._tileCountsPerPlayer[pi] = {};
     const counts = this._tileCountsPerPlayer[pi];
+
+    // Hard cap: once this player has received their allotment, return null so
+    // the rack slot stays empty rather than being refilled.
+    const limit = this.options.tilesPerPlayer || 0;
+    if (limit > 0 && (counts._total || 0) >= limit) return null;
 
     // Per-player options with fallback to global options
     const pp = this.options.perPlayerOptions?.[pi] || {};
@@ -200,6 +206,8 @@ class StreetsTileSet extends TileSet {
     if (tile.type === 'private' && playerIndex !== null) {
       tile.ownedByIndex = playerIndex;
     }
+
+    counts._total = (counts._total || 0) + 1;
 
     return tile;
   }
