@@ -60,6 +60,9 @@ export class BoardManager {
     if (tile.isBonusTile) {
       cell.classList.toggle('bonus-tile-unclaimed', !tile.claimed);
       cell.classList.toggle('bonus-tile-claimed',   !!tile.claimed);
+      if (tile.claimed && tile.claimedByColor) {
+        cell.style.setProperty('--star-color', tile.claimedByColor);
+      }
     } else {
       cell.classList.remove('bonus-tile-unclaimed', 'bonus-tile-claimed');
     }

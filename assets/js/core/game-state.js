@@ -183,10 +183,18 @@ export class GameState {
 
         this.boardState[y][x] = rotatedTile;
 
+        // Placed circles tiles become claimable bonus tiles on the board,
+        // matching the look/behaviour of the pre-placed border bonus tiles.
+        // Scoring already awarded the circles placement bonus above.
+        if (rotatedTile.centerPattern === 'circles' && !rotatedTile.isBonusTile) {
+            rotatedTile.isBonusTile = true;
+            rotatedTile.claimed = false;
+        }
+
         const currentPlayer = this.getCurrentPlayer();
         this.playerManager.updatePlayerScore(currentPlayer.id, score, bonus, breakdown);
 
-        // Claim any border-bonus tiles now connected to this player's street path
+        // Claim any bonus tiles now connected to this player's street path
         const claimed = this.scoringSystem.claimBonusTiles?.(this, currentPlayer, position) ?? [];
 
         // Award points for newly claimed tiles (adjacent road play, step 1)

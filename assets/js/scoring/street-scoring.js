@@ -205,6 +205,7 @@ export class StreetScoring extends AdjacencyScoring {
                     if (placedSides[myEdge] === 'street' && bonusSides[theirEdge] === 'street') {
                         t.claimed = true;
                         t.isStarterTile = false; // no longer a neutral endpoint
+                        t.claimedByColor = player.color; // for star colour
                         toRender.push({ x: nx, y: ny, tile: t });
                     }
                 }
