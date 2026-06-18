@@ -1,5 +1,5 @@
 // assets/js/main.js
-const VERSION = '4.40';
+const VERSION = '4.41';
 
 import { GameRegistry } from './core/game-registry.js';
 import { GameState } from './core/game-state.js?v=4.26';
@@ -32,7 +32,8 @@ class Game {
     this._onlineLobbySetup = false; // unused — kept to avoid breakage during transition
     this.tournament = null;
     this.wakeLock = null;
-    this.showingPaths = false;
+    this.showingHighlights = false;
+    this._lastPlacedCell = null;
     this.online = null; // OnlineManager, set in initialize()
     this.ai = null;     // AIController, set in initialize()
   }
@@ -64,7 +65,7 @@ class Game {
     this.rackManager = new RackManager({
       rackElement: document.getElementById('rack'),
       rotateButton: document.getElementById('rotate-button'),
-      showValidMovesButton: document.getElementById('show-valid-moves'),
+      showValidMovesButton: null, // highlights managed by the unified Highlights toggle
       onTileSelected: (tile) => this.handleTileSelected(tile),
     });
 
@@ -102,11 +103,11 @@ class Game {
     });
 
     document.getElementById('setup-button')?.addEventListener('click', () => this._goToSetup());
-    document.getElementById('show-paths')?.addEventListener('click', () => this.togglePathHighlights());
+    document.getElementById('show-highlights')?.addEventListener('click', () => this.toggleHighlights());
 
     // Click a player card while paths are on to pin that player's path; click again to unpin
     document.getElementById('player-container')?.addEventListener('click', (e) => {
-      if (!this.showingPaths) return;
+      if (!this.showingHighlights) return;
       const card = e.target.closest('.player-info[id^="player-"]');
       if (!card) return;
       const playerId = card.id.replace('player-', '');
@@ -263,6 +264,12 @@ class Game {
     tileSet?.onNewGame?.();
     scoringSystem?.onNewGame?.();
 
+    // Clear last-tile highlight from previous game
+    if (this._lastPlacedCell) {
+      this._lastPlacedCell.classList.remove('last-placed');
+      this._lastPlacedCell = null;
+    }
+
     // ---- Initial tiles handling (supports both Random and Arrangement) ----
     const isObj = typeof cfg.initialTiles === 'object' && cfg.initialTiles !== null;
     const isArrangement = isObj && cfg.initialTiles.type === 'arrangement';
@@ -326,11 +333,6 @@ class Game {
     const lbBtn = document.getElementById('leaderboard-button');
     if (lbBtn) lbBtn.style.display = TournamentManager.getLeaderboard().length ? '' : 'none';
 
-    // Path highlighting only applies to tile sets with path scoring
-    const showPathsButton = document.getElementById('show-paths');
-    if (showPathsButton) {
-      showPathsButton.style.display = this.gameState.scoringSystem?.pathScoring ? '' : 'none';
-    }
     this.refreshPathHighlights();
 
     this.boardManager.setupResizeListener();
@@ -438,6 +440,7 @@ class Game {
       for (const c of (claimed ?? [])) {
         this.boardManager.renderTile({ x: c.x, y: c.y }, c.tile);
       }
+      this._applyLastTileHighlight(position, tile);
       this.refreshPathHighlights();
       this._updateZoneOverlay();
     });
@@ -635,19 +638,41 @@ class Game {
     return false;
   }
 
-  togglePathHighlights() {
-    this.showingPaths = !this.showingPaths;
-    document.getElementById('show-paths')?.classList.toggle('active', this.showingPaths);
-    if (!this.showingPaths) this.selectedPathPlayerId = null;
+  toggleHighlights() {
+    this.showingHighlights = !this.showingHighlights;
+    document.getElementById('show-highlights')?.classList.toggle('active', this.showingHighlights);
+
+    // Valid moves
+    this.rackManager.showingValidMoves = this.showingHighlights;
+    if (this.showingHighlights && this.gameState?.selectedTile) {
+      this.rackManager.showValidMoves();
+    } else {
+      this.rackManager.clearValidMoves();
+    }
+
+    // Paths
+    if (!this.showingHighlights) this.selectedPathPlayerId = null;
     this._updatePathPlayerIndicators();
     this.refreshPathHighlights();
+  }
+
+  _applyLastTileHighlight(position, tile) {
+    if (this._lastPlacedCell) this._lastPlacedCell.classList.remove('last-placed');
+    const boardEl = this.boardManager?.boardElement;
+    const idx = position.y * this.gameState.boardSize + position.x;
+    const cell = boardEl?.children[idx];
+    if (cell) {
+      cell.style.setProperty('--last-placed-color', tile.backgroundColor || 'rgba(255,255,255,0.8)');
+      cell.classList.add('last-placed');
+      this._lastPlacedCell = cell;
+    }
   }
 
   // Show only one player's path: the pinned player, or the current player by default
   refreshPathHighlights() {
     if (!this.boardManager || !this.gameState) return;
     this.boardManager.clearPathHighlights();
-    if (!this.showingPaths) return;
+    if (!this.showingHighlights) return;
 
     const pathScoring = this.gameState.scoringSystem?.pathScoring;
     if (!pathScoring) return;
@@ -665,10 +690,10 @@ class Game {
   _updatePathPlayerIndicators() {
     const container = document.getElementById('player-container');
     if (!container) return;
-    container.classList.toggle('paths-active', !!this.showingPaths);
+    container.classList.toggle('paths-active', !!this.showingHighlights);
     container.querySelectorAll('.player-info').forEach(div => {
       const id = div.id.replace('player-', '');
-      div.classList.toggle('path-viewing', !!this.showingPaths && id === this.selectedPathPlayerId);
+      div.classList.toggle('path-viewing', !!this.showingHighlights && id === this.selectedPathPlayerId);
     });
   }
 

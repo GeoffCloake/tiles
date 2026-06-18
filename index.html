@@ -12,7 +12,7 @@
     <meta http-equiv="Expires" content="0">
     <title>Multiplayer Tile Board Game</title>
     <link rel="stylesheet" href="assets/css/styles.css?v=4.16">
-    <link rel="stylesheet" href="assets/css/game-board.css?v=4.22">
+    <link rel="stylesheet" href="assets/css/game-board.css?v=4.23">
     <style>
         #game-container {
             position: relative;
@@ -355,12 +355,9 @@
                             <button id="rotate-button" class="button">
                                 <span class="button-icon">↻</span> Rotate Tile
                             </button>
-                            <button id="show-valid-moves" class="button">
-                                Show Valid Moves
-                            </button>
-                            <button id="show-paths" class="button" style="display: none;"
-                                title="Highlight each player's best centre-to-bonus path">
-                                Show Paths
+                            <button id="show-highlights" class="button"
+                                title="Toggle valid moves, paths and last tile played">
+                                Highlights
                             </button>
                         </div>
                     </div>
@@ -735,7 +732,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="assets/js/main.js?v=4.40"></script>
+    <script type="module" src="assets/js/main.js?v=4.41"></script>
     <script>
         // Fullscreen functionality
         const container = document.getElementById('game-container');
